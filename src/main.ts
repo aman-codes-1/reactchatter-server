@@ -12,7 +12,6 @@ async function bootstrap() {
   const origins = [allowedOrigins, process.env.CLIENT_URI]
     .filter((origin) => origin)
     .flat(1);
-  console.log(allowedOrigins);
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe());
   app.enableCors({
