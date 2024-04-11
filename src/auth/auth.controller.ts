@@ -13,7 +13,7 @@ import { User } from '../user/user.schema';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private AuthServices: AuthService) {
+  constructor(private authService: AuthService) {
     //
   }
 
@@ -37,7 +37,7 @@ export class AuthController {
     });
     const { iss, azp, aud, sub, at_hash, ...rest } = ticket.getPayload();
     const ticketData = { ...rest, ...tokens } as User;
-    const data = await this.AuthServices.login(ticketData);
+    const data = await this.authService.login(ticketData);
     response.cookie('auth', JSON.stringify(data), {
       httpOnly: true,
       domain: process.env.COOKIE_DOMAIN,
@@ -92,7 +92,7 @@ export class AuthController {
         secure: true,
       });
     }
-    const authData = await this.AuthServices.login(auth);
+    const authData = await this.authService.login(auth);
     const {
       iat,
       exp,

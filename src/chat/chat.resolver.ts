@@ -1,102 +1,77 @@
 import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
 import { ChatArgs } from './dto/chat.args';
-import { ChatsInput } from './dto/chat.input';
-import { Chat, ChatData, ChatsData } from './models/chat.model';
+import { ChatInput, ChatsInput, CreateChatInput } from './dto/chat.input';
+import { Chat, ChatData } from './models/chat.model';
 import { ChatService } from './chat.service';
-import { Chat as ChatSchema } from './chat.schema';
+import { SocketGateway } from '../socket/socket.gateway';
 
 const pubSub = new PubSub();
 
 @Resolver(() => Chat)
 export class ChatResolver {
-  constructor(private readonly ChatServices: ChatService) {
+  constructor(
+    private readonly chatService: ChatService,
+    private readonly socketGateway: SocketGateway,
+  ) {
     //
   }
 
-  @Query((returns) => Chat)
-  async chat(@Args('chatId') chatId: string): Promise<ChatSchema> {
-    const chat = await this.ChatServices.findOneById(chatId);
-    return chat;
+  @Query(() => Chat)
+  async chat(@Args('input') input: ChatInput): Promise<Chat> {
+    const { chatId } = input;
+    const chat = await this.chatService.findOneById(chatId);
+    return chat as unknown as Chat;
   }
 
-  @Query((returns) => [Chat])
+  @Query(() => [Chat])
   async chats(
-    @Args('chatData') chatData: ChatsInput,
-    @Args() chatArgs: ChatArgs,
+    @Args('input') input: ChatsInput,
+    @Args() args: ChatArgs,
   ): Promise<Chat[]> {
-    const chats = await this.ChatServices.findAll(chatData, chatArgs);
+    const { userId } = input;
+    const chats = await this.chatService.findAll(userId, args);
     return chats;
   }
 
-  @Mutation((returns) => Chat)
-  async createChat(
-    @Args('chatData') chatData: Chat,
-    @Args() chatArgs: ChatArgs,
-  ): Promise<ChatSchema> {
-    const { friendId } = chatData;
-    const newChat = await this.ChatServices.create(chatData);
-    const chats = await this.ChatServices.findAll(chatData, chatArgs);
+  @Mutation(() => Chat)
+  async createChat(@Args('input') input: CreateChatInput): Promise<Chat> {
+    const { friendId } = input;
+    const newChat = await this.chatService.create(input);
     pubSub.publish('OnChatAdded', {
       OnChatAdded: {
         friendId,
-        data: newChat,
+        chat: newChat,
       },
     });
-    pubSub.publish('OnChatsAdded', {
-      OnChatsAdded: {
-        friendId,
-        data: chats,
-      },
-    });
-    return newChat;
+    return newChat as unknown as Chat;
   }
 
-  @Mutation((returns) => Chat)
-  async updateChat(
-    @Args('chatData') chatData: Chat,
-    @Args() chatArgs: ChatArgs,
-  ): Promise<ChatSchema> {
-    const { friendId } = chatData;
-    const updatedChat = await this.ChatServices.create(chatData);
-    const chats = await this.ChatServices.findAll(chatData, chatArgs);
+  @Mutation(() => Chat)
+  async updateChat(@Args('input') input: CreateChatInput): Promise<Chat> {
+    const { friendId } = input;
+    const updatedChat = await this.chatService.create(input);
     pubSub.publish('OnChatUpdated', {
       OnChatUpdated: {
         friendId,
-        data: updatedChat,
+        chat: updatedChat,
       },
     });
-    pubSub.publish('OnChatUpdated', {
-      OnChatsUpdated: {
-        friendId,
-        data: chats,
-      },
-    });
-    return updatedChat;
+    return updatedChat as unknown as Chat;
   }
 
-  @Mutation((returns) => Boolean)
+  @Mutation(() => Boolean)
   async removeChat(@Args('id') id: string) {
-    return this.ChatServices.remove(id);
+    return this.chatService.remove(id);
   }
 
-  @Subscription((returns) => ChatData)
+  @Subscription(() => ChatData)
   OnChatAdded() {
     return pubSub.asyncIterator('OnChatAdded');
   }
 
-  @Subscription((returns) => ChatsData)
-  OnChatsAdded() {
-    return pubSub.asyncIterator('OnChatsAdded');
-  }
-
-  @Subscription((returns) => ChatData)
+  @Subscription(() => ChatData)
   OnChatUpdated() {
     return pubSub.asyncIterator('OnChatUpdated');
-  }
-
-  @Subscription((returns) => ChatsData)
-  OnChatsUpdated() {
-    return pubSub.asyncIterator('OnChatsUpdated');
   }
 }

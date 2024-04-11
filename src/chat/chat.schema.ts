@@ -1,61 +1,24 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
-class DocumentResult<T> {
-  _doc: T;
-}
-
-class CommonTimestamp {
+class Member {
   @Prop()
-  timestamp: number;
-}
+  _id: Types.ObjectId;
 
-class SentStatus extends CommonTimestamp {
   @Prop()
-  isSent: boolean;
-}
+  hasAdded: boolean;
 
-class DeliveredStatus extends CommonTimestamp {
-  @Prop()
-  isDelivered: boolean;
-}
-
-class ReadStatus extends CommonTimestamp {
-  @Prop()
-  isRead: boolean;
-}
-
-class CommonId {
-  @Prop()
-  _id: string;
-}
-
-class Sender extends CommonId {
-  @Prop({ type: SentStatus })
-  sentStatus: SentStatus;
-}
-
-class Receiver extends CommonId {
-  @Prop({ type: DeliveredStatus })
-  deliveredStatus: DeliveredStatus;
-
-  @Prop({ type: ReadStatus })
-  readStatus: ReadStatus;
+  @Prop({ isRequired: false })
+  isAdmin: boolean;
 }
 
 @Schema({ timestamps: true })
-export class Chat extends DocumentResult<Chat> {
+export class Chat {
   @Prop()
-  friendId: Types.ObjectId;
+  type: string;
 
-  @Prop()
-  message: string;
-
-  @Prop({ type: Sender })
-  sender: Sender;
-
-  @Prop({ type: Receiver })
-  receiver: Receiver;
+  @Prop({ type: [Member] })
+  members: Member[];
 }
 
 export const ChatSchema = SchemaFactory.createForClass(Chat);

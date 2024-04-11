@@ -1,93 +1,63 @@
-import { Field, Float, InputType, ObjectType } from '@nestjs/graphql';
-import { MaxLength } from 'class-validator';
+import { Field, InputType, ObjectType } from '@nestjs/graphql';
 
-@InputType('SentStatusInput')
-@ObjectType('SentStatusObject')
-class SentStatus {
-  @Field((type) => Boolean)
-  isSent: boolean;
-
-  @Field((type) => Float)
-  timestamp: number;
-}
-
-@InputType('DeliveredStatusInput')
-@ObjectType('DeliveredStatusObject')
-class DeliveredStatus {
-  @Field((type) => Boolean)
-  isDelivered: boolean;
-
-  @Field((type) => Float)
-  timestamp: number;
-}
-
-@InputType('ReadStatusInput')
-@ObjectType('ReadStatusObject')
-class ReadStatus {
-  @Field((type) => Boolean)
-  isRead: boolean;
-
-  @Field((type) => Float)
-  timestamp: number;
-}
-
-@InputType('SenderInput')
-@ObjectType('SenderObject')
-class Sender {
-  @Field((type) => String)
+@InputType('MemberDetailsInput')
+@ObjectType('MemberDetailsObject')
+export class MemberDetails {
+  @Field(() => String)
   _id: string;
 
-  @Field((type) => SentStatus)
-  sentStatus: SentStatus;
+  @Field(() => String)
+  name: string;
+
+  @Field(() => String)
+  email: string;
+
+  @Field(() => Boolean)
+  email_verified: boolean;
+
+  @Field(() => String)
+  picture: string;
+
+  @Field(() => String)
+  given_name: string;
+
+  @Field(() => String)
+  family_name: string;
 }
 
-@InputType('ReceiverInput')
-@ObjectType('ReceiverObject')
-class Receiver {
-  @Field((type) => String)
+@InputType('MemberInput')
+@ObjectType('MemberObject')
+export class Member {
+  @Field(() => String)
   _id: string;
 
-  @Field((type) => DeliveredStatus, { nullable: true })
-  deliveredStatus: DeliveredStatus;
+  @Field(() => Boolean)
+  hasAdded: boolean;
 
-  @Field((type) => ReadStatus, { nullable: true })
-  readStatus: ReadStatus;
+  @Field(() => Boolean, { nullable: true })
+  isAdmin: boolean;
+
+  @Field(() => MemberDetails, { nullable: true })
+  memberDetails: MemberDetails;
 }
 
-@InputType('ChatInput')
 @ObjectType('ChatObject')
 export class Chat {
-  @Field({ nullable: true })
+  @Field(() => String)
   _id: string;
 
-  @Field((type) => String)
-  friendId: string;
+  @Field(() => String)
+  type: string;
 
-  @Field((type) => String)
-  @MaxLength(4096)
-  message: string;
-
-  @Field((type) => Sender)
-  sender: Sender;
-
-  @Field((type) => Receiver)
-  receiver: Receiver;
+  @Field(() => [Member])
+  members: Member[];
 }
 
 @ObjectType({ description: 'ChatDataObject' })
 export class ChatData {
-  @Field((type) => String)
+  @Field(() => String)
   friendId: string;
 
-  @Field((type) => Chat)
-  data: Chat;
-}
-
-@ObjectType({ description: 'ChatsDataObject' })
-export class ChatsData {
-  @Field((type) => String)
-  friendId: string;
-
-  @Field((type) => [Chat])
-  data: Chat[];
+  @Field(() => Chat)
+  chat: Chat;
 }

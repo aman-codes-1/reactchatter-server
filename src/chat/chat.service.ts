@@ -3,91 +3,202 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { ChatArgs } from './dto/chat.args';
-import { ChatsInput } from './dto/chat.input';
+import { CreateChatInput } from './dto/chat.input';
 import { Chat } from './models/chat.model';
 import { Chat as ChatSchema, ChatDocument } from './chat.schema';
-import { Friend, FriendDocument } from '../friend/friend.schema';
 
 @Injectable()
 export class ChatService {
   constructor(
-    @InjectModel(ChatSchema.name) private ChatModel: Model<ChatDocument>,
-    @InjectModel(Friend.name) private FriendModel: Model<FriendDocument>,
+    @InjectModel(ChatSchema.name)
+    private ChatModel: Model<ChatDocument>,
   ) {
     //
   }
 
-  async create(data: Chat): Promise<ChatSchema> {
-    const {
-      friendId,
-      sender: { _id: senderId },
-      receiver: { _id: receiverId },
-    } = data;
-    const friendObjectId = new ObjectId(friendId);
-    const senderObjectId = new ObjectId(senderId);
-    const receiverObjectId = new ObjectId(receiverId);
-    const friend = await this.FriendModel.findOne({
-      $or: [
-        {
-          $and: [
-            { _id: friendObjectId },
-            { addedByUserId: senderObjectId },
-            { userId: receiverObjectId },
-            { isFriend: true },
-          ],
-        },
-        {
-          $and: [
-            { _id: friendObjectId },
-            { addedByUserId: receiverObjectId },
-            { userId: senderObjectId },
-            { isFriend: true },
-          ],
-        },
-      ],
-    }).lean();
-    if (!friend) {
-      throw new BadRequestException('Friend not found.');
-    }
+  async create(data: CreateChatInput): Promise<ChatSchema> {
+    const { members } = data;
+    const membersWithObjectId = members.map((member) => ({
+      ...member,
+      _id: new ObjectId(member?._id),
+    }));
     const newChatData = {
       ...data,
-      friendId: friendObjectId,
-      sender: {
-        ...data?.sender,
-        _id: senderObjectId,
-      },
-      receiver: {
-        ...data.receiver,
-        _id: receiverObjectId,
-      },
+      members: membersWithObjectId,
     };
     const newChat = new this.ChatModel(newChatData);
-    await newChat.save();
-    return newChat?._doc ? newChat?._doc : newChat;
+    const savedChat = await newChat.save();
+    const { _id } = savedChat.toObject();
+    const chat = await this.ChatModel.aggregate([
+      {
+        $match: { _id },
+      },
+      {
+        $unwind: '$members',
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'members._id',
+          foreignField: '_id',
+          pipeline: [
+            {
+              $project: {
+                _id: '$_id',
+                __v: '$__v',
+                name: '$name',
+                email: '$email',
+                email_verified: '$email_verified',
+                picture: '$picture',
+                given_name: '$given_name',
+                family_name: '$family_name',
+                locale: '$locale',
+              },
+            },
+          ],
+          as: 'memberDetails',
+        },
+      },
+      {
+        $unwind: '$memberDetails',
+      },
+      {
+        $addFields: {
+          'members.memberDetails': '$memberDetails',
+        },
+      },
+      {
+        $group: {
+          _id: '$_id',
+          type: { $first: '$type' },
+          createdAt: { $first: '$createdAt' },
+          updatedAt: { $first: '$updatedAt' },
+          __v: { $first: '$__v' },
+          members: { $push: '$members' },
+        },
+      },
+      { $limit: 1 },
+    ]);
+    return chat?.length ? chat?.[0] : savedChat.toObject();
   }
 
   async findOneById(chatId: string): Promise<ChatSchema> {
     const chatObjectId = new ObjectId(chatId);
-    const chat = await this.ChatModel.findOne({ _id: chatObjectId }).lean();
-    if (!chat) {
+    const chat = await this.ChatModel.aggregate([
+      { $match: { _id: chatObjectId } },
+      {
+        $unwind: '$members',
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'members._id',
+          foreignField: '_id',
+          pipeline: [
+            {
+              $project: {
+                _id: '$_id',
+                __v: '$__v',
+                name: '$name',
+                email: '$email',
+                email_verified: '$email_verified',
+                picture: '$picture',
+                given_name: '$given_name',
+                family_name: '$family_name',
+                locale: '$locale',
+              },
+            },
+          ],
+          as: 'memberDetails',
+        },
+      },
+      {
+        $unwind: '$memberDetails',
+      },
+      {
+        $addFields: {
+          'members.memberDetails': '$memberDetails',
+        },
+      },
+      {
+        $group: {
+          _id: '$_id',
+          type: { $first: '$type' },
+          createdAt: { $first: '$createdAt' },
+          updatedAt: { $first: '$updatedAt' },
+          __v: { $first: '$__v' },
+          members: { $push: '$members' },
+        },
+      },
+      { $limit: 1 },
+    ]);
+    if (!chat?.length) {
       throw new BadRequestException('Chat not found');
     }
-    return chat;
+    return chat?.[0];
   }
 
-  async findAll(data: ChatsInput, chatArgs: ChatArgs): Promise<Chat[]> {
-    const { friendId } = data;
-    const friendObjectId = new ObjectId(friendId);
-    const { limit, skip } = chatArgs;
-    const chats = await this.ChatModel.find({ friendId: friendObjectId })
-      .limit(limit)
-      .skip(skip)
-      .sort({ $natural: -1 })
-      .lean();
-    return chats.reverse() as unknown as Chat[];
+  async findAll(userId: string, args: ChatArgs): Promise<Chat[]> {
+    const userObjectId = new ObjectId(userId);
+    const { limit, skip } = args;
+    const chats = await this.ChatModel.aggregate([
+      {
+        $match: {
+          members: { $elemMatch: { _id: userObjectId } },
+        },
+      },
+      {
+        $unwind: '$members',
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'members._id',
+          foreignField: '_id',
+          pipeline: [
+            {
+              $project: {
+                _id: '$_id',
+                __v: '$__v',
+                name: '$name',
+                email: '$email',
+                email_verified: '$email_verified',
+                picture: '$picture',
+                given_name: '$given_name',
+                family_name: '$family_name',
+                locale: '$locale',
+              },
+            },
+          ],
+          as: 'memberDetails',
+        },
+      },
+      {
+        $unwind: '$memberDetails',
+      },
+      {
+        $addFields: {
+          'members.memberDetails': '$memberDetails',
+        },
+      },
+      {
+        $group: {
+          _id: '$_id',
+          type: { $first: '$type' },
+          createdAt: { $first: '$createdAt' },
+          updatedAt: { $first: '$updatedAt' },
+          __v: { $first: '$__v' },
+          members: { $push: '$members' },
+        },
+      },
+      { $limit: limit },
+      { $skip: skip },
+      { $sort: { createdAt: -1 } },
+    ]);
+    return chats as unknown as Chat[];
   }
 
-  async remove(id: string): Promise<boolean> {
+  async remove(chatId: string): Promise<boolean> {
     return true;
   }
 }

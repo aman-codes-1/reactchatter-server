@@ -1,12 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
-class DocumentResult<T> {
-  _doc: T;
-}
-
 @Schema({ timestamps: true })
-export class User extends DocumentResult<User> {
+export class User {
   @Prop()
   name: string;
 
