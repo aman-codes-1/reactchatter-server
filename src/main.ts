@@ -12,7 +12,7 @@ async function bootstrap() {
           process.env.ALLOWED_CLIENTS?.split(',')) ||
         process.env.ALLOWED_CLIENTS
       : process.env.CLIENT_URI,
-    methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders:
       'X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept, Observe',
     credentials: true,

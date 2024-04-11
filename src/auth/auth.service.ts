@@ -14,8 +14,8 @@ export class AuthService {
     const user = await this.UserModel.findOne({ email }).lean();
     if (!user) {
       const newUser = new this.UserModel({ ...ticketData });
-      await newUser.save();
-      return newUser?._doc ? newUser?._doc : newUser;
+      const savedUser = await newUser.save();
+      return savedUser.toObject();
     }
     const { _id, __v, ...rest } = (user as any) || {};
     let objEqual = false;

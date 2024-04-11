@@ -1,17 +1,18 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
-class DocumentResult<T> {
-  _doc: T;
+class Member {
+  @Prop()
+  _id: Types.ObjectId;
+
+  @Prop()
+  hasAdded: boolean;
 }
 
 @Schema({ timestamps: true })
-export class Friend extends DocumentResult<Friend> {
+export class Friend {
   @Prop()
-  userId: Types.ObjectId;
-
-  @Prop()
-  addedByUserId: Types.ObjectId;
+  members: Member[];
 
   @Prop()
   isFriend: boolean;

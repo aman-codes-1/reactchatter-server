@@ -2,7 +2,7 @@ import { ArgsType, Field, Int } from '@nestjs/graphql';
 import { Max, Min } from 'class-validator';
 
 @ArgsType()
-export class ChatArgs {
+export class RequestArgs {
   @Field(() => Int)
   @Min(1)
   @Max(50)

@@ -1,0 +1,277 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+"""ChatDataObject"""
+type ChatData {
+  chat: ChatObject!
+  friendId: String!
+}
+
+"""ChatInput"""
+input ChatInput {
+  chatId: String!
+}
+
+type ChatObject {
+  _id: String!
+  members: [MemberObject!]!
+  type: String!
+}
+
+"""ChatsInput"""
+input ChatsInput {
+  userId: String!
+}
+
+"""CreateChatInput"""
+input CreateChatInput {
+  friendId: String!
+  members: [MemberInput!]!
+  type: String!
+}
+
+"""CreateMessageInput"""
+input CreateMessageInput {
+  chatId: String!
+  message: String!
+  otherMembers: [OtherMemberInput!]!
+  sender: SenderInput!
+  userId: String!
+}
+
+"""CreateRequestInput"""
+input CreateRequestInput {
+  sendToEmail: String!
+  sentByUserId: String!
+}
+
+"""Date custom scalar type"""
+scalar Date
+
+input DeliveredStatusInput {
+  isDelivered: Boolean!
+  timestamp: Float!
+}
+
+type DeliveredStatusObject {
+  isDelivered: Boolean!
+  timestamp: Float!
+}
+
+"""FriendObject"""
+type Friend {
+  _id: String!
+  isFriend: Boolean!
+  members: [Member!]!
+}
+
+"""FriendDataObject"""
+type FriendData {
+  friend: Friend!
+}
+
+"""FriendInput"""
+input FriendInput {
+  friendId: String!
+}
+
+"""FriendsInput"""
+input FriendsInput {
+  userId: String!
+}
+
+"""MemberObject"""
+type Member {
+  _id: String!
+  hasAdded: Boolean!
+  memberDetails: MemberDetailsObject
+}
+
+input MemberDetailsInput {
+  _id: String!
+  email: String!
+  email_verified: Boolean!
+  family_name: String!
+  given_name: String!
+  name: String!
+  picture: String!
+}
+
+type MemberDetailsObject {
+  _id: String!
+  email: String!
+  email_verified: Boolean!
+  family_name: String!
+  given_name: String!
+  name: String!
+  picture: String!
+}
+
+input MemberInput {
+  _id: String!
+  hasAdded: Boolean!
+  isAdmin: Boolean
+  memberDetails: MemberDetailsInput
+}
+
+type MemberObject {
+  _id: String!
+  hasAdded: Boolean!
+  isAdmin: Boolean
+  memberDetails: MemberDetailsObject
+}
+
+"""MessageData"""
+type MessageData {
+  chatId: String!
+  data: MessageObject!
+  userId: String!
+}
+
+"""MessageInput"""
+input MessageInput {
+  chatId: String!
+  messageId: String!
+  userId: String!
+}
+
+type MessageObject {
+  _id: String!
+  chatId: String!
+  message: String!
+  otherMembers: [OtherMemberObject!]!
+  sender: SenderObject!
+}
+
+"""MessagesDataObject"""
+type MessagesData {
+  chatId: String!
+  data: [MessageObject!]!
+  userId: String!
+}
+
+"""MessagesInput"""
+input MessagesInput {
+  chatId: String!
+  userId: String!
+}
+
+type Mutation {
+  createChat(input: CreateChatInput!): ChatObject!
+  createMessage(input: CreateMessageInput!, limit: Int! = 25, skip: Int! = 0): MessageData!
+  createRequest(input: CreateRequestInput!): Request!
+  removeChat(id: String!): Boolean!
+  removeFriend(id: String!): Boolean!
+  removeMessage(id: String!): Boolean!
+  removeRequest(id: String!): Boolean!
+  updateChat(input: CreateChatInput!): ChatObject!
+  updateMessage(input: CreateMessageInput!, limit: Int! = 25, skip: Int! = 0): MessageData!
+  updateRequest(input: UpdateRequestInput!): Request!
+}
+
+input OtherMemberInput {
+  _id: String!
+  deliveredStatus: DeliveredStatusInput
+  readStatus: ReadStatusInput
+}
+
+type OtherMemberObject {
+  _id: String!
+  deliveredStatus: DeliveredStatusObject
+  readStatus: ReadStatusObject
+}
+
+type Query {
+  chat(input: ChatInput!): ChatObject!
+  chats(input: ChatsInput!, limit: Int! = 25, skip: Int! = 0): [ChatObject!]!
+  friend(input: FriendInput!): Friend!
+  friends(input: FriendsInput!, limit: Int! = 25, skip: Int! = 0): [Friend!]!
+  message(input: MessageInput!): MessageData!
+  messages(input: MessagesInput!, limit: Int! = 25, skip: Int! = 0): MessagesData!
+  otherFriends(input: FriendsInput!, limit: Int! = 25, skip: Int! = 0): [Friend!]!
+  request(input: RequestInput!): Request!
+  requests(input: RequestsInput!, limit: Int! = 25, skip: Int! = 0): [Request!]!
+  sentRequests(input: RequestsInput!, limit: Int! = 25, skip: Int! = 0): [Request!]!
+}
+
+input ReadStatusInput {
+  isRead: Boolean!
+  timestamp: Float!
+}
+
+type ReadStatusObject {
+  isRead: Boolean!
+  timestamp: Float!
+}
+
+"""RequestObject"""
+type Request {
+  _id: String!
+  sentByUserId: String!
+  sentToUserId: String!
+  status: String!
+  userDetails: UserDetailsObject!
+}
+
+"""RequestDataObject"""
+type RequestData {
+  request: Request!
+}
+
+"""RequestInput"""
+input RequestInput {
+  requestId: String!
+}
+
+"""RequestsInput"""
+input RequestsInput {
+  sentByUserId: String!
+}
+
+input SenderInput {
+  _id: String!
+  sentStatus: SentStatusInput!
+}
+
+type SenderObject {
+  _id: String!
+  sentStatus: SentStatusObject!
+}
+
+input SentStatusInput {
+  isSent: Boolean!
+  timestamp: Float!
+}
+
+type SentStatusObject {
+  isSent: Boolean!
+  timestamp: Float!
+}
+
+type Subscription {
+  OnChatAdded: ChatData!
+  OnChatUpdated: ChatData!
+  OnFriendAdded: FriendData!
+  OnMessageAdded: MessageData!
+  OnMessageUpdated: MessageData!
+  OnMessagesAdded: MessagesData!
+  OnMessagesUpdated: MessagesData!
+  OnRequestAdded: RequestData!
+}
+
+"""UpdateRequestInput"""
+input UpdateRequestInput {
+  requestId: String!
+  status: String!
+}
+
+type UserDetailsObject {
+  _id: String!
+  email: String!
+  email_verified: Boolean!
+  family_name: String!
+  given_name: String!
+  name: String!
+  picture: String!
+}

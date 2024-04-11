@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { Friend, FriendSchema } from './friend.schema';
-import { FriendController } from './friend.controller';
+import { FriendResolver } from './friend.resolver';
 import { FriendService } from './friend.service';
+import { Friend, FriendSchema } from './friend.schema';
 
 @Module({
   imports: [
@@ -10,7 +10,6 @@ import { FriendService } from './friend.service';
       { name: Friend.name, schema: FriendSchema, collection: 'friends' },
     ]),
   ],
-  controllers: [FriendController],
-  providers: [FriendService],
+  providers: [FriendResolver, FriendService],
 })
 export class FriendModule {}
