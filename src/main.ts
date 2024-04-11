@@ -4,15 +4,19 @@ import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
+  const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? (process.env.ALLOWED_ORIGINS?.includes(',') &&
+        process.env.ALLOWED_ORIGINS?.split(',')) ||
+      process.env.ALLOWED_ORIGINS
+    : undefined;
+  const origins = [allowedOrigins, process.env.CLIENT_URI]
+    .filter((origin) => origin)
+    .flat(1);
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe());
   app.enableCors({
-    origin: process.env.ALLOWED_CLIENTS
-      ? (process.env.ALLOWED_CLIENTS?.includes(',') &&
-          process.env.ALLOWED_CLIENTS?.split(',')) ||
-        process.env.ALLOWED_CLIENTS
-      : process.env.CLIENT_URI,
-    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    origin: [...new Set(origins)],
+    methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders:
       'X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept, Observe',
     credentials: true,
