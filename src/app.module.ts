@@ -24,7 +24,10 @@ import { SocketModule } from './socket/socket.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    MongooseModule.forRoot(process.env.MONGO_URI, { dbName: 'ReactChatter' }),
+    MongooseModule.forRoot(
+      process.env.MONGO_URI || 'mongodb://localhost:27017/',
+      { dbName: 'ReactChatter' },
+    ),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       playground: true,
@@ -32,7 +35,9 @@ import { SocketModule } from './socket/socket.module';
       sortSchema: true,
       fieldResolverEnhancers: ['interceptors'] as Enhancer[],
       autoTransformHttpErrors: true,
-      introspection: process.env.NODE_ENV !== 'production',
+      introspection: process.env.NODE_ENV
+        ? process.env.NODE_ENV !== 'production'
+        : true,
       installSubscriptionHandlers: true,
       context: ({ req, connection }) =>
         connection ? { req: connection?.context } : { req },
