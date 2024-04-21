@@ -9,7 +9,10 @@ async function bootstrap() {
         process.env.ALLOWED_ORIGINS?.split(',')) ||
       process.env.ALLOWED_ORIGINS
     : undefined;
-  const origins = [allowedOrigins, process.env.CLIENT_URI]
+  const origins = [
+    allowedOrigins,
+    process.env.CLIENT_URI || 'http://localhost:3001',
+  ]
     .filter((origin) => origin)
     .flat(1);
   const app = await NestFactory.create(AppModule);
@@ -22,7 +25,7 @@ async function bootstrap() {
     credentials: true,
   });
   app.use(cookieParser());
-  await app.listen(process.env.PORT, async () => {
+  await app.listen(process.env.PORT || 8000, async () => {
     const logger = new Logger();
     const appUri = await app.getUrl();
     logger.log(`Server started at ${appUri}`);

@@ -7,7 +7,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { OAuth2Client } from 'google-auth-library';
-import { Request, Response } from 'express';
+import { CookieOptions, Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { User } from '../user/user.schema';
 
@@ -18,10 +18,22 @@ export class AuthController {
   }
 
   client = new OAuth2Client(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    `${process.env.CLIENT_URI}/login`,
+    process.env.GOOGLE_CLIENT_ID || '',
+    process.env.GOOGLE_CLIENT_SECRET || '',
+    `${process.env.CLIENT_URI || 'http://localhost:3001'}/login`,
   );
+
+  isDevelopment = process.env.NODE_ENV
+    ? process.env.NODE_ENV === 'development'
+    : true;
+
+  cookieOptions: CookieOptions = {
+    httpOnly: true,
+    domain: process.env.COOKIE_DOMAIN || 'localhost',
+    sameSite: 'lax',
+    secure: false,
+    // maxAge: 7 * 24 * 60 * 60 * 1000,
+  };
 
   @Post('google')
   async google(
@@ -32,18 +44,13 @@ export class AuthController {
     const { tokens } = await this.client.getToken(code);
     this.client.setCredentials(tokens);
     const ticket = await this.client.verifyIdToken({
-      idToken: tokens.id_token,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      idToken: tokens?.id_token,
+      audience: process.env.GOOGLE_CLIENT_ID || '',
     });
     const { iss, azp, aud, sub, at_hash, ...rest } = ticket.getPayload();
     const ticketData = { ...rest, ...tokens } as User;
     const data = await this.authService.login(ticketData);
-    response.cookie('auth', JSON.stringify(data), {
-      httpOnly: true,
-      domain: process.env.COOKIE_DOMAIN,
-      sameSite: 'none',
-      secure: true,
-    });
+    response.cookie('auth', JSON.stringify(data), this.cookieOptions);
     const {
       iat,
       exp,
@@ -85,12 +92,7 @@ export class AuthController {
         ...data,
       });
       auth = { ...auth, ...data };
-      response.cookie('auth', JSON.stringify(auth), {
-        httpOnly: true,
-        domain: process.env.COOKIE_DOMAIN,
-        sameSite: 'none',
-        secure: true,
-      });
+      response.cookie('auth', JSON.stringify(auth), this.cookieOptions);
     }
     const authData = await this.authService.login(auth);
     const {
@@ -112,12 +114,7 @@ export class AuthController {
 
   @Post('google/logout')
   async logout(@Res({ passthrough: true }) response: Response): Promise<any> {
-    response.clearCookie('auth', {
-      httpOnly: true,
-      domain: process.env.COOKIE_DOMAIN,
-      sameSite: 'none',
-      secure: true,
-    });
+    response.clearCookie('auth', this.cookieOptions);
     return {
       message: 'success',
     };
