@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { User, UserDocument } from '../user/user.schema';
-import { Request } from './models/request.model';
+import { PaginatedRequest, Request } from './models/request.model';
 import { Request as RequestSchema, RequestDocument } from './request.schema';
 import { CreateRequestInput, UpdateRequestInput } from './dto/request.input';
 import { RequestArgs } from './dto/request.args';
@@ -17,7 +17,8 @@ import { pubSub as friendPubSub } from '../friend/friend.resolver';
 @Injectable()
 export class RequestService {
   constructor(
-    @InjectModel(Request.name) private RequestModel: Model<RequestDocument>,
+    @InjectModel(RequestSchema.name)
+    private RequestModel: Model<RequestDocument>,
     @InjectModel(User.name) private UserModel: Model<UserDocument>,
     @InjectModel(FriendSchema.name) private FriendModel: Model<FriendDocument>,
     private friendService: FriendService,
@@ -25,26 +26,89 @@ export class RequestService {
     //
   }
 
+  async findOneById(requestId: string): Promise<Request> {
+    const requestObjectId = new ObjectId(requestId);
+    const request = await this.RequestModel.aggregate([
+      {
+        $match: { _id: requestObjectId },
+      },
+      {
+        $unwind: '$members',
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'members._id',
+          foreignField: '_id',
+          pipeline: [
+            {
+              $project: {
+                _id: '$_id',
+                __v: '$__v',
+                name: '$name',
+                email: '$email',
+                email_verified: '$email_verified',
+                picture: '$picture',
+                given_name: '$given_name',
+                family_name: '$family_name',
+              },
+            },
+          ],
+          as: 'memberDetails',
+        },
+      },
+      {
+        $unwind: '$memberDetails',
+      },
+      {
+        $addFields: {
+          'members.memberDetails': '$memberDetails',
+        },
+      },
+      {
+        $group: {
+          _id: '$_id',
+          status: { $first: '$status' },
+          createdAt: { $first: '$createdAt' },
+          updatedAt: { $first: '$updatedAt' },
+          __v: { $first: '$__v' },
+          members: { $push: '$members' },
+        },
+      },
+      { $limit: 1 },
+    ]);
+    if (!request?.length) {
+      throw new BadRequestException('Friend Request not found');
+    }
+    return request?.[0];
+  }
+
   async create(data: CreateRequestInput): Promise<Request> {
-    const { sentByUserId, sendToEmail } = data;
-    const sentByUserObjectId = new ObjectId(sentByUserId);
+    const { userId, sendToEmail } = data;
+    const userObjectId = new ObjectId(userId);
     const user = await this.UserModel.findOne({
       email: sendToEmail,
     }).lean();
     if (!user) {
       throw new BadRequestException('User not found.');
     }
-    const { _id } = (user as any) || {};
-    const _idObjectId = new ObjectId(_id);
+    const { _id } = user;
+    const _idObjectId = new ObjectId(String(_id));
     const duplicateRequestSent = await this.RequestModel.findOne({
-      $and: [{ sentToUserId: _id }, { sentByUserId: sentByUserObjectId }],
-      $or: [{ status: 'pending' }, { status: 'accepted' }],
+      $and: [
+        { members: { $elemMatch: { _id, hasSent: false } } },
+        { members: { $elemMatch: { _id: userObjectId, hasSent: true } } },
+        { $or: [{ status: 'pending' }, { status: 'accepted' }] },
+      ],
     }).lean();
     const duplicateRequestReceived = await this.RequestModel.findOne({
-      $and: [{ sentToUserId: sentByUserObjectId }, { sentByUserId: _id }],
-      $or: [{ status: 'pending' }, { status: 'accepted' }],
+      $and: [
+        { members: { $elemMatch: { _id, hasSent: true } } },
+        { members: { $elemMatch: { _id: userObjectId, hasSent: false } } },
+        { $or: [{ status: 'pending' }, { status: 'accepted' }] },
+      ],
     }).lean();
-    if (sentByUserObjectId.equals(_idObjectId)) {
+    if (userObjectId.equals(_idObjectId)) {
       throw new BadRequestException(
         'Please send a friend request to a different user.',
       );
@@ -67,49 +131,46 @@ export class RequestService {
         );
       }
     }
+    const members = [userObjectId, _idObjectId].map((id, idx) => ({
+      _id: id,
+      hasSent: idx === 0,
+    }));
     const newRequest = new this.RequestModel({
-      sentByUserId: sentByUserObjectId,
-      sentToUserId: _idObjectId,
+      members,
       status: 'pending',
     });
     const savedRequest = await newRequest.save();
-    return savedRequest.toObject();
+    const { _id: requestId } = savedRequest.toObject();
+    const request = await this.findOneById(String(requestId));
+    return request || savedRequest.toObject();
   }
 
-  async findOneById(requestId: string): Promise<RequestSchema> {
-    const request = await this.RequestModel.findById(requestId).lean();
-    if (!request) {
-      throw new BadRequestException('Friend Request not found');
-    }
-    return request;
-  }
-
-  async findOneByIdAndUpdate(data: UpdateRequestInput): Promise<any> {
+  async findOneByIdAndUpdate(data: UpdateRequestInput): Promise<Request> {
     const { requestId, status } = data;
     const request = await this.findOneById(requestId);
-    const { sentByUserId, sentToUserId } = request;
-    const sentByUserObjectId = new ObjectId(sentByUserId);
-    const sentToUserObjectId = new ObjectId(sentToUserId);
-    const duplicateFriend = await this.FriendModel.find({
+    const { members } = request;
+    const memberIds = members?.map((member) => member?._id);
+    const [id1, id2] = memberIds;
+    const id1ObjectId = new ObjectId(id1);
+    const id2ObjectId = new ObjectId(id2);
+    const duplicateFriend = await this.FriendModel.findOne({
       $and: [
-        {
-          $and: [
-            { members: { $elemMatch: { _id: sentByUserObjectId } } },
-            { members: { $elemMatch: { _id: sentToUserObjectId } } },
-          ],
-        },
+        { members: { $elemMatch: { _id: id1ObjectId } } },
+        { members: { $elemMatch: { _id: id2ObjectId } } },
         { isFriend: true },
       ],
     }).lean();
-    if (duplicateFriend?.length) {
+    if (duplicateFriend) {
       throw new BadRequestException('Already a Friend.');
     }
-    const updatedRequest = await this.RequestModel.findByIdAndUpdate(
+    const { _id } = await this.RequestModel.findByIdAndUpdate(
       { _id: requestId },
       { $set: { status } },
       { new: true },
     ).lean();
-    if (status === 'accepted') {
+    const updatedRequest = await this.findOneById(String(_id));
+    const { status: updatedRequestStatus } = updatedRequest;
+    if (updatedRequestStatus === 'accepted') {
       const newFriend = await this.friendService.create(request);
       friendPubSub.publish('OnFriendAdded', {
         OnFriendAdded: {
@@ -120,32 +181,32 @@ export class RequestService {
     return updatedRequest;
   }
 
-  async findAll(sentByUserId: string, args: RequestArgs): Promise<Request[]> {
+  async findAllPending(
+    userId: string,
+    args: RequestArgs,
+  ): Promise<PaginatedRequest> {
     const { limit, skip } = args;
-    const sentByUserObjectId = new ObjectId(sentByUserId);
-    const receivedByUsers = await this.RequestModel.aggregate([
+    const userObjectId = new ObjectId(userId);
+    const pendingRequests = await this.RequestModel.aggregate([
       {
         $match: {
-          $expr: {
-            $and: [
-              { $eq: ['$status', 'pending'] },
-              { $eq: ['$sentToUserId', sentByUserObjectId] },
-            ],
-          },
+          $and: [
+            { status: 'pending' },
+            {
+              members: { $elemMatch: { _id: userObjectId, hasSent: false } },
+            },
+          ],
         },
+      },
+      {
+        $unwind: '$members',
       },
       {
         $lookup: {
           from: 'users',
-          let: { userId: '$sentByUserId' },
+          localField: 'members._id',
+          foreignField: '_id',
           pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $eq: ['$_id', '$$userId'],
-                },
-              },
-            },
             {
               $project: {
                 _id: '$_id',
@@ -156,53 +217,78 @@ export class RequestService {
                 picture: '$picture',
                 given_name: '$given_name',
                 family_name: '$family_name',
-                locale: '$locale',
               },
             },
           ],
-          as: 'userDetails',
+          as: 'memberDetails',
         },
       },
       {
-        $unwind: {
-          path: '$userDetails',
+        $unwind: '$memberDetails',
+      },
+      {
+        $addFields: {
+          'members.memberDetails': '$memberDetails',
         },
       },
-      { $limit: limit },
-      { $skip: skip },
+      {
+        $group: {
+          _id: '$_id',
+          status: { $first: '$status' },
+          createdAt: { $first: '$createdAt' },
+          updatedAt: { $first: '$updatedAt' },
+          __v: { $first: '$__v' },
+          members: { $push: '$members' },
+        },
+      },
+      {
+        $facet: {
+          data: [
+            { $limit: limit },
+            { $skip: skip },
+            { $sort: { createdAt: -1 } },
+          ],
+          totalCount: [{ $count: 'count' }],
+        },
+      },
     ]);
-    return receivedByUsers;
+    const res = pendingRequests?.[0];
+    return {
+      data: res?.data,
+      totalCount: res?.totalCount?.some((count: any) =>
+        Object.prototype.hasOwnProperty.call(count, 'count'),
+      )
+        ? res?.totalCount?.[0]?.count
+        : 0,
+    };
   }
 
   async findAllSent(
-    sentByUserId: string,
+    userId: string,
     args: RequestArgs,
-  ): Promise<Request[]> {
+  ): Promise<PaginatedRequest> {
     const { limit, skip } = args;
-    const sentByUserObjectId = new ObjectId(sentByUserId);
-    const sentToUsers = await this.RequestModel.aggregate([
+    const userObjectId = new ObjectId(userId);
+    const sentRequests = await this.RequestModel.aggregate([
       {
         $match: {
-          $expr: {
-            $and: [
-              { $eq: ['$status', 'pending'] },
-              { $eq: ['$sentByUserId', sentByUserObjectId] },
-            ],
-          },
+          $and: [
+            { status: 'pending' },
+            {
+              members: { $elemMatch: { _id: userObjectId, hasSent: true } },
+            },
+          ],
         },
+      },
+      {
+        $unwind: '$members',
       },
       {
         $lookup: {
           from: 'users',
-          let: { userId: '$sentToUserId' },
+          localField: 'members._id',
+          foreignField: '_id',
           pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $eq: ['$_id', '$$userId'],
-                },
-              },
-            },
             {
               $project: {
                 _id: '$_id',
@@ -213,22 +299,50 @@ export class RequestService {
                 picture: '$picture',
                 given_name: '$given_name',
                 family_name: '$family_name',
-                locale: '$locale',
               },
             },
           ],
-          as: 'userDetails',
+          as: 'memberDetails',
         },
       },
       {
-        $unwind: {
-          path: '$userDetails',
+        $unwind: '$memberDetails',
+      },
+      {
+        $addFields: {
+          'members.memberDetails': '$memberDetails',
         },
       },
-      { $limit: limit },
-      { $skip: skip },
+      {
+        $group: {
+          _id: '$_id',
+          status: { $first: '$status' },
+          createdAt: { $first: '$createdAt' },
+          updatedAt: { $first: '$updatedAt' },
+          __v: { $first: '$__v' },
+          members: { $push: '$members' },
+        },
+      },
+      {
+        $facet: {
+          data: [
+            { $limit: limit },
+            { $skip: skip },
+            { $sort: { createdAt: -1 } },
+          ],
+          totalCount: [{ $count: 'count' }],
+        },
+      },
     ]);
-    return sentToUsers;
+    const res = sentRequests?.[0];
+    return {
+      data: res?.data,
+      totalCount: res?.totalCount?.some((count: any) =>
+        Object.prototype.hasOwnProperty.call(count, 'count'),
+      )
+        ? res?.totalCount?.[0]?.count
+        : 0,
+    };
   }
 
   async remove(requestId: string): Promise<boolean> {

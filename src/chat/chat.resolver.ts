@@ -1,29 +1,29 @@
+import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
 import { ChatArgs } from './dto/chat.args';
 import { ChatInput, ChatsInput, CreateChatInput } from './dto/chat.input';
 import { Chat, ChatData } from './models/chat.model';
 import { ChatService } from './chat.service';
-import { SocketGateway } from '../socket/socket.gateway';
+import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 
 const pubSub = new PubSub();
 
 @Resolver(() => Chat)
 export class ChatResolver {
-  constructor(
-    private readonly chatService: ChatService,
-    private readonly socketGateway: SocketGateway,
-  ) {
+  constructor(private readonly chatService: ChatService) {
     //
   }
 
+  @UseGuards(GqlAuthGuard)
   @Query(() => Chat)
   async chat(@Args('input') input: ChatInput): Promise<Chat> {
     const { chatId } = input;
     const chat = await this.chatService.findOneById(chatId);
-    return chat as unknown as Chat;
+    return chat;
   }
 
+  @UseGuards(GqlAuthGuard)
   @Query(() => [Chat])
   async chats(
     @Args('input') input: ChatsInput,
@@ -34,6 +34,7 @@ export class ChatResolver {
     return chats;
   }
 
+  @UseGuards(GqlAuthGuard)
   @Mutation(() => Chat)
   async createChat(@Args('input') input: CreateChatInput): Promise<Chat> {
     const { friendId } = input;
@@ -44,9 +45,10 @@ export class ChatResolver {
         chat: newChat,
       },
     });
-    return newChat as unknown as Chat;
+    return newChat;
   }
 
+  @UseGuards(GqlAuthGuard)
   @Mutation(() => Chat)
   async updateChat(@Args('input') input: CreateChatInput): Promise<Chat> {
     const { friendId } = input;
@@ -57,19 +59,22 @@ export class ChatResolver {
         chat: updatedChat,
       },
     });
-    return updatedChat as unknown as Chat;
+    return updatedChat;
   }
 
+  @UseGuards(GqlAuthGuard)
   @Mutation(() => Boolean)
   async removeChat(@Args('id') id: string) {
     return this.chatService.remove(id);
   }
 
+  @UseGuards(GqlAuthGuard)
   @Subscription(() => ChatData)
   OnChatAdded() {
     return pubSub.asyncIterator('OnChatAdded');
   }
 
+  @UseGuards(GqlAuthGuard)
   @Subscription(() => ChatData)
   OnChatUpdated() {
     return pubSub.asyncIterator('OnChatUpdated');

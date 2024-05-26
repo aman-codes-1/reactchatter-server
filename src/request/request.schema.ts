@@ -1,17 +1,22 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Document, SchemaTimestampsConfig, Types } from 'mongoose';
+
+export class Member {
+  @Prop()
+  _id: Types.ObjectId;
+
+  @Prop()
+  hasSent: boolean;
+}
 
 @Schema({ timestamps: true })
 export class Request {
   @Prop()
-  sentByUserId: Types.ObjectId;
-
-  @Prop()
-  sentToUserId: Types.ObjectId;
+  members: Member[];
 
   @Prop()
   status: string;
 }
 
 export const RequestSchema = SchemaFactory.createForClass(Request);
-export type RequestDocument = Request & Document;
+export type RequestDocument = Request & Document & SchemaTimestampsConfig;

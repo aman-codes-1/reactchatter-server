@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Document, SchemaTimestampsConfig, Types } from 'mongoose';
 
 class Member {
   @Prop()
@@ -19,4 +19,4 @@ export class Friend {
 }
 
 export const FriendSchema = SchemaFactory.createForClass(Friend);
-export type FriendDocument = Friend & Document;
+export type FriendDocument = Friend & Document & SchemaTimestampsConfig;

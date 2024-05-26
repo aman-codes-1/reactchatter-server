@@ -16,73 +16,7 @@ export class ChatService {
     //
   }
 
-  async create(data: CreateChatInput): Promise<ChatSchema> {
-    const { members } = data;
-    const membersWithObjectId = members.map((member) => ({
-      ...member,
-      _id: new ObjectId(member?._id),
-    }));
-    const newChatData = {
-      ...data,
-      members: membersWithObjectId,
-    };
-    const newChat = new this.ChatModel(newChatData);
-    const savedChat = await newChat.save();
-    const { _id } = savedChat.toObject();
-    const chat = await this.ChatModel.aggregate([
-      {
-        $match: { _id },
-      },
-      {
-        $unwind: '$members',
-      },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'members._id',
-          foreignField: '_id',
-          pipeline: [
-            {
-              $project: {
-                _id: '$_id',
-                __v: '$__v',
-                name: '$name',
-                email: '$email',
-                email_verified: '$email_verified',
-                picture: '$picture',
-                given_name: '$given_name',
-                family_name: '$family_name',
-                locale: '$locale',
-              },
-            },
-          ],
-          as: 'memberDetails',
-        },
-      },
-      {
-        $unwind: '$memberDetails',
-      },
-      {
-        $addFields: {
-          'members.memberDetails': '$memberDetails',
-        },
-      },
-      {
-        $group: {
-          _id: '$_id',
-          type: { $first: '$type' },
-          createdAt: { $first: '$createdAt' },
-          updatedAt: { $first: '$updatedAt' },
-          __v: { $first: '$__v' },
-          members: { $push: '$members' },
-        },
-      },
-      { $limit: 1 },
-    ]);
-    return chat?.length ? chat?.[0] : savedChat.toObject();
-  }
-
-  async findOneById(chatId: string): Promise<ChatSchema> {
+  async findOneById(chatId: string): Promise<Chat> {
     const chatObjectId = new ObjectId(chatId);
     const chat = await this.ChatModel.aggregate([
       { $match: { _id: chatObjectId } },
@@ -105,7 +39,6 @@ export class ChatService {
                 picture: '$picture',
                 given_name: '$given_name',
                 family_name: '$family_name',
-                locale: '$locale',
               },
             },
           ],
@@ -138,6 +71,22 @@ export class ChatService {
     return chat?.[0];
   }
 
+  async create(data: CreateChatInput): Promise<Chat> {
+    const { userId, type, friendUserId } = data;
+    const members = [userId, friendUserId].map((id, idx) => ({
+      _id: new ObjectId(id),
+      hasAdded: idx === 0,
+    }));
+    const newChat = new this.ChatModel({
+      type,
+      members,
+    });
+    const savedChat = await newChat.save();
+    const { _id: chatId } = savedChat.toObject();
+    const chat = await this.findOneById(String(chatId));
+    return chat || savedChat.toObject();
+  }
+
   async findAll(userId: string, args: ChatArgs): Promise<Chat[]> {
     const userObjectId = new ObjectId(userId);
     const { limit, skip } = args;
@@ -166,7 +115,6 @@ export class ChatService {
                 picture: '$picture',
                 given_name: '$given_name',
                 family_name: '$family_name',
-                locale: '$locale',
               },
             },
           ],
@@ -195,7 +143,7 @@ export class ChatService {
       { $skip: skip },
       { $sort: { createdAt: -1 } },
     ]);
-    return chats as unknown as Chat[];
+    return chats;
   }
 
   async remove(chatId: string): Promise<boolean> {

@@ -1,5 +1,4 @@
 import { Field, InputType } from '@nestjs/graphql';
-import { Member } from '../models/chat.model';
 
 @InputType({ description: 'ChatInput' })
 export class ChatInput {
@@ -15,11 +14,14 @@ export class ChatsInput {
 @InputType({ description: 'CreateChatInput' })
 export class CreateChatInput {
   @Field(() => String)
+  userId: string;
+
+  @Field(() => String)
   friendId: string;
 
   @Field(() => String)
   type: string;
 
-  @Field(() => [Member])
-  members: Member[];
+  @Field(() => String)
+  friendUserId: string;
 }

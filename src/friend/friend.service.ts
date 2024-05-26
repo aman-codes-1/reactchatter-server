@@ -3,9 +3,9 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { FriendArgs } from './dto/friend.args';
-import { CreateFriendInput, FriendInput } from './dto/friend.input';
 import { Friend } from './models/friend.model';
 import { Friend as FriendSchema, FriendDocument } from './friend.schema';
+import { Request } from '../request/models/request.model';
 
 @Injectable()
 export class FriendService {
@@ -13,73 +13,6 @@ export class FriendService {
     @InjectModel(FriendSchema.name) private FriendModel: Model<FriendDocument>,
   ) {
     //
-  }
-
-  async create(data: CreateFriendInput): Promise<FriendSchema> {
-    const { sentByUserId, sentToUserId } = data;
-    const sentByUserObjectId = new ObjectId(sentByUserId);
-    const sentToUserObjectId = new ObjectId(sentToUserId);
-    const members = [sentByUserObjectId, sentToUserObjectId].map((id, idx) => ({
-      _id: id,
-      hasAdded: idx === 0,
-    }));
-    const newFriend = new this.FriendModel({
-      members,
-      isFriend: true,
-    });
-    const savedFriend = await newFriend.save();
-    const { _id } = savedFriend.toObject();
-    const friend = await this.FriendModel.aggregate([
-      {
-        $match: { _id },
-      },
-      {
-        $unwind: '$members',
-      },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'members._id',
-          foreignField: '_id',
-          pipeline: [
-            {
-              $project: {
-                _id: '$_id',
-                __v: '$__v',
-                name: '$name',
-                email: '$email',
-                email_verified: '$email_verified',
-                picture: '$picture',
-                given_name: '$given_name',
-                family_name: '$family_name',
-                locale: '$locale',
-              },
-            },
-          ],
-          as: 'memberDetails',
-        },
-      },
-      {
-        $unwind: '$memberDetails',
-      },
-      {
-        $addFields: {
-          'members.memberDetails': '$memberDetails',
-        },
-      },
-      {
-        $group: {
-          _id: '$_id',
-          isFriend: { $first: '$isFriend' },
-          createdAt: { $first: '$createdAt' },
-          updatedAt: { $first: '$updatedAt' },
-          __v: { $first: '$__v' },
-          members: { $push: '$members' },
-        },
-      },
-      { $limit: 1 },
-    ]);
-    return friend?.length ? friend?.[0] : savedFriend.toObject();
   }
 
   async findOneById(friendId: string): Promise<Friend> {
@@ -105,7 +38,6 @@ export class FriendService {
                 picture: '$picture',
                 given_name: '$given_name',
                 family_name: '$family_name',
-                locale: '$locale',
               },
             },
           ],
@@ -136,6 +68,22 @@ export class FriendService {
       throw new BadRequestException('Friend not found');
     }
     return friend?.[0];
+  }
+
+  async create(data: Request): Promise<Friend> {
+    const { members } = data;
+    const Members = members.map((member) => ({
+      _id: new ObjectId(member?._id),
+      hasAdded: member?.hasSent,
+    }));
+    const newFriend = new this.FriendModel({
+      members: Members,
+      isFriend: true,
+    });
+    const savedFriend = await newFriend.save();
+    const { _id: friendId } = savedFriend.toObject();
+    const friend = await this.findOneById(String(friendId));
+    return friend || savedFriend.toObject();
   }
 
   async findAll(userId: string, args: FriendArgs): Promise<Friend[]> {
@@ -171,7 +119,6 @@ export class FriendService {
                 picture: '$picture',
                 given_name: '$given_name',
                 family_name: '$family_name',
-                locale: '$locale',
               },
             },
           ],
@@ -239,7 +186,6 @@ export class FriendService {
                 picture: '$picture',
                 given_name: '$given_name',
                 family_name: '$family_name',
-                locale: '$locale',
               },
             },
           ],
