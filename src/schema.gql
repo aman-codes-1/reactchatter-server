@@ -2,9 +2,16 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+"""ChatObject"""
+type Chat {
+  _id: String!
+  members: [ChatMember!]!
+  type: String!
+}
+
 """ChatDataObject"""
 type ChatData {
-  chat: ChatObject!
+  chat: Chat!
   friendId: String!
 }
 
@@ -13,10 +20,23 @@ input ChatInput {
   chatId: String!
 }
 
-type ChatObject {
+"""ChatMemberObject"""
+type ChatMember {
   _id: String!
-  members: [MemberObject!]!
-  type: String!
+  hasAdded: Boolean!
+  isAdmin: Boolean
+  memberDetails: ChatMemberDetails
+}
+
+"""ChatMemberDetailsObject"""
+type ChatMemberDetails {
+  _id: String!
+  email: String!
+  email_verified: Boolean!
+  family_name: String!
+  given_name: String!
+  name: String!
+  picture: String!
 }
 
 """ChatsInput"""
@@ -27,8 +47,9 @@ input ChatsInput {
 """CreateChatInput"""
 input CreateChatInput {
   friendId: String!
-  members: [MemberInput!]!
+  friendUserId: String!
   type: String!
+  userId: String!
 }
 
 """CreateMessageInput"""
@@ -43,7 +64,7 @@ input CreateMessageInput {
 """CreateRequestInput"""
 input CreateRequestInput {
   sendToEmail: String!
-  sentByUserId: String!
+  userId: String!
 }
 
 """Date custom scalar type"""
@@ -63,7 +84,7 @@ type DeliveredStatusObject {
 type Friend {
   _id: String!
   isFriend: Boolean!
-  members: [Member!]!
+  members: [FriendMember!]!
 }
 
 """FriendDataObject"""
@@ -76,50 +97,27 @@ input FriendInput {
   friendId: String!
 }
 
+"""FriendMemberObject"""
+type FriendMember {
+  _id: String!
+  hasAdded: Boolean!
+  memberDetails: FriendMemberDetails
+}
+
+"""FriendMemberDetailsObject"""
+type FriendMemberDetails {
+  _id: String!
+  email: String!
+  email_verified: Boolean!
+  family_name: String!
+  given_name: String!
+  name: String!
+  picture: String!
+}
+
 """FriendsInput"""
 input FriendsInput {
   userId: String!
-}
-
-"""MemberObject"""
-type Member {
-  _id: String!
-  hasAdded: Boolean!
-  memberDetails: MemberDetailsObject
-}
-
-input MemberDetailsInput {
-  _id: String!
-  email: String!
-  email_verified: Boolean!
-  family_name: String!
-  given_name: String!
-  name: String!
-  picture: String!
-}
-
-type MemberDetailsObject {
-  _id: String!
-  email: String!
-  email_verified: Boolean!
-  family_name: String!
-  given_name: String!
-  name: String!
-  picture: String!
-}
-
-input MemberInput {
-  _id: String!
-  hasAdded: Boolean!
-  isAdmin: Boolean
-  memberDetails: MemberDetailsInput
-}
-
-type MemberObject {
-  _id: String!
-  hasAdded: Boolean!
-  isAdmin: Boolean
-  memberDetails: MemberDetailsObject
 }
 
 """MessageData"""
@@ -158,14 +156,14 @@ input MessagesInput {
 }
 
 type Mutation {
-  createChat(input: CreateChatInput!): ChatObject!
+  createChat(input: CreateChatInput!): Chat!
   createMessage(input: CreateMessageInput!, limit: Int! = 25, skip: Int! = 0): MessageData!
   createRequest(input: CreateRequestInput!): Request!
   removeChat(id: String!): Boolean!
   removeFriend(id: String!): Boolean!
   removeMessage(id: String!): Boolean!
   removeRequest(id: String!): Boolean!
-  updateChat(input: CreateChatInput!): ChatObject!
+  updateChat(input: CreateChatInput!): Chat!
   updateMessage(input: CreateMessageInput!, limit: Int! = 25, skip: Int! = 0): MessageData!
   updateRequest(input: UpdateRequestInput!): Request!
 }
@@ -182,17 +180,23 @@ type OtherMemberObject {
   readStatus: ReadStatusObject
 }
 
+"""PaginatedRequestObject"""
+type PaginatedRequest {
+  data: [Request!]!
+  totalCount: Float!
+}
+
 type Query {
-  chat(input: ChatInput!): ChatObject!
-  chats(input: ChatsInput!, limit: Int! = 25, skip: Int! = 0): [ChatObject!]!
+  chat(input: ChatInput!): Chat!
+  chats(input: ChatsInput!, limit: Int! = 25, skip: Int! = 0): [Chat!]!
   friend(input: FriendInput!): Friend!
   friends(input: FriendsInput!, limit: Int! = 25, skip: Int! = 0): [Friend!]!
   message(input: MessageInput!): MessageData!
   messages(input: MessagesInput!, limit: Int! = 25, skip: Int! = 0): MessagesData!
   otherFriends(input: FriendsInput!, limit: Int! = 25, skip: Int! = 0): [Friend!]!
-  request(input: RequestInput!): Request!
-  requests(input: RequestsInput!, limit: Int! = 25, skip: Int! = 0): [Request!]!
-  sentRequests(input: RequestsInput!, limit: Int! = 25, skip: Int! = 0): [Request!]!
+  pendingRequest(input: RequestInput!): Request!
+  pendingRequests(input: RequestsInput!, limit: Int! = 25, skip: Int! = 0): PaginatedRequest!
+  sentRequests(input: RequestsInput!, limit: Int! = 25, skip: Int! = 0): PaginatedRequest!
 }
 
 input ReadStatusInput {
@@ -208,10 +212,8 @@ type ReadStatusObject {
 """RequestObject"""
 type Request {
   _id: String!
-  sentByUserId: String!
-  sentToUserId: String!
+  members: [RequestMember!]!
   status: String!
-  userDetails: UserDetailsObject!
 }
 
 """RequestDataObject"""
@@ -224,9 +226,27 @@ input RequestInput {
   requestId: String!
 }
 
+"""RequestMemberObject"""
+type RequestMember {
+  _id: String!
+  hasSent: Boolean!
+  memberDetails: RequestMemberDetails
+}
+
+"""RequestMemberDetailsObject"""
+type RequestMemberDetails {
+  _id: String!
+  email: String!
+  email_verified: Boolean!
+  family_name: String!
+  given_name: String!
+  name: String!
+  picture: String!
+}
+
 """RequestsInput"""
 input RequestsInput {
-  sentByUserId: String!
+  userId: String!
 }
 
 input SenderInput {
@@ -258,20 +278,11 @@ type Subscription {
   OnMessagesAdded: MessagesData!
   OnMessagesUpdated: MessagesData!
   OnRequestAdded: RequestData!
+  OnRequestUpdated: RequestData!
 }
 
 """UpdateRequestInput"""
 input UpdateRequestInput {
   requestId: String!
   status: String!
-}
-
-type UserDetailsObject {
-  _id: String!
-  email: String!
-  email_verified: Boolean!
-  family_name: String!
-  given_name: String!
-  name: String!
-  picture: String!
 }

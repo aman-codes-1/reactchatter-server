@@ -1,7 +1,7 @@
 import { Field, ObjectType } from '@nestjs/graphql';
 
-@ObjectType('UserDetailsObject')
-export class UserDetails {
+@ObjectType({ description: 'RequestMemberDetailsObject' })
+class RequestMemberDetails {
   @Field(() => String)
   _id: string;
 
@@ -24,22 +24,37 @@ export class UserDetails {
   family_name: string;
 }
 
+@ObjectType({ description: 'RequestMemberObject' })
+class RequestMember {
+  @Field(() => String)
+  _id: string;
+
+  @Field(() => Boolean)
+  hasSent: boolean;
+
+  @Field(() => RequestMemberDetails, { nullable: true })
+  memberDetails: RequestMemberDetails;
+}
+
 @ObjectType({ description: 'RequestObject' })
 export class Request {
   @Field(() => String)
   _id: string;
 
   @Field(() => String)
-  sentByUserId: string;
-
-  @Field(() => String)
-  sentToUserId: string;
-
-  @Field(() => String)
   status: string;
 
-  @Field(() => UserDetails)
-  userDetails: UserDetails;
+  @Field(() => [RequestMember])
+  members: RequestMember[];
+}
+
+@ObjectType({ description: 'PaginatedRequestObject' })
+export class PaginatedRequest {
+  @Field(() => [Request])
+  data: Request[];
+
+  @Field(() => Number)
+  totalCount: number;
 }
 
 @ObjectType({ description: 'RequestDataObject' })

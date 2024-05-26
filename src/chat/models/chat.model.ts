@@ -1,8 +1,7 @@
-import { Field, InputType, ObjectType } from '@nestjs/graphql';
+import { Field, ObjectType } from '@nestjs/graphql';
 
-@InputType('MemberDetailsInput')
-@ObjectType('MemberDetailsObject')
-export class MemberDetails {
+@ObjectType({ description: 'ChatMemberDetailsObject' })
+class ChatMemberDetails {
   @Field(() => String)
   _id: string;
 
@@ -25,9 +24,8 @@ export class MemberDetails {
   family_name: string;
 }
 
-@InputType('MemberInput')
-@ObjectType('MemberObject')
-export class Member {
+@ObjectType({ description: 'ChatMemberObject' })
+class ChatMember {
   @Field(() => String)
   _id: string;
 
@@ -37,11 +35,11 @@ export class Member {
   @Field(() => Boolean, { nullable: true })
   isAdmin: boolean;
 
-  @Field(() => MemberDetails, { nullable: true })
-  memberDetails: MemberDetails;
+  @Field(() => ChatMemberDetails, { nullable: true })
+  memberDetails: ChatMemberDetails;
 }
 
-@ObjectType('ChatObject')
+@ObjectType({ description: 'ChatObject' })
 export class Chat {
   @Field(() => String)
   _id: string;
@@ -49,8 +47,8 @@ export class Chat {
   @Field(() => String)
   type: string;
 
-  @Field(() => [Member])
-  members: Member[];
+  @Field(() => [ChatMember])
+  members: ChatMember[];
 }
 
 @ObjectType({ description: 'ChatDataObject' })

@@ -1,3 +1,4 @@
+import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
 import { MessageArgs } from './dto/message.args';
@@ -8,6 +9,7 @@ import {
 } from './dto/message.input';
 import { Message, MessageData, MessagesData } from './models/message.model';
 import { MessageService } from './message.service';
+import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 
 const pubSub = new PubSub();
 
@@ -17,6 +19,7 @@ export class MessageResolver {
     //
   }
 
+  @UseGuards(GqlAuthGuard)
   @Query(() => MessageData)
   async message(@Args('input') input: MessageInput): Promise<MessageData> {
     const { userId, chatId, messageId } = input;
@@ -28,6 +31,7 @@ export class MessageResolver {
     };
   }
 
+  @UseGuards(GqlAuthGuard)
   @Query(() => MessagesData)
   async messages(
     @Args('input') input: MessagesInput,
@@ -42,6 +46,7 @@ export class MessageResolver {
     };
   }
 
+  @UseGuards(GqlAuthGuard)
   @Mutation(() => MessageData)
   async createMessage(
     @Args('input') input: CreateMessageInput,
@@ -67,10 +72,11 @@ export class MessageResolver {
     return {
       userId,
       chatId,
-      data: newMessage as unknown as Message,
+      data: newMessage,
     };
   }
 
+  @UseGuards(GqlAuthGuard)
   @Mutation(() => MessageData)
   async updateMessage(
     @Args('input') input: CreateMessageInput,
@@ -96,30 +102,35 @@ export class MessageResolver {
     return {
       userId,
       chatId,
-      data: updatedMessage as unknown as Message,
+      data: updatedMessage,
     };
   }
 
+  @UseGuards(GqlAuthGuard)
   @Mutation(() => Boolean)
   async removeMessage(@Args('id') id: string) {
     return this.messageService.remove(id);
   }
 
+  @UseGuards(GqlAuthGuard)
   @Subscription(() => MessageData)
   OnMessageAdded() {
     return pubSub.asyncIterator('OnMessageAdded');
   }
 
+  @UseGuards(GqlAuthGuard)
   @Subscription(() => MessagesData)
   OnMessagesAdded() {
     return pubSub.asyncIterator('OnMessagesAdded');
   }
 
+  @UseGuards(GqlAuthGuard)
   @Subscription(() => MessageData)
   OnMessageUpdated() {
     return pubSub.asyncIterator('OnMessageUpdated');
   }
 
+  @UseGuards(GqlAuthGuard)
   @Subscription(() => MessagesData)
   OnMessagesUpdated() {
     return pubSub.asyncIterator('OnMessagesUpdated');

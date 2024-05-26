@@ -1,5 +1,4 @@
 import { Field, InputType } from '@nestjs/graphql';
-import { Types } from 'mongoose';
 
 @InputType({ description: 'RequestInput' })
 export class RequestInput {
@@ -10,13 +9,13 @@ export class RequestInput {
 @InputType({ description: 'RequestsInput' })
 export class RequestsInput {
   @Field(() => String)
-  sentByUserId: string;
+  userId: string;
 }
 
 @InputType({ description: 'CreateRequestInput' })
 export class CreateRequestInput {
   @Field(() => String)
-  sentByUserId: string;
+  userId: string;
 
   @Field(() => String)
   sendToEmail: string;

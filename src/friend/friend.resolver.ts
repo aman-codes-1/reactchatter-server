@@ -1,9 +1,11 @@
+import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
 import { FriendArgs } from './dto/friend.args';
 import { FriendInput, FriendsInput } from './dto/friend.input';
 import { Friend, FriendData } from './models/friend.model';
 import { FriendService } from './friend.service';
+import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 
 export const pubSub = new PubSub();
 
@@ -13,6 +15,7 @@ export class FriendResolver {
     //
   }
 
+  @UseGuards(GqlAuthGuard)
   @Query(() => Friend)
   async friend(@Args('input') input: FriendInput): Promise<Friend> {
     const { friendId } = input;
@@ -20,6 +23,7 @@ export class FriendResolver {
     return friend;
   }
 
+  @UseGuards(GqlAuthGuard)
   @Query(() => [Friend])
   async friends(
     @Args('input') input: FriendsInput,
@@ -30,6 +34,7 @@ export class FriendResolver {
     return friends;
   }
 
+  @UseGuards(GqlAuthGuard)
   @Query(() => [Friend])
   async otherFriends(
     @Args('input') input: FriendsInput,
@@ -43,11 +48,13 @@ export class FriendResolver {
     return otherFriends;
   }
 
+  @UseGuards(GqlAuthGuard)
   @Mutation(() => Boolean)
   async removeFriend(@Args('id') id: string) {
     return this.friendService.remove(id);
   }
 
+  @UseGuards(GqlAuthGuard)
   @Subscription(() => FriendData)
   OnFriendAdded() {
     return pubSub.asyncIterator('OnFriendAdded');

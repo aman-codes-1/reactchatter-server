@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Document, SchemaTimestampsConfig, Types } from 'mongoose';
 
 class CommonTimestamp {
   @Prop()
@@ -55,4 +55,4 @@ export class Message {
 }
 
 export const MessageSchema = SchemaFactory.createForClass(Message);
-export type MessageDocument = Message & Document;
+export type MessageDocument = Message & Document & SchemaTimestampsConfig;
