@@ -1,4 +1,11 @@
-import { Controller, Get, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Req,
+  Res,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
@@ -31,18 +38,25 @@ export class AuthController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const user = request?.user as UserDocument;
-    const {
-      google_auth: { tokens: { expires_in = 0, expiry_date = 0 } = {} } = {},
-      ...rest
-    } = user;
-    const { accessToken } =
-      (await this.authService.login(rest, response, expires_in, expiry_date)) ||
-      {};
-    const { from } = request.params || {};
-    return response.redirect(
-      `${this.CLIENT_URL}/login?token=${accessToken}&from=${from}`,
-    );
+    if (request?.user) {
+      const user = request?.user;
+      const {
+        google_auth: { tokens: { expires_in = 0, expiry_date = 0 } = {} } = {},
+        ...rest
+      } = user as UserDocument;
+      const { accessToken } =
+        (await this.authService.login(
+          rest,
+          response,
+          expires_in,
+          expiry_date,
+        )) || {};
+      const { from } = request.params || {};
+      return response.redirect(
+        `${this.CLIENT_URL}/login?token=${accessToken}&from=${from}`,
+      );
+    }
+    throw new UnauthorizedException();
   }
 
   @Get('google/cancel')
@@ -54,11 +68,14 @@ export class AuthController {
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   profile(@Req() request: Request) {
-    const user = request?.user as UserDocument;
-    return {
-      data: user,
-      message: 'success',
-    };
+    if (request?.user) {
+      const user = request?.user;
+      return {
+        data: user,
+        message: 'success',
+      };
+    }
+    throw new UnauthorizedException();
   }
 
   @Get('logout')
