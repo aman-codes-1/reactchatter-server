@@ -194,7 +194,7 @@ export class AuthService {
       response?.clearCookie('token-expires');
     }
     if (request) {
-      request?.logOut((err) => err);
+      request?.logOut((err: any) => err);
     }
   }
 }
