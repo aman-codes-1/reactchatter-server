@@ -39,7 +39,7 @@ export class AuthController {
     const { accessToken } =
       (await this.authService.login(rest, response, expires_in, expiry_date)) ||
       {};
-    const { from } = request.params || {};
+    const { from } = request?.params || {};
     return response.redirect(
       `${this.CLIENT_URL}/login?token=${accessToken}&from=${from}`,
     );
