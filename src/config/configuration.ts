@@ -20,6 +20,7 @@ const JWT_SECRET = process.env.JWT_SECRET || '';
 const JWT_EXPIRATION_TIME = process.env.JWT_EXPIRATION_TIME || 3599;
 const RATE_LIMIT_MS = process.env.RATE_LIMIT_MS || 60000;
 const RATE_LIMIT_MAX = process.env.RATE_LIMIT_MAX || 100;
+const isDevelopment = NODE_ENV === 'development';
 
 export default () => ({
   PORT,
@@ -27,14 +28,12 @@ export default () => ({
   CLIENT_PORT,
   CLIENT_DOMAIN,
   SERVER_DOMAIN,
-  CLIENT_URL:
-    NODE_ENV === 'development'
-      ? `http://${CLIENT_DOMAIN}:${CLIENT_PORT}`
-      : `${CLIENT_URI}`,
-  SERVER_URL:
-    NODE_ENV === 'development'
-      ? `http://${SERVER_DOMAIN}:${PORT}`
-      : `${SERVER_URI}`,
+  CLIENT_URL: isDevelopment
+    ? `http://${CLIENT_DOMAIN}:${CLIENT_PORT}`
+    : `${CLIENT_URI}`,
+  SERVER_URL: isDevelopment
+    ? `http://${SERVER_DOMAIN}:${PORT}`
+    : `${SERVER_URI}`,
   MONGO_URI,
   ALLOWED_ORIGINS,
   COOKIE_SECRET,
@@ -44,19 +43,22 @@ export default () => ({
   SESSION_SECRET,
   JWT_SECRET,
   JWT_EXPIRATION_TIME,
+  RATE_LIMIT_MS,
+  RATE_LIMIT_MAX,
   HTTP_ONLY_COOKIE: {
     httpOnly: true,
     signed: true,
     domain: SERVER_DOMAIN,
-    sameSite: 'lax',
-    secure: NODE_ENV !== 'development',
+    sameSite: isDevelopment ? 'lax' : 'none',
+    secure: !isDevelopment,
     maxAge: Number(COOKIE_MAX_AGE) * 1000,
   },
   USERS_COOKIE: {
+    httpOnly: true,
     domain: SERVER_DOMAIN,
+    sameSite: isDevelopment ? 'lax' : 'none',
+    secure: !isDevelopment,
     maxAge: Number(COOKIE_MAX_AGE) * 1000,
   },
-  isDevelopment: NODE_ENV === 'development',
-  RATE_LIMIT_MS,
-  RATE_LIMIT_MAX,
+  isDevelopment,
 });
