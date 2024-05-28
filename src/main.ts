@@ -1,12 +1,14 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
+import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
 import passport from 'passport';
-import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { AppModule } from './app.module';
+
+const MemoryStore = require('memorystore')(session);
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -14,6 +16,7 @@ async function bootstrap() {
   const PORT = configService.get('PORT');
   const SESSION_SECRET = configService.get('SESSION_SECRET');
   const COOKIE_SECRET = configService.get('COOKIE_SECRET');
+  const COOKIE_MAX_AGE = configService.get('COOKIE_MAX_AGE');
   const isDevelopment = configService.get('isDevelopment');
   const HTTP_ONLY_COOKIE = configService.get('HTTP_ONLY_COOKIE');
   const RATE_LIMIT_MS = configService.get('RATE_LIMIT_MS');
@@ -64,6 +67,9 @@ async function bootstrap() {
       resave: false,
       saveUninitialized: false,
       cookie: HTTP_ONLY_COOKIE,
+      store: new MemoryStore({
+        checkPeriod: Number(COOKIE_MAX_AGE) * 1000,
+      }),
     }),
   );
   app.use(passport.initialize());
