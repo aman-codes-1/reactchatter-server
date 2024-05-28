@@ -190,8 +190,8 @@ export class AuthService {
 
   logout(request: Request, response?: Response): any {
     if (response) {
-      response?.clearCookie('token');
-      response?.clearCookie('token-expires');
+      response?.cookie('token', '', this.HTTP_ONLY_COOKIE);
+      response?.cookie('token-expires', '', this.USERS_COOKIE);
     }
     if (request) {
       request?.logOut((err: any) => err);
