@@ -48,29 +48,6 @@ import configuration from './config/configuration';
         autoTransformHttpErrors: true,
         introspection: !!configService.get('isDevelopment'),
         installSubscriptionHandlers: true,
-        // context: ({ req, connection }) =>
-        //   connection ? { req: connection?.context } : { req },
-        // context: ({ req, connection }) =>
-        //   connection ? connection?.context : { req },
-        // context: ({ req, res, extra }) => {
-        //   if (extra) {
-        //     const context = { req, res, extra };
-        //     const contextCookie = context?.extra?.request?.headers?.cookie;
-        //     const cookies = cookie.parse(contextCookie || '');
-        //     let token = cookies?.token;
-        //     if (token && token?.startsWith('s:')) {
-        //       token = token?.slice(2);
-        //     } else {
-        //       token = null;
-        //     }
-        //     context.extra.token = token;
-        //     return context;
-        //   }
-        //   return {
-        //     req,
-        //     res,
-        //   };
-        // },
         subscriptions: {
           'graphql-ws': true,
           'subscriptions-transport-ws': {
@@ -81,6 +58,10 @@ import configuration from './config/configuration';
           },
         },
         context: ({ req, res }) => ({ req, res }),
+        // context: ({ req, connection }) =>
+        //   connection ? { req: connection?.context } : { req },
+        // context: ({ req, connection }) =>
+        //   connection ? connection?.context : { req },
       }),
     }),
     SocketModule,
