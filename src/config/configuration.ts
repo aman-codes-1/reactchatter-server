@@ -48,14 +48,14 @@ export default () => ({
   HTTP_ONLY_COOKIE: {
     httpOnly: true,
     signed: true,
-    domain: SERVER_DOMAIN,
+    domain: CLIENT_DOMAIN,
     sameSite: isDevelopment ? 'lax' : 'none',
     secure: !isDevelopment,
     maxAge: Number(COOKIE_MAX_AGE) * 1000,
   },
   USERS_COOKIE: {
     httpOnly: true,
-    domain: SERVER_DOMAIN,
+    domain: CLIENT_DOMAIN,
     sameSite: isDevelopment ? 'lax' : 'none',
     secure: !isDevelopment,
     maxAge: Number(COOKIE_MAX_AGE) * 1000,
