@@ -44,7 +44,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           const parts = token?.split?.('.');
           if (parts?.length === 4) {
             const COOKIE_SECRET = configService.get('COOKIE_SECRET');
-            const JWT_SECRET = configService.get('JWT_SECRET');
             const unsignedToken = cookieSignature.unsign(
               token,
               COOKIE_SECRET,

@@ -12,17 +12,14 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
   const PORT = configService.get('PORT');
-  const ALLOWED_ORIGINS = configService.get('ALLOWED_ORIGINS');
-  const CLIENT_URL = configService.get('CLIENT_URL');
   const SESSION_SECRET = configService.get('SESSION_SECRET');
   const COOKIE_SECRET = configService.get('COOKIE_SECRET');
   const isDevelopment = configService.get('isDevelopment');
   const HTTP_ONLY_COOKIE = configService.get('HTTP_ONLY_COOKIE');
   const RATE_LIMIT_MS = configService.get('RATE_LIMIT_MS');
   const RATE_LIMIT_MAX = configService.get('RATE_LIMIT_MAX');
-  const origins = [ALLOWED_ORIGINS, CLIENT_URL]
-    .filter((origin) => origin)
-    .flat(1);
+  const ORIGINS = configService.get<string[]>('ORIGINS');
+
   const developmentContentSecurityPolicy = {
     directives: {
       imgSrc: [
@@ -46,7 +43,7 @@ async function bootstrap() {
     }),
   );
   app.enableCors({
-    origin: [...new Set(origins)],
+    origin: [...new Set(ORIGINS)],
     methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders:
       'X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept, Observe',
