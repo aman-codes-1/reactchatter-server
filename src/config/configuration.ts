@@ -41,7 +41,7 @@ const HTTP_ONLY_COOKIE = {
 const USERS_COOKIE = {
   httpOnly: true,
   domain: SERVER_DOMAIN,
-  sameSite: isDevelopment ? 'lax' : 'none',
+  sameSite: isDevelopment ? 'lax' : 'None',
   secure: !isDevelopment,
   maxAge: Number(COOKIE_MAX_AGE) * 1000,
 };
