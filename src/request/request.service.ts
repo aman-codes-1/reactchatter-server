@@ -43,14 +43,13 @@ export class RequestService {
           pipeline: [
             {
               $project: {
-                _id: '$_id',
-                __v: '$__v',
-                name: '$name',
-                email: '$email',
-                email_verified: '$email_verified',
-                picture: '$picture',
-                given_name: '$given_name',
-                family_name: '$family_name',
+                _id: 1,
+                name: 1,
+                email: 1,
+                email_verified: 1,
+                picture: 1,
+                given_name: 1,
+                family_name: 1,
               },
             },
           ],
@@ -71,7 +70,6 @@ export class RequestService {
           status: { $first: '$status' },
           createdAt: { $first: '$createdAt' },
           updatedAt: { $first: '$updatedAt' },
-          __v: { $first: '$__v' },
           members: { $push: '$members' },
         },
       },
@@ -236,14 +234,13 @@ export class RequestService {
           pipeline: [
             {
               $project: {
-                _id: '$_id',
-                __v: '$__v',
-                name: '$name',
-                email: '$email',
-                email_verified: '$email_verified',
-                picture: '$picture',
-                given_name: '$given_name',
-                family_name: '$family_name',
+                _id: 1,
+                name: 1,
+                email: 1,
+                email_verified: 1,
+                picture: 1,
+                given_name: 1,
+                family_name: 1,
               },
             },
           ],
@@ -264,15 +261,14 @@ export class RequestService {
           status: { $first: '$status' },
           createdAt: { $first: '$createdAt' },
           updatedAt: { $first: '$updatedAt' },
-          __v: { $first: '$__v' },
           members: { $push: '$members' },
         },
       },
       {
         $facet: {
           data: [
-            { $limit: limit },
             { $skip: skip },
+            { $limit: limit },
             { $sort: { createdAt: -1 } },
           ],
           totalCount: [{ $count: 'count' }],
@@ -318,14 +314,13 @@ export class RequestService {
           pipeline: [
             {
               $project: {
-                _id: '$_id',
-                __v: '$__v',
-                name: '$name',
-                email: '$email',
-                email_verified: '$email_verified',
-                picture: '$picture',
-                given_name: '$given_name',
-                family_name: '$family_name',
+                _id: 1,
+                name: 1,
+                email: 1,
+                email_verified: 1,
+                picture: 1,
+                given_name: 1,
+                family_name: 1,
               },
             },
           ],
@@ -346,15 +341,14 @@ export class RequestService {
           status: { $first: '$status' },
           createdAt: { $first: '$createdAt' },
           updatedAt: { $first: '$updatedAt' },
-          __v: { $first: '$__v' },
           members: { $push: '$members' },
         },
       },
       {
         $facet: {
           data: [
-            { $limit: limit },
             { $skip: skip },
+            { $limit: limit },
             { $sort: { createdAt: -1 } },
           ],
           totalCount: [{ $count: 'count' }],

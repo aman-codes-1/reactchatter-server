@@ -30,14 +30,13 @@ export class FriendService {
           pipeline: [
             {
               $project: {
-                _id: '$_id',
-                __v: '$__v',
-                name: '$name',
-                email: '$email',
-                email_verified: '$email_verified',
-                picture: '$picture',
-                given_name: '$given_name',
-                family_name: '$family_name',
+                _id: 1,
+                name: 1,
+                email: 1,
+                email_verified: 1,
+                picture: 1,
+                given_name: 1,
+                family_name: 1,
               },
             },
           ],
@@ -58,7 +57,6 @@ export class FriendService {
           isFriend: { $first: '$isFriend' },
           createdAt: { $first: '$createdAt' },
           updatedAt: { $first: '$updatedAt' },
-          __v: { $first: '$__v' },
           members: { $push: '$members' },
         },
       },
@@ -111,14 +109,13 @@ export class FriendService {
           pipeline: [
             {
               $project: {
-                _id: '$_id',
-                __v: '$__v',
-                name: '$name',
-                email: '$email',
-                email_verified: '$email_verified',
-                picture: '$picture',
-                given_name: '$given_name',
-                family_name: '$family_name',
+                _id: 1,
+                name: 1,
+                email: 1,
+                email_verified: 1,
+                picture: 1,
+                given_name: 1,
+                family_name: 1,
               },
             },
           ],
@@ -139,12 +136,11 @@ export class FriendService {
           isFriend: { $first: '$isFriend' },
           createdAt: { $first: '$createdAt' },
           updatedAt: { $first: '$updatedAt' },
-          __v: { $first: '$__v' },
           members: { $push: '$members' },
         },
       },
-      { $limit: limit },
       { $skip: skip },
+      { $limit: limit },
       { $sort: { createdAt: -1 } },
     ]);
     return friends;
@@ -171,6 +167,11 @@ export class FriendService {
         $unwind: '$members',
       },
       {
+        $match: {
+          'members._id': { $ne: userObjectId },
+        },
+      },
+      {
         $lookup: {
           from: 'users',
           localField: 'members._id',
@@ -178,14 +179,13 @@ export class FriendService {
           pipeline: [
             {
               $project: {
-                _id: '$_id',
-                __v: '$__v',
-                name: '$name',
-                email: '$email',
-                email_verified: '$email_verified',
-                picture: '$picture',
-                given_name: '$given_name',
-                family_name: '$family_name',
+                _id: 1,
+                name: 1,
+                email: 1,
+                email_verified: 1,
+                picture: 1,
+                given_name: 1,
+                family_name: 1,
               },
             },
           ],
@@ -201,6 +201,33 @@ export class FriendService {
         },
       },
       {
+        $lookup: {
+          from: 'chats',
+          let: { friendId: '$members._id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $in: ['$$friendId', '$members._id'] },
+                    { $in: [userObjectId, '$members._id'] },
+                  ],
+                },
+              },
+            },
+            {
+              $project: { _id: 1 },
+            },
+          ],
+          as: 'chatsWithFriend',
+        },
+      },
+      {
+        $match: {
+          chatsWithFriend: { $size: 0 },
+        },
+      },
+      {
         $group: {
           _id: '$_id',
           isFriend: { $first: '$isFriend' },
@@ -210,30 +237,8 @@ export class FriendService {
           members: { $push: '$members' },
         },
       },
-      {
-        $lookup: {
-          from: 'chats',
-          let: { memberId: '$members._id' },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [{ $eq: ['$$memberId', '$members._id'] }],
-                },
-              },
-            },
-          ],
-          as: 'chats',
-        },
-      },
-      {
-        $match: {
-          chats: { $eq: [] },
-        },
-      },
-      { $project: { chats: 0 } },
-      { $limit: limit },
       { $skip: skip },
+      { $limit: limit },
       { $sort: { createdAt: -1 } },
     ]);
     return otherFriends;
