@@ -56,9 +56,8 @@ input CreateChatInput {
 input CreateMessageInput {
   chatId: String!
   message: String!
-  otherMembers: [OtherMemberInput!]!
-  sender: SenderInput!
-  userId: String!
+  senderId: String!
+  timestamp: Float!
 }
 
 """CreateRequestInput"""
@@ -70,12 +69,8 @@ input CreateRequestInput {
 """Date custom scalar type"""
 scalar Date
 
-input DeliveredStatusInput {
-  isDelivered: Boolean!
-  timestamp: Float!
-}
-
-type DeliveredStatusObject {
+"""DeliveredStatusObject"""
+type DeliveredStatus {
   isDelivered: Boolean!
   timestamp: Float!
 }
@@ -120,64 +115,49 @@ input FriendsInput {
   userId: String!
 }
 
-"""MessageData"""
+"""MessageObject"""
+type Message {
+  _id: String!
+  chatId: String!
+  message: String!
+  otherMembers: [OtherMember!]!
+  sender: Sender!
+}
+
+"""MessageDataObject"""
 type MessageData {
   chatId: String!
-  data: MessageObject!
-  userId: String!
+  message: [Message!]!
 }
 
 """MessageInput"""
 input MessageInput {
-  chatId: String!
   messageId: String!
-  userId: String!
-}
-
-type MessageObject {
-  _id: String!
-  chatId: String!
-  message: String!
-  otherMembers: [OtherMemberObject!]!
-  sender: SenderObject!
-}
-
-"""MessagesDataObject"""
-type MessagesData {
-  chatId: String!
-  data: [MessageObject!]!
-  userId: String!
 }
 
 """MessagesInput"""
 input MessagesInput {
   chatId: String!
-  userId: String!
 }
 
 type Mutation {
   createChat(input: CreateChatInput!): Chat!
-  createMessage(input: CreateMessageInput!, limit: Int! = 25, skip: Int! = 0): MessageData!
+  createMessage(input: CreateMessageInput!): Message!
   createRequest(input: CreateRequestInput!): Request!
   removeChat(id: String!): Boolean!
   removeFriend(id: String!): Boolean!
   removeMessage(id: String!): Boolean!
   removeRequest(id: String!): Boolean!
   updateChat(input: CreateChatInput!): Chat!
-  updateMessage(input: CreateMessageInput!, limit: Int! = 25, skip: Int! = 0): MessageData!
+  updateMessage(input: CreateMessageInput!): Message!
   updateRequest(input: UpdateRequestInput!): Request!
 }
 
-input OtherMemberInput {
+"""OtherMemberObject"""
+type OtherMember {
   _id: String!
-  deliveredStatus: DeliveredStatusInput
-  readStatus: ReadStatusInput
-}
-
-type OtherMemberObject {
-  _id: String!
-  deliveredStatus: DeliveredStatusObject
-  readStatus: ReadStatusObject
+  deliveredStatus: DeliveredStatus
+  readStatus: ReadStatus
 }
 
 """PaginatedRequestObject"""
@@ -191,20 +171,16 @@ type Query {
   chats(input: ChatsInput!, limit: Int! = 25, skip: Int! = 0): [Chat!]!
   friend(input: FriendInput!): Friend!
   friends(input: FriendsInput!, limit: Int! = 25, skip: Int! = 0): [Friend!]!
-  message(input: MessageInput!): MessageData!
-  messages(input: MessagesInput!, limit: Int! = 25, skip: Int! = 0): MessagesData!
+  message(input: MessageInput!): Message!
+  messages(input: MessagesInput!, limit: Int! = 25, skip: Int! = 0): [Message!]!
   otherFriends(input: FriendsInput!, limit: Int! = 25, skip: Int! = 0): [Friend!]!
   pendingRequest(input: RequestInput!): Request!
   pendingRequests(input: RequestsInput!, limit: Int! = 25, skip: Int! = 0): PaginatedRequest!
   sentRequests(input: RequestsInput!, limit: Int! = 25, skip: Int! = 0): PaginatedRequest!
 }
 
-input ReadStatusInput {
-  isRead: Boolean!
-  timestamp: Float!
-}
-
-type ReadStatusObject {
+"""ReadStatusObject"""
+type ReadStatus {
   isRead: Boolean!
   timestamp: Float!
 }
@@ -249,22 +225,14 @@ input RequestsInput {
   userId: String!
 }
 
-input SenderInput {
+"""SenderObject"""
+type Sender {
   _id: String!
-  sentStatus: SentStatusInput!
+  sentStatus: SentStatus!
 }
 
-type SenderObject {
-  _id: String!
-  sentStatus: SentStatusObject!
-}
-
-input SentStatusInput {
-  isSent: Boolean!
-  timestamp: Float!
-}
-
-type SentStatusObject {
+"""SentStatusObject"""
+type SentStatus {
   isSent: Boolean!
   timestamp: Float!
 }
@@ -275,8 +243,6 @@ type Subscription {
   OnFriendAdded: FriendData!
   OnMessageAdded: MessageData!
   OnMessageUpdated: MessageData!
-  OnMessagesAdded: MessagesData!
-  OnMessagesUpdated: MessagesData!
   OnRequestAdded: RequestData!
   OnRequestUpdated: RequestData!
 }

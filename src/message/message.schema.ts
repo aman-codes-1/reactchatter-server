@@ -2,8 +2,8 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, SchemaTimestampsConfig, Types } from 'mongoose';
 
 class CommonTimestamp {
-  @Prop()
-  timestamp: number;
+  @Prop({ required: false })
+  timestamp?: number;
 }
 
 class SentStatus extends CommonTimestamp {
@@ -12,13 +12,13 @@ class SentStatus extends CommonTimestamp {
 }
 
 class DeliveredStatus extends CommonTimestamp {
-  @Prop()
-  isDelivered: boolean;
+  @Prop({ required: false })
+  isDelivered?: boolean;
 }
 
 class ReadStatus extends CommonTimestamp {
-  @Prop()
-  isRead: boolean;
+  @Prop({ required: false })
+  isRead?: boolean;
 }
 
 class CommonId {
@@ -32,11 +32,11 @@ class Sender extends CommonId {
 }
 
 class OtherMember extends CommonId {
-  @Prop({ type: DeliveredStatus })
-  deliveredStatus: DeliveredStatus;
+  @Prop({ type: DeliveredStatus, required: false })
+  deliveredStatus?: DeliveredStatus;
 
-  @Prop({ type: ReadStatus })
-  readStatus: ReadStatus;
+  @Prop({ type: ReadStatus, required: false })
+  readStatus?: ReadStatus;
 }
 
 @Schema({ timestamps: true })
