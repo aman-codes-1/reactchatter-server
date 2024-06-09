@@ -1,7 +1,6 @@
-import { Field, Float, InputType, ObjectType } from '@nestjs/graphql';
+import { Field, Float, ObjectType } from '@nestjs/graphql';
 
-@InputType('SentStatusInput')
-@ObjectType('SentStatusObject')
+@ObjectType({ description: 'SentStatusObject' })
 class SentStatus {
   @Field(() => Boolean)
   isSent: boolean;
@@ -10,8 +9,7 @@ class SentStatus {
   timestamp: number;
 }
 
-@InputType('DeliveredStatusInput')
-@ObjectType('DeliveredStatusObject')
+@ObjectType({ description: 'DeliveredStatusObject' })
 class DeliveredStatus {
   @Field(() => Boolean)
   isDelivered: boolean;
@@ -20,8 +18,7 @@ class DeliveredStatus {
   timestamp: number;
 }
 
-@InputType('ReadStatusInput')
-@ObjectType('ReadStatusObject')
+@ObjectType({ description: 'ReadStatusObject' })
 class ReadStatus {
   @Field(() => Boolean)
   isRead: boolean;
@@ -30,8 +27,7 @@ class ReadStatus {
   timestamp: number;
 }
 
-@InputType('SenderInput')
-@ObjectType('SenderObject')
+@ObjectType({ description: 'SenderObject' })
 export class Sender {
   @Field(() => String)
   _id: string;
@@ -40,8 +36,7 @@ export class Sender {
   sentStatus: SentStatus;
 }
 
-@InputType('OtherMemberInput')
-@ObjectType('OtherMemberObject')
+@ObjectType({ description: 'OtherMemberObject' })
 export class OtherMember {
   @Field(() => String)
   _id: string;
@@ -53,7 +48,7 @@ export class OtherMember {
   readStatus: ReadStatus;
 }
 
-@ObjectType('MessageObject')
+@ObjectType({ description: 'MessageObject' })
 export class Message {
   @Field(() => String)
   _id: string;
@@ -71,23 +66,11 @@ export class Message {
   otherMembers: OtherMember[];
 }
 
-@ObjectType({ description: 'MessageDataExtendedObject' })
-class MessageDataExtended {
-  @Field(() => String)
-  userId: string;
-
+@ObjectType({ description: 'MessageDataObject' })
+export class MessageData {
   @Field(() => String)
   chatId: string;
-}
 
-@ObjectType({ description: 'MessageData' })
-export class MessageData extends MessageDataExtended {
-  @Field(() => Message)
-  data: Message;
-}
-
-@ObjectType({ description: 'MessagesDataObject' })
-export class MessagesData extends MessageDataExtended {
   @Field(() => [Message])
-  data: Message[];
+  message: Message[];
 }

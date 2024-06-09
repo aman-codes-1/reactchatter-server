@@ -18,32 +18,6 @@ export class MessageService {
     //
   }
 
-  async create(data: CreateMessageInput): Promise<Message> {
-    const { chatId, sender, otherMembers } = data;
-    const chatObjectId = new ObjectId(chatId);
-    const chat = await this.ChatModel.findById(chatObjectId).lean();
-    if (!chat) {
-      throw new BadRequestException('Chat not found.');
-    }
-    const senderObjectId = new ObjectId(sender?._id);
-    const otherMembersWithObjectId = otherMembers.map((el) => ({
-      ...el,
-      _id: new ObjectId(el?._id),
-    }));
-    const newMessageData = {
-      ...data,
-      chatId: chatObjectId,
-      sender: {
-        ...data?.sender,
-        _id: senderObjectId,
-      },
-      otherMembersWithObjectId,
-    };
-    const newMessage = new this.MessageModel(newMessageData);
-    const savedMessage = await newMessage.save();
-    return savedMessage.toObject();
-  }
-
   async findOneById(messageId: string): Promise<Message> {
     const messageObjectId = new ObjectId(messageId);
     const message = await this.MessageModel.findById(messageObjectId).lean();
@@ -53,8 +27,43 @@ export class MessageService {
     return message as unknown as Message;
   }
 
+  async create(data: CreateMessageInput): Promise<Message> {
+    const { chatId, message, senderId, timestamp } = data || {};
+    const chatObjectId = new ObjectId(chatId);
+    const senderObjectId = new ObjectId(senderId);
+    const chat = await this.ChatModel.findById(chatObjectId).lean();
+    if (!chat) {
+      throw new BadRequestException('Chat not found.');
+    }
+    const { members } = chat || {};
+    const otherMembers = members
+      .filter((el) => String(el?._id) !== String(senderId))
+      .map((el) => ({
+        _id: new ObjectId(el?._id),
+      }));
+    const newMessageData = {
+      chatId: chatObjectId,
+      message,
+      sender: {
+        _id: senderObjectId,
+        sentStatus: {
+          isSent: true,
+          timestamp,
+        },
+      },
+      otherMembers,
+    };
+    const newMessage = new this.MessageModel(newMessageData);
+    const savedMessage = await newMessage.save();
+    return savedMessage.toObject();
+  }
+
   async findAll(chatId: string, messageArgs: MessageArgs): Promise<Message[]> {
     const chatObjectId = new ObjectId(chatId);
+    const chat = await this.ChatModel.findById(chatObjectId);
+    if (!chat) {
+      throw new BadRequestException('Chat not found.');
+    }
     const { limit, skip } = messageArgs;
     const messages = await this.MessageModel.find({ chatId: chatObjectId })
       .limit(limit)

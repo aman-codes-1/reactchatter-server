@@ -94,42 +94,69 @@ export class RequestService {
     }
     const { _id } = user;
     const _idObjectId = new ObjectId(String(_id));
-    const duplicateRequestSent = await this.RequestModel.findOne({
-      $and: [
-        { members: { $elemMatch: { _id, hasSent: false } } },
-        { members: { $elemMatch: { _id: userObjectId, hasSent: true } } },
-        { $or: [{ status: 'pending' }, { status: 'accepted' }] },
-      ],
-    }).lean();
-    const duplicateRequestReceived = await this.RequestModel.findOne({
-      $and: [
-        { members: { $elemMatch: { _id, hasSent: true } } },
-        { members: { $elemMatch: { _id: userObjectId, hasSent: false } } },
-        { $or: [{ status: 'pending' }, { status: 'accepted' }] },
-      ],
-    }).lean();
     if (userObjectId.equals(_idObjectId)) {
       throw new BadRequestException(
         'Please send a friend request to a different user.',
       );
     }
-    if (duplicateRequestSent) {
-      const { status } = duplicateRequestSent;
-      if (status === 'accepted') {
-        throw new BadRequestException('Already a Friend.');
-      } else {
-        throw new BadRequestException('Friend Request already sent.');
-      }
+    const duplicateFriend = await this.FriendModel.findOne({
+      members: {
+        $all: [
+          {
+            $elemMatch: {
+              _id: _idObjectId,
+            },
+          },
+          {
+            $elemMatch: {
+              _id: userObjectId,
+            },
+          },
+        ],
+      },
+    }).lean();
+    const duplicatePendingRequestSent = await this.RequestModel.findOne({
+      $and: [
+        { members: { $elemMatch: { _id, hasSent: false } } },
+        { members: { $elemMatch: { _id: userObjectId, hasSent: true } } },
+        { status: 'pending' },
+      ],
+    }).lean();
+    const duplicateAcceptedRequestSent = await this.RequestModel.findOne({
+      $and: [
+        { members: { $elemMatch: { _id, hasSent: false } } },
+        { members: { $elemMatch: { _id: userObjectId, hasSent: true } } },
+        { status: 'accepted' },
+      ],
+    }).lean();
+    const duplicatePendingRequestReceived = await this.RequestModel.findOne({
+      $and: [
+        { members: { $elemMatch: { _id, hasSent: true } } },
+        { members: { $elemMatch: { _id: userObjectId, hasSent: false } } },
+        { status: 'pending' },
+      ],
+    }).lean();
+    const duplicateAcceptedRequestReceived = await this.RequestModel.findOne({
+      $and: [
+        { members: { $elemMatch: { _id, hasSent: true } } },
+        { members: { $elemMatch: { _id: userObjectId, hasSent: false } } },
+        { status: 'accepted' },
+      ],
+    }).lean();
+    if (duplicatePendingRequestSent) {
+      throw new BadRequestException('Friend Request already sent.');
     }
-    if (duplicateRequestReceived) {
-      const { status } = duplicateRequestReceived;
-      if (status === 'accepted') {
-        throw new BadRequestException('Already a Friend.');
-      } else {
-        throw new BadRequestException(
-          'You already have a pending request from this user.',
-        );
-      }
+    if (duplicatePendingRequestReceived) {
+      throw new BadRequestException(
+        'You already have a pending request from this user.',
+      );
+    }
+    if (
+      duplicateFriend ||
+      (duplicateAcceptedRequestSent && duplicateFriend) ||
+      (duplicateAcceptedRequestReceived && duplicateFriend)
+    ) {
+      throw new BadRequestException('Already a Friend.');
     }
     const members = [userObjectId, _idObjectId].map((id, idx) => ({
       _id: id,
