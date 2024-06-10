@@ -28,8 +28,19 @@ import configuration from './config/configuration';
       load: [configuration],
       expandVariables: true,
     }),
-    ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', '..', 'build'),
+    ServeStaticModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => {
+        const isDevelopment = configService.get('isDevelopment');
+        if (!isDevelopment) {
+          return [{
+            rootPath: join(__dirname, '..', '..', 'build'),
+          }];
+        } else {
+          return [];
+        }
+      },
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
