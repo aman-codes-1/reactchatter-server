@@ -34,12 +34,13 @@ import configuration from './config/configuration';
       useFactory: async (configService: ConfigService) => {
         const isDevelopment = configService.get('isDevelopment');
         if (!isDevelopment) {
-          return [{
-            rootPath: join(__dirname, '..', '..', 'build'),
-          }];
-        } else {
-          return [];
+          return [
+            {
+              rootPath: join(__dirname, '..', '..', 'build'),
+            },
+          ];
         }
+        return [];
       },
     }),
     MongooseModule.forRootAsync({
