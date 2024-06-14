@@ -8,7 +8,7 @@
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "nest build",
-    "start": "nest --max-old-space-size=4096 start",
+    "start": "nest start",
     "start:dev": "nest start --watch --max-old-space-size=4096",
     "start:debug": "nest start --debug --watch --max-old-space-size=4096",
     "start:prod": "node --max-old-space-size=4096 dist/main",
