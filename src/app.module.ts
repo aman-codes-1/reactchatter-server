@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ServeStaticModule } from '@nestjs/serve-static';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Enhancer, GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
@@ -27,21 +26,6 @@ import configuration from './config/configuration';
       envFilePath: '.env',
       load: [configuration],
       expandVariables: true,
-    }),
-    ServeStaticModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => {
-        const isDevelopment = configService.get('isDevelopment');
-        if (!isDevelopment) {
-          return [
-            {
-              rootPath: join(__dirname, '..', '..', 'build'),
-            },
-          ];
-        }
-        return [];
-      },
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
