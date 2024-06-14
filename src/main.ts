@@ -1,7 +1,6 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
-import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
@@ -12,7 +11,7 @@ import { AppModule } from './app.module';
 const MemoryStore = require('memorystore')(session);
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
   const PORT = configService.get('PORT');
   const SESSION_SECRET = configService.get('SESSION_SECRET');
@@ -23,6 +22,7 @@ async function bootstrap() {
   const RATE_LIMIT_MS = configService.get('RATE_LIMIT_MS');
   const RATE_LIMIT_MAX = configService.get('RATE_LIMIT_MAX');
   const ORIGINS = configService.get<string[]>('ORIGINS');
+
   const developmentContentSecurityPolicy = {
     directives: {
       imgSrc: [
@@ -38,7 +38,6 @@ async function bootstrap() {
       frameSrc: [`'self'`, 'sandbox.embed.apollographql.com'],
     },
   };
-  app.set('trust proxy', 1);
   app.use(
     helmet({
       contentSecurityPolicy: isDevelopment
