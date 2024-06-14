@@ -74,12 +74,12 @@ async function bootstrap() {
   );
   app.use(passport.initialize());
   app.use(passport.session());
-  // app.use(
-  //   rateLimit({
-  //     windowMs: Number(RATE_LIMIT_MS),
-  //     max: Number(RATE_LIMIT_MAX),
-  //   }),
-  // );
+  app.use(
+    rateLimit({
+      windowMs: Number(RATE_LIMIT_MS),
+      max: Number(RATE_LIMIT_MAX),
+    }),
+  );
   await app.listen(PORT, async () => {
     const logger = new Logger();
     const appUri = await app.getUrl();
