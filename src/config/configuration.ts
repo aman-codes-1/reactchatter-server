@@ -9,7 +9,7 @@ const CLIENT_URL = isDevelopment
   ? `http://${DOMAIN}:${CLIENT_PORT}`
   : `${CLIENT_URI}`;
 const SERVER_URL = isDevelopment ? `http://${DOMAIN}:${PORT}` : `${SERVER_URI}`;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/';
+const MONGO_URI = process.env.MONGO_URI || '';
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
   ? (process.env.ALLOWED_ORIGINS?.includes(',') &&
       process.env.ALLOWED_ORIGINS?.split(',')) ||
@@ -31,14 +31,14 @@ const HTTP_ONLY_COOKIE = {
   httpOnly: true,
   signed: true,
   domain: DOMAIN,
-  sameSite: isDevelopment ? 'lax' : 'None',
+  // sameSite: isDevelopment ? 'lax' : 'None',
   secure: !isDevelopment,
   maxAge: Number(COOKIE_MAX_AGE) * 1000,
 };
 const USERS_COOKIE = {
   httpOnly: true,
   domain: DOMAIN,
-  sameSite: isDevelopment ? 'lax' : 'None',
+  // sameSite: isDevelopment ? 'lax' : 'None',
   secure: !isDevelopment,
   maxAge: Number(COOKIE_MAX_AGE) * 1000,
 };
