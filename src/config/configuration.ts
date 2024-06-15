@@ -30,12 +30,12 @@ const RATE_LIMIT_MAX = process.env.RATE_LIMIT_MAX || 100;
 const HTTP_ONLY_COOKIE = {
   httpOnly: true,
   signed: true,
-  secure: !isDevelopment,
+  ...(!isDevelopment ? { sameSite: 'None', secure: true } : {}),
   maxAge: Number(COOKIE_MAX_AGE) * 1000,
 };
 const USERS_COOKIE = {
   httpOnly: true,
-  secure: !isDevelopment,
+  ...(!isDevelopment ? { sameSite: 'None', secure: true } : {}),
   maxAge: Number(COOKIE_MAX_AGE) * 1000,
 };
 
