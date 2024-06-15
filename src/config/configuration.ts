@@ -31,15 +31,12 @@ const HTTP_ONLY_COOKIE = {
   httpOnly: true,
   signed: true,
   domain: DOMAIN,
-  // sameSite: isDevelopment ? 'lax' : 'None',
-  secure: !isDevelopment,
   maxAge: Number(COOKIE_MAX_AGE) * 1000,
 };
 const USERS_COOKIE = {
   httpOnly: true,
   domain: DOMAIN,
-  // sameSite: isDevelopment ? 'lax' : 'None',
-  secure: !isDevelopment,
+  ...(!isDevelopment ? { sameSite: 'Strict' } : {}),
   maxAge: Number(COOKIE_MAX_AGE) * 1000,
 };
 
