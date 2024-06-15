@@ -33,7 +33,7 @@ const HTTP_ONLY_COOKIE = {
   // ...(!isDevelopment
   //   ? { sameSite: 'Strict', secure: true }
   //   : { secure: false }),
-  // domain: DOMAIN,
+  domain: DOMAIN,
   // path: '/',
   maxAge: Number(COOKIE_MAX_AGE) * 1000,
 };
@@ -42,7 +42,7 @@ const USERS_COOKIE = {
   // ...(!isDevelopment
   //   ? { sameSite: 'Strict', secure: true }
   //   : { secure: false }),
-  // domain: DOMAIN,
+  domain: DOMAIN,
   // path: '/',
   maxAge: Number(COOKIE_MAX_AGE) * 1000,
 };
