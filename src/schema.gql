@@ -1,0 +1,254 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+"""ChatObject"""
+type Chat {
+  _id: String!
+  members: [ChatMember!]!
+  type: String!
+}
+
+"""ChatDataObject"""
+type ChatData {
+  chat: Chat!
+  friendId: String!
+}
+
+"""ChatInput"""
+input ChatInput {
+  chatId: String!
+}
+
+"""ChatMemberObject"""
+type ChatMember {
+  _id: String!
+  hasAdded: Boolean!
+  isAdmin: Boolean
+  memberDetails: ChatMemberDetails
+}
+
+"""ChatMemberDetailsObject"""
+type ChatMemberDetails {
+  _id: String!
+  email: String!
+  email_verified: Boolean!
+  family_name: String!
+  given_name: String!
+  name: String!
+  picture: String!
+}
+
+"""ChatsInput"""
+input ChatsInput {
+  userId: String!
+}
+
+"""CreateChatInput"""
+input CreateChatInput {
+  friendId: String!
+  friendUserId: String!
+  type: String!
+  userId: String!
+}
+
+"""CreateMessageInput"""
+input CreateMessageInput {
+  chatId: String!
+  message: String!
+  senderId: String!
+  timestamp: Float!
+}
+
+"""CreateRequestInput"""
+input CreateRequestInput {
+  sendToEmail: String!
+  userId: String!
+}
+
+"""Date custom scalar type"""
+scalar Date
+
+"""DeliveredStatusObject"""
+type DeliveredStatus {
+  isDelivered: Boolean!
+  timestamp: Float!
+}
+
+"""FriendObject"""
+type Friend {
+  _id: String!
+  isFriend: Boolean!
+  members: [FriendMember!]!
+}
+
+"""FriendDataObject"""
+type FriendData {
+  friend: Friend!
+}
+
+"""FriendInput"""
+input FriendInput {
+  friendId: String!
+}
+
+"""FriendMemberObject"""
+type FriendMember {
+  _id: String!
+  hasAdded: Boolean!
+  memberDetails: FriendMemberDetails
+}
+
+"""FriendMemberDetailsObject"""
+type FriendMemberDetails {
+  _id: String!
+  email: String!
+  email_verified: Boolean!
+  family_name: String!
+  given_name: String!
+  name: String!
+  picture: String!
+}
+
+"""FriendsInput"""
+input FriendsInput {
+  userId: String!
+}
+
+"""MessageObject"""
+type Message {
+  _id: String!
+  chatId: String!
+  message: String!
+  otherMembers: [OtherMember!]!
+  sender: Sender!
+}
+
+"""MessageDataObject"""
+type MessageData {
+  chatId: String!
+  message: [Message!]!
+}
+
+"""MessageInput"""
+input MessageInput {
+  messageId: String!
+}
+
+"""MessagesInput"""
+input MessagesInput {
+  chatId: String!
+}
+
+type Mutation {
+  createChat(input: CreateChatInput!): Chat!
+  createMessage(input: CreateMessageInput!): Message!
+  createRequest(input: CreateRequestInput!): Request!
+  removeChat(id: String!): Boolean!
+  removeFriend(id: String!): Boolean!
+  removeMessage(id: String!): Boolean!
+  removeRequest(id: String!): Boolean!
+  updateChat(input: CreateChatInput!): Chat!
+  updateMessage(input: CreateMessageInput!): Message!
+  updateRequest(input: UpdateRequestInput!): Request!
+}
+
+"""OtherMemberObject"""
+type OtherMember {
+  _id: String!
+  deliveredStatus: DeliveredStatus
+  readStatus: ReadStatus
+}
+
+"""PaginatedRequestObject"""
+type PaginatedRequest {
+  data: [Request!]!
+  totalCount: Float!
+}
+
+type Query {
+  chat(input: ChatInput!): Chat!
+  chats(input: ChatsInput!, limit: Int! = 25, skip: Int! = 0): [Chat!]!
+  friend(input: FriendInput!): Friend!
+  friends(input: FriendsInput!, limit: Int! = 25, skip: Int! = 0): [Friend!]!
+  message(input: MessageInput!): Message!
+  messages(input: MessagesInput!, limit: Int! = 25, skip: Int! = 0): [Message!]!
+  otherFriends(input: FriendsInput!, limit: Int! = 25, skip: Int! = 0): [Friend!]!
+  pendingRequest(input: RequestInput!): Request!
+  pendingRequests(input: RequestsInput!, limit: Int! = 25, skip: Int! = 0): PaginatedRequest!
+  sentRequests(input: RequestsInput!, limit: Int! = 25, skip: Int! = 0): PaginatedRequest!
+}
+
+"""ReadStatusObject"""
+type ReadStatus {
+  isRead: Boolean!
+  timestamp: Float!
+}
+
+"""RequestObject"""
+type Request {
+  _id: String!
+  members: [RequestMember!]!
+  status: String!
+}
+
+"""RequestDataObject"""
+type RequestData {
+  request: Request!
+}
+
+"""RequestInput"""
+input RequestInput {
+  requestId: String!
+}
+
+"""RequestMemberObject"""
+type RequestMember {
+  _id: String!
+  hasSent: Boolean!
+  memberDetails: RequestMemberDetails
+}
+
+"""RequestMemberDetailsObject"""
+type RequestMemberDetails {
+  _id: String!
+  email: String!
+  email_verified: Boolean!
+  family_name: String!
+  given_name: String!
+  name: String!
+  picture: String!
+}
+
+"""RequestsInput"""
+input RequestsInput {
+  userId: String!
+}
+
+"""SenderObject"""
+type Sender {
+  _id: String!
+  sentStatus: SentStatus!
+}
+
+"""SentStatusObject"""
+type SentStatus {
+  isSent: Boolean!
+  timestamp: Float!
+}
+
+type Subscription {
+  OnChatAdded: ChatData!
+  OnChatUpdated: ChatData!
+  OnFriendAdded: FriendData!
+  OnMessageAdded: MessageData!
+  OnMessageUpdated: MessageData!
+  OnRequestAdded: RequestData!
+  OnRequestUpdated: RequestData!
+}
+
+"""UpdateRequestInput"""
+input UpdateRequestInput {
+  requestId: String!
+  status: String!
+}
