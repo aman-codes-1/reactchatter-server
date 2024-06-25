@@ -10,14 +10,7 @@ const CLIENT_URL = isDevelopment
   : `${CLIENT_URI}`;
 const SERVER_URL = isDevelopment ? `http://${DOMAIN}:${PORT}` : `${SERVER_URI}`;
 const MONGO_URI = process.env.MONGO_URI || '';
-const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
-  ? (process.env.ALLOWED_ORIGINS?.includes(',') &&
-      process.env.ALLOWED_ORIGINS?.split(',')) ||
-    process.env.ALLOWED_ORIGINS
-  : undefined;
-const ORIGINS = [ALLOWED_ORIGINS, CLIENT_URL]
-  .filter((origin) => origin)
-  .flat(1);
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS || '';
 const COOKIE_SECRET = process.env.COOKIE_SECRET || '';
 const COOKIE_MAX_AGE = process.env.COOKIE_MAX_AGE || 86400;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
@@ -48,7 +41,6 @@ export default () => ({
   SERVER_URI,
   CLIENT_URL,
   SERVER_URL,
-  ORIGINS,
   MONGO_URI,
   ALLOWED_ORIGINS,
   COOKIE_SECRET,
