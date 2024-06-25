@@ -4,7 +4,7 @@ const DOMAIN = process.env.DOMAIN || 'localhost';
 const CLIENT_PORT = process.env.CLIENT_PORT || 3001;
 const CLIENT_URI = process.env.CLIENT_URI || '';
 const SERVER_URI = process.env.SERVER_URI || '';
-const SAME_SITE = process.env.SERVER_URI || '';
+const SAME_SITE = process.env.SERVER_URI || 'Lax';
 const isDevelopment = NODE_ENV === 'development';
 const CLIENT_URL = isDevelopment
   ? `http://${DOMAIN}:${CLIENT_PORT}`
