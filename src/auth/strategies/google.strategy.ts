@@ -27,7 +27,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       {
         clientID: GOOGLE_CLIENT_ID,
         clientSecret: GOOGLE_CLIENT_SECRET,
-        callbackURL: `${SERVER_URL}/api/auth/google/redirect`,
+        callbackURL: `${isDevelopment ? SERVER_URL : CLIENT_URL}/api/auth/google/redirect`,
         scope: ['profile', 'email'],
       },
       async (
