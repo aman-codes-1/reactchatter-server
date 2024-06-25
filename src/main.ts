@@ -22,7 +22,15 @@ async function bootstrap() {
   const HTTP_ONLY_COOKIE = configService.get('HTTP_ONLY_COOKIE');
   const RATE_LIMIT_MS = configService.get('RATE_LIMIT_MS');
   const RATE_LIMIT_MAX = configService.get('RATE_LIMIT_MAX');
-  const ORIGINS = configService.get<string[]>('ORIGINS');
+  const CLIENT_URL = configService.get('CLIENT_URL');
+  const ALLOWED_ORIGINS = configService.get('ALLOWED_ORIGINS');
+  const ALLOWED_ORIGIN = ALLOWED_ORIGINS
+    ? (ALLOWED_ORIGINS?.includes?.(',') && ALLOWED_ORIGINS?.split?.(',')) ||
+      ALLOWED_ORIGINS
+    : undefined;
+  const ORIGINS = [ALLOWED_ORIGIN, CLIENT_URL]
+    .filter((origin) => origin)
+    .flat(1);
   const developmentContentSecurityPolicy = {
     directives: {
       imgSrc: [
