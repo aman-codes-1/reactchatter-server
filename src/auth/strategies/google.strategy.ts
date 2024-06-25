@@ -19,15 +19,13 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   ) {
     const GOOGLE_CLIENT_ID = configService.get('GOOGLE_CLIENT_ID');
     const GOOGLE_CLIENT_SECRET = configService.get('GOOGLE_CLIENT_SECRET');
-    const SERVER_URL = configService.get('SERVER_URL');
-    const CLIENT_URL = configService.get('CLIENT_URL');
-    const isDevelopment = configService.get('isDevelopment');
+    const PROXY_URL = configService.get('PROXY_URL');
 
     super(
       {
         clientID: GOOGLE_CLIENT_ID,
         clientSecret: GOOGLE_CLIENT_SECRET,
-        callbackURL: `${isDevelopment ? SERVER_URL : CLIENT_URL}/api/auth/google/redirect`,
+        callbackURL: `${PROXY_URL}/api/auth/google/redirect`,
         scope: ['profile', 'email'],
       },
       async (
