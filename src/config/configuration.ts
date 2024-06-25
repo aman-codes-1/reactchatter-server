@@ -3,14 +3,12 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 const DOMAIN = process.env.DOMAIN || 'localhost';
 const CLIENT_PORT = process.env.CLIENT_PORT || 3001;
 const CLIENT_URI = process.env.CLIENT_URI || '';
-const SERVER_URI = process.env.SERVER_URI || '';
 const PROXY_URI = process.env.PROXY_URI || '';
-const SAME_SITE = process.env.SERVER_URI || 'Lax';
+const SAME_SITE = process.env.SAME_SITE || 'Lax';
 const isDevelopment = NODE_ENV === 'development';
 const CLIENT_URL = isDevelopment
   ? `http://${DOMAIN}:${CLIENT_PORT}`
   : `${CLIENT_URI}`;
-const SERVER_URL = isDevelopment ? `http://${DOMAIN}:${PORT}` : `${SERVER_URI}`;
 const PROXY_URL = isDevelopment ? `http://${DOMAIN}:${PORT}` : `${PROXY_URI}`;
 const MONGO_URI = process.env.MONGO_URI || '';
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS || '';
@@ -45,10 +43,8 @@ export default () => ({
   DOMAIN,
   CLIENT_PORT,
   CLIENT_URI,
-  SERVER_URI,
   PROXY_URI,
   CLIENT_URL,
-  SERVER_URL,
   PROXY_URL,
   MONGO_URI,
   ALLOWED_ORIGINS,
