@@ -52,6 +52,7 @@ import configuration from './config/configuration';
             path: '/ws',
             onConnect: (ctx: any) => {
               ctx.req = ctx?.extra?.request;
+              ctx.req.headers = ctx?.request?.params;
               return ctx;
             },
           },
