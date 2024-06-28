@@ -48,11 +48,11 @@ import configuration from './config/configuration';
         introspection: !!configService.get('isDevelopment'),
         installSubscriptionHandlers: true,
         subscriptions: {
-          'graphql-ws': true,
-          'subscriptions-transport-ws': {
-            onConnect: (_: any, __: any, context: any) => {
-              context.req = context.request;
-              return context;
+          'graphql-ws': {
+            path: '/subscriptions',
+            onConnect: (ctx: any) => {
+              ctx.req = ctx?.extra?.request;
+              return ctx;
             },
           },
         },
