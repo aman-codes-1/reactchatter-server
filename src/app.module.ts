@@ -49,7 +49,7 @@ import configuration from './config/configuration';
         installSubscriptionHandlers: true,
         subscriptions: {
           'graphql-ws': {
-            path: '/subscriptions',
+            path: '/ws',
             onConnect: (ctx: any) => {
               ctx.req = ctx?.extra?.request;
               return ctx;
