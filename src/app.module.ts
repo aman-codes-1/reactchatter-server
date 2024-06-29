@@ -52,10 +52,18 @@ import configuration from './config/configuration';
             path: '/ws',
             onConnect: (ctx: any) => {
               ctx.req = ctx?.extra?.request;
-              ctx.req.headers = ctx?.request?.params;
+              ctx.req.headers = ctx?.extra?.request?.headers;
               return ctx;
             },
           },
+          // 'subscriptions-transport-ws': {
+          //   path: '/ws',
+          //   onConnect: (params: any, __: any, ctx: any) => {
+          //     console.log(ctx?.request?.headers);
+          //     ctx.req = ctx?.request;
+          //     return ctx;
+          //   },
+          // },
         },
         context: ({ req, res }) => ({ req, res }),
         // context: ({ req, connection }) =>
