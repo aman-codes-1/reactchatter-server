@@ -52,7 +52,7 @@ import configuration from './config/configuration';
             path: '/graphql',
             onConnect: (ctx: any) => {
               ctx.req = ctx?.extra?.request;
-              ctx.req.headers = ctx?.extra?.request?.headers;
+              // ctx.req.headers = ctx?.extra?.request?.headers;
               return ctx;
             },
           },
