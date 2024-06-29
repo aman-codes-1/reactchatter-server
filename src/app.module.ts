@@ -56,14 +56,6 @@ import configuration from './config/configuration';
               return ctx;
             },
           },
-          // 'subscriptions-transport-ws': {
-          //   path: '/ws',
-          //   onConnect: (params: any, __: any, ctx: any) => {
-          //     console.log(ctx?.request?.headers);
-          //     ctx.req = ctx?.request;
-          //     return ctx;
-          //   },
-          // },
         },
         context: ({ req, res }) => ({ req, res }),
         // context: ({ req, connection }) =>
