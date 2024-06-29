@@ -51,6 +51,7 @@ import configuration from './config/configuration';
           'graphql-ws': {
             path: '/subscriptions',
             onConnect: (ctx: any) => {
+              console.log('subscription headers', ctx?.extra?.request?.headers);
               ctx.req = ctx?.extra?.request;
               // ctx.req.headers = ctx?.extra?.request?.headers;
               return ctx;
