@@ -76,7 +76,6 @@ async function bootstrap() {
       resave: false,
       saveUninitialized: false,
       cookie: HTTP_ONLY_COOKIE,
-      proxy: !isDevelopment,
       store: new MemoryStore({
         checkPeriod: Number(COOKIE_MAX_AGE) * 1000,
       }),
