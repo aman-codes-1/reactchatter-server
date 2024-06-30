@@ -21,6 +21,7 @@ import configuration from './config/configuration';
     FriendModule,
     MessageModule,
     RequestModule,
+    SocketModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
@@ -57,13 +58,8 @@ import configuration from './config/configuration';
           },
         },
         context: ({ req, res }) => ({ req, res }),
-        // context: ({ req, connection }) =>
-        //   connection ? { req: connection?.context } : { req },
-        // context: ({ req, connection }) =>
-        //   connection ? connection?.context : { req },
       }),
     }),
-    SocketModule,
   ],
   controllers: [AppController],
   providers: [AppService],

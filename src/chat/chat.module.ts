@@ -9,7 +9,6 @@ import { Chat, ChatSchema } from './chat.schema';
 import { User, UserSchema } from '../user/user.schema';
 import { AuthService } from '../auth/auth.service';
 import { JwtStrategy } from '../auth/strategies/jwt.strategy';
-import { SocketGateway } from '../socket/socket.gateway';
 
 @Module({
   imports: [
@@ -31,12 +30,6 @@ import { SocketGateway } from '../socket/socket.gateway';
       { name: User.name, schema: UserSchema, collection: 'users' },
     ]),
   ],
-  providers: [
-    ChatResolver,
-    ChatService,
-    AuthService,
-    JwtStrategy,
-    SocketGateway,
-  ],
+  providers: [ChatResolver, ChatService, AuthService, JwtStrategy],
 })
 export class ChatModule {}
