@@ -26,13 +26,13 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (userId) {
       this.server.emit('connection', { clientId });
       this.connectedUsers.set(clientId, user);
-      console.log(
-        `User ${user?.email} is ${user?.isOnline === false ? 'offline' : 'online'}.`,
-      );
+      // console.log(
+      //   `User ${user?.email} is ${user?.isOnline === false ? 'offline' : 'online'}.`,
+      // );
     } else {
-      console.error('userId is undefined');
+      // console.error('userId is undefined');
     }
-    console.log(this.connectedUsers.size);
+    // console.log(this.connectedUsers.size);
   }
 
   handleDisconnect(client: Socket) {
@@ -40,9 +40,9 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.clientId = clientId;
     const user = this.connectedUsers.get(clientId);
     if (user) {
-      console.log(`User ${user?.email} disconnected.`);
+      // console.log(`User ${user?.email} disconnected.`);
       this.connectedUsers.delete(clientId);
     }
-    console.log(this.connectedUsers.size);
+    // console.log(this.connectedUsers.size);
   }
 }
