@@ -17,7 +17,7 @@ export class AuthController {
     this.CLIENT_URL = configService.get('CLIENT_URL');
   }
 
-  @Get('google/login')
+  @Get('google/login/:from')
   @UseGuards(GoogleOAuthGuard)
   googleAuth() {
     return {
