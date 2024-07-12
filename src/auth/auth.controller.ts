@@ -20,7 +20,6 @@ export class AuthController {
   @Get('google/login/:from')
   @UseGuards(GoogleOAuthGuard)
   googleAuth() {
-    console.log('hereee');
     return {
       message: 'success',
     };
