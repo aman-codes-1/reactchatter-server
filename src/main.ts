@@ -31,8 +31,6 @@ async function bootstrap() {
   const ORIGINS = [ALLOWED_ORIGIN, CLIENT_URL]
     .filter((origin) => origin)
     .flat(1);
-  const NODE_ENV = configService.get('NODE_ENV');
-  console.log(PORT, SESSION_SECRET, COOKIE_SECRET, NODE_ENV);
   const developmentContentSecurityPolicy = {
     directives: {
       imgSrc: [
