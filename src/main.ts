@@ -15,8 +15,6 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const configService = app.get(ConfigService);
   const PORT = configService.get('PORT');
-  const NODE_ENV = configService.get('NODE_ENV');
-  console.log(NODE_ENV);
   const SESSION_SECRET = configService.get('SESSION_SECRET');
   const COOKIE_SECRET = configService.get('COOKIE_SECRET');
   const COOKIE_MAX_AGE = configService.get('COOKIE_MAX_AGE');
