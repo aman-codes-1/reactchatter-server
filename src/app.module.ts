@@ -24,7 +24,9 @@ import configuration from './config/configuration';
     SocketModule,
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
+      envFilePath: process.env.NODE_ENV
+        ? ['.env.production.local', '.env']
+        : '.env',
       load: [configuration],
       expandVariables: true,
     }),
