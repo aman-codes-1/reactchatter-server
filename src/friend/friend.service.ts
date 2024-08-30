@@ -3,9 +3,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { FriendArgs } from './dto/friend.args';
-import { Friend } from './models/friend.model';
 import { Friend as FriendSchema, FriendDocument } from './friend.schema';
-import { Request } from '../request/models/request.model';
+import { Request } from '../request/request.schema';
 
 @Injectable()
 export class FriendService {
@@ -15,7 +14,7 @@ export class FriendService {
     //
   }
 
-  async findOneById(friendId: string): Promise<Friend> {
+  async findOneById(friendId: string): Promise<FriendSchema> {
     const friendObjectId = new ObjectId(friendId);
     const friend = await this.FriendModel.aggregate([
       { $match: { _id: friendObjectId } },
@@ -68,7 +67,7 @@ export class FriendService {
     return friend?.[0];
   }
 
-  async create(data: Request): Promise<Friend> {
+  async create(data: Request): Promise<FriendSchema> {
     const { members } = data;
     const Members = members.map((member) => ({
       _id: new ObjectId(member?._id),
@@ -84,7 +83,7 @@ export class FriendService {
     return friend || savedFriend.toObject();
   }
 
-  async findAll(userId: string, args: FriendArgs): Promise<Friend[]> {
+  async findAll(userId: string, args: FriendArgs): Promise<FriendSchema[]> {
     const userObjectId = new ObjectId(userId);
     const { limit, skip } = args;
     const friends = await this.FriendModel.aggregate([
@@ -149,7 +148,7 @@ export class FriendService {
   async findAllOtherFriends(
     userId: string,
     args: FriendArgs,
-  ): Promise<Friend[]> {
+  ): Promise<FriendSchema[]> {
     const userObjectId = new ObjectId(userId);
     const { limit, skip } = args;
     const otherFriends = await this.FriendModel.aggregate([

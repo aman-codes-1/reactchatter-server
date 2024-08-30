@@ -9,6 +9,7 @@ import {
   UpdateRequestInput,
 } from './dto/request.input';
 import { PaginatedRequest, Request, RequestData } from './models/request.model';
+import { Request as RequestSchema } from './request.schema';
 import { RequestService } from './request.service';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 
@@ -22,7 +23,9 @@ export class RequestResolver {
 
   @UseGuards(GqlAuthGuard)
   @Query(() => Request)
-  async pendingRequest(@Args('input') input: RequestInput): Promise<Request> {
+  async pendingRequest(
+    @Args('input') input: RequestInput,
+  ): Promise<RequestSchema> {
     const { requestId } = input;
     const request = await this.requestService.findOneById(requestId);
     return request;
@@ -57,7 +60,7 @@ export class RequestResolver {
   @Mutation(() => Request)
   async createRequest(
     @Args('input') input: CreateRequestInput,
-  ): Promise<Request> {
+  ): Promise<RequestSchema> {
     const newRequest = await this.requestService.create(input);
     pubSub.publish('OnRequestAdded', {
       OnRequestAdded: {
@@ -71,7 +74,7 @@ export class RequestResolver {
   @Mutation(() => Request)
   async updateRequest(
     @Args('input') input: UpdateRequestInput,
-  ): Promise<Request> {
+  ): Promise<RequestSchema> {
     const updatedRequest =
       await this.requestService.findOneByIdAndUpdate(input);
     pubSub.publish('OnRequestUpdated', {
