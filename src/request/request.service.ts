@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { User, UserDocument } from '../user/user.schema';
-import { PaginatedRequest, Request } from './models/request.model';
+import { PaginatedRequest } from './models/request.model';
 import { Request as RequestSchema, RequestDocument } from './request.schema';
 import { CreateRequestInput, UpdateRequestInput } from './dto/request.input';
 import { RequestArgs } from './dto/request.args';
@@ -26,7 +26,7 @@ export class RequestService {
     //
   }
 
-  async findOneById(requestId: string): Promise<Request> {
+  async findOneById(requestId: string): Promise<RequestSchema> {
     const requestObjectId = new ObjectId(requestId);
     const request = await this.RequestModel.aggregate([
       {
@@ -81,7 +81,7 @@ export class RequestService {
     return request?.[0];
   }
 
-  async create(data: CreateRequestInput): Promise<Request> {
+  async create(data: CreateRequestInput): Promise<RequestSchema> {
     const { userId, sendToEmail } = data;
     const userObjectId = new ObjectId(userId);
     const user = await this.UserModel.findOne({
@@ -170,7 +170,7 @@ export class RequestService {
     return request || savedRequest.toObject();
   }
 
-  async findOneByIdAndUpdate(data: UpdateRequestInput): Promise<Request> {
+  async findOneByIdAndUpdate(data: UpdateRequestInput): Promise<RequestSchema> {
     const { requestId, status } = data;
     const request = await this.findOneById(requestId);
     const { members } = request;

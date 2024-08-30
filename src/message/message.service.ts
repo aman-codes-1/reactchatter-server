@@ -27,7 +27,7 @@ export class MessageService {
     return message as unknown as Message;
   }
 
-  async create(data: CreateMessageInput): Promise<Message> {
+  async create(data: CreateMessageInput): Promise<MessageSchema> {
     const { chatId, message, senderId, timestamp } = data || {};
     const chatObjectId = new ObjectId(chatId);
     const senderObjectId = new ObjectId(senderId);

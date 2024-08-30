@@ -8,6 +8,7 @@ import {
   MessagesInput,
 } from './dto/message.input';
 import { Message, MessageData } from './models/message.model';
+import { Message as MessageSchema } from './message.schema';
 import { MessageService } from './message.service';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 
@@ -42,7 +43,7 @@ export class MessageResolver {
   @Mutation(() => Message)
   async createMessage(
     @Args('input') input: CreateMessageInput,
-  ): Promise<Message> {
+  ): Promise<MessageSchema> {
     const { chatId } = input;
     const newMessage = await this.messageService.create(input);
     pubSub.publish('OnMessageAdded', {
@@ -58,7 +59,7 @@ export class MessageResolver {
   @Mutation(() => Message)
   async updateMessage(
     @Args('input') input: CreateMessageInput,
-  ): Promise<Message> {
+  ): Promise<MessageSchema> {
     const { chatId } = input;
     const updatedMessage = await this.messageService.create(input);
     pubSub.publish('OnMessageUpdated', {

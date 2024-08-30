@@ -4,6 +4,7 @@ import { PubSub } from 'graphql-subscriptions';
 import { ChatArgs } from './dto/chat.args';
 import { ChatInput, ChatsInput, CreateChatInput } from './dto/chat.input';
 import { Chat, ChatData } from './models/chat.model';
+import { Chat as ChatSchema } from './chat.schema';
 import { ChatService } from './chat.service';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 
@@ -17,7 +18,7 @@ export class ChatResolver {
 
   @UseGuards(GqlAuthGuard)
   @Query(() => Chat)
-  async chat(@Args('input') input: ChatInput): Promise<Chat> {
+  async chat(@Args('input') input: ChatInput): Promise<ChatSchema> {
     const { chatId } = input;
     const chat = await this.chatService.findOneById(chatId);
     return chat;
@@ -28,7 +29,7 @@ export class ChatResolver {
   async chats(
     @Args('input') input: ChatsInput,
     @Args() args: ChatArgs,
-  ): Promise<Chat[]> {
+  ): Promise<ChatSchema[]> {
     const { userId } = input;
     const chats = await this.chatService.findAll(userId, args);
     return chats;
@@ -36,7 +37,7 @@ export class ChatResolver {
 
   @UseGuards(GqlAuthGuard)
   @Mutation(() => Chat)
-  async createChat(@Args('input') input: CreateChatInput): Promise<Chat> {
+  async createChat(@Args('input') input: CreateChatInput): Promise<ChatSchema> {
     const { friendId } = input;
     const newChat = await this.chatService.create(input);
     pubSub.publish('OnChatAdded', {
@@ -50,7 +51,7 @@ export class ChatResolver {
 
   @UseGuards(GqlAuthGuard)
   @Mutation(() => Chat)
-  async updateChat(@Args('input') input: CreateChatInput): Promise<Chat> {
+  async updateChat(@Args('input') input: CreateChatInput): Promise<ChatSchema> {
     const { friendId } = input;
     const updatedChat = await this.chatService.create(input);
     pubSub.publish('OnChatUpdated', {

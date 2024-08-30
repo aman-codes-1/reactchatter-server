@@ -4,7 +4,6 @@ import { Model } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { ChatArgs } from './dto/chat.args';
 import { CreateChatInput } from './dto/chat.input';
-import { Chat } from './models/chat.model';
 import { Chat as ChatSchema, ChatDocument } from './chat.schema';
 
 @Injectable()
@@ -16,7 +15,7 @@ export class ChatService {
     //
   }
 
-  async findOneById(chatId: string): Promise<Chat> {
+  async findOneById(chatId: string): Promise<ChatSchema> {
     const chatObjectId = new ObjectId(chatId);
     const chat = await this.ChatModel.aggregate([
       { $match: { _id: chatObjectId } },
@@ -69,7 +68,7 @@ export class ChatService {
     return chat?.[0];
   }
 
-  async create(data: CreateChatInput): Promise<Chat> {
+  async create(data: CreateChatInput): Promise<ChatSchema> {
     const { userId, type, friendUserId } = data;
     const members = [userId, friendUserId].map((id, idx) => ({
       _id: new ObjectId(id),
@@ -85,7 +84,7 @@ export class ChatService {
     return chat || savedChat.toObject();
   }
 
-  async findAll(userId: string, args: ChatArgs): Promise<Chat[]> {
+  async findAll(userId: string, args: ChatArgs): Promise<ChatSchema[]> {
     const userObjectId = new ObjectId(userId);
     const { limit, skip } = args;
     const chats = await this.ChatModel.aggregate([
