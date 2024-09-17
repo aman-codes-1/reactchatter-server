@@ -19,11 +19,14 @@ export class CreateMessageInput {
   chatId: string;
 
   @Field(() => String)
-  @MaxLength(4096)
-  message: string;
+  senderId: string;
+
+  @Field(() => Number, { nullable: true })
+  localId: number;
 
   @Field(() => String)
-  senderId: string;
+  @MaxLength(4096)
+  message: string;
 
   @Field(() => Float)
   timestamp: number;
