@@ -44,6 +44,9 @@ export class Message {
   @Prop()
   chatId: Types.ObjectId;
 
+  @Prop({ required: false })
+  localId?: number;
+
   @Prop()
   message: string;
 

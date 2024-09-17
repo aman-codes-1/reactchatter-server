@@ -55,6 +55,7 @@ input CreateChatInput {
 """CreateMessageInput"""
 input CreateMessageInput {
   chatId: String!
+  localId: Float
   message: String!
   senderId: String!
   timestamp: Float!
@@ -119,6 +120,7 @@ input FriendsInput {
 type Message {
   _id: String!
   chatId: String!
+  localId: Float
   message: String!
   otherMembers: [OtherMember!]!
   sender: Sender!

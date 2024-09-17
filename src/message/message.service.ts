@@ -28,7 +28,7 @@ export class MessageService {
   }
 
   async create(data: CreateMessageInput): Promise<MessageSchema> {
-    const { chatId, message, senderId, timestamp } = data || {};
+    const { chatId, senderId, timestamp, ...rest } = data || {};
     const chatObjectId = new ObjectId(chatId);
     const senderObjectId = new ObjectId(senderId);
     const chat = await this.ChatModel.findById(chatObjectId).lean();
@@ -42,8 +42,8 @@ export class MessageService {
         _id: new ObjectId(el?._id),
       }));
     const newMessageData = {
+      ...rest,
       chatId: chatObjectId,
-      message,
       sender: {
         _id: senderObjectId,
         sentStatus: {
