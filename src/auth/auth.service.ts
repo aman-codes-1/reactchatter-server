@@ -82,12 +82,11 @@ export class AuthService {
       const savedUser = await newUser.save();
       return savedUser.toObject();
     }
-    const { _id, createdAt, updatedAt, __v, ...restUser } = user;
+    const { _id, createdAt, updatedAt, ...restUser } = user;
     const {
       _id: _id2,
       createdAt: createdAt2,
       updatedAt: updatedAt2,
-      __v: __v2,
       ...restUserDetails
     } = userDetails;
     const areEqual = this.compareObjects(restUser, restUserDetails);
