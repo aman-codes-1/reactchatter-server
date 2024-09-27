@@ -6,7 +6,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
 import passport from 'passport';
-import rateLimit from 'express-rate-limit';
+// import rateLimit from 'express-rate-limit';
 import { AppModule } from './app.module';
 
 const MemoryStore = require('memorystore')(session);
@@ -20,8 +20,8 @@ async function bootstrap() {
   const COOKIE_MAX_AGE = configService.get('COOKIE_MAX_AGE');
   const isDevelopment = configService.get('isDevelopment');
   const HTTP_ONLY_COOKIE = configService.get('HTTP_ONLY_COOKIE');
-  const RATE_LIMIT_MS = configService.get('RATE_LIMIT_MS');
-  const RATE_LIMIT_MAX = configService.get('RATE_LIMIT_MAX');
+  // const RATE_LIMIT_MS = configService.get('RATE_LIMIT_MS');
+  // const RATE_LIMIT_MAX = configService.get('RATE_LIMIT_MAX');
   const CLIENT_URL = configService.get('CLIENT_URL');
   const ALLOWED_ORIGINS = configService.get('ALLOWED_ORIGINS');
   const ALLOWED_ORIGIN = ALLOWED_ORIGINS
@@ -84,12 +84,12 @@ async function bootstrap() {
   );
   app.use(passport.initialize());
   app.use(passport.session());
-  app.use(
-    rateLimit({
-      windowMs: Number(RATE_LIMIT_MS),
-      max: Number(RATE_LIMIT_MAX),
-    }),
-  );
+  // app.use(
+  //   rateLimit({
+  //     windowMs: Number(RATE_LIMIT_MS),
+  //     max: Number(RATE_LIMIT_MAX),
+  //   }),
+  // );
   await app.listen(PORT, async () => {
     const logger = new Logger();
     const appUri = await app.getUrl();
