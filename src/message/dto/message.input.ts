@@ -13,6 +13,12 @@ export class MessagesInput {
   chatId: string;
 }
 
+@InputType({ description: 'MessageQueuedInput' })
+export class MessageQueuedInput {
+  @Field(() => String)
+  queueId: string;
+}
+
 @InputType({ description: 'CreateMessageInput' })
 export class CreateMessageInput {
   @Field(() => String)
@@ -21,8 +27,8 @@ export class CreateMessageInput {
   @Field(() => String)
   senderId: string;
 
-  @Field(() => Number, { nullable: true })
-  localId: number;
+  @Field(() => String, { nullable: true })
+  queueId: string;
 
   @Field(() => String)
   @MaxLength(4096)

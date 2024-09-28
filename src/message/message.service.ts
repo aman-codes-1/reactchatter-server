@@ -27,6 +27,14 @@ export class MessageService {
     return message as unknown as Message;
   }
 
+  async findOneByQueueId(queueId: string): Promise<Message> {
+    const message = await this.MessageModel.findOne({ queueId }).lean();
+    if (!message) {
+      throw new BadRequestException('Message not found');
+    }
+    return message as unknown as Message;
+  }
+
   async create(data: CreateMessageInput): Promise<MessageSchema> {
     const { chatId, senderId, timestamp, ...rest } = data || {};
     const chatObjectId = new ObjectId(chatId);
