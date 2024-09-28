@@ -55,8 +55,8 @@ input CreateChatInput {
 """CreateMessageInput"""
 input CreateMessageInput {
   chatId: String!
-  localId: Float
   message: String!
+  queueId: String
   senderId: String!
   timestamp: Float!
 }
@@ -120,9 +120,9 @@ input FriendsInput {
 type Message {
   _id: String!
   chatId: String!
-  localId: Float
   message: String!
   otherMembers: [OtherMember!]!
+  queueId: String
   sender: Sender!
 }
 
@@ -135,6 +135,11 @@ type MessageData {
 """MessageInput"""
 input MessageInput {
   messageId: String!
+}
+
+"""MessageQueuedInput"""
+input MessageQueuedInput {
+  queueId: String!
 }
 
 """MessagesInput"""
@@ -174,6 +179,7 @@ type Query {
   friend(input: FriendInput!): Friend!
   friends(input: FriendsInput!, limit: Int! = 25, skip: Int! = 0): [Friend!]!
   message(input: MessageInput!): Message!
+  messageQueued(input: MessageQueuedInput!): Message!
   messages(input: MessagesInput!, limit: Int! = 25, skip: Int! = 0): [Message!]!
   otherFriends(input: FriendsInput!, limit: Int! = 25, skip: Int! = 0): [Friend!]!
   pendingRequest(input: RequestInput!): Request!

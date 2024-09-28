@@ -56,8 +56,8 @@ export class Message {
   @Field(() => String)
   chatId: string;
 
-  @Field(() => Number, { nullable: true })
-  localId: number;
+  @Field(() => String, { nullable: true })
+  queueId: string;
 
   @Field(() => String)
   message: string;
