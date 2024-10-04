@@ -62,7 +62,7 @@ export class FriendService {
       { $limit: 1 },
     ]);
     if (!friend?.length) {
-      throw new BadRequestException('Friend not found');
+      throw new BadRequestException('Friend not found.');
     }
     return friend?.[0];
   }

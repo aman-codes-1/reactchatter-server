@@ -22,7 +22,7 @@ export class MessageService {
     const messageObjectId = new ObjectId(messageId);
     const message = await this.MessageModel.findById(messageObjectId).lean();
     if (!message) {
-      throw new BadRequestException('Message not found');
+      throw new BadRequestException('Message not found.');
     }
     return message as unknown as Message;
   }
@@ -30,7 +30,7 @@ export class MessageService {
   async findOneByQueueId(queueId: string): Promise<Message> {
     const message = await this.MessageModel.findOne({ queueId }).lean();
     if (!message) {
-      throw new BadRequestException('Message not found');
+      throw new BadRequestException('Message not found.');
     }
     return message as unknown as Message;
   }
