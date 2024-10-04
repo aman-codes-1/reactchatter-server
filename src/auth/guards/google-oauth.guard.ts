@@ -1,4 +1,3 @@
-/* eslint-disable no-useless-escape */
 import {
   ExecutionContext,
   Injectable,
