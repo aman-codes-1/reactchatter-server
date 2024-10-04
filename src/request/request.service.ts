@@ -76,7 +76,7 @@ export class RequestService {
       { $limit: 1 },
     ]);
     if (!request?.length) {
-      throw new BadRequestException('Friend Request not found');
+      throw new BadRequestException('Friend Request not found.');
     }
     return request?.[0];
   }

@@ -63,7 +63,7 @@ export class ChatService {
       { $limit: 1 },
     ]);
     if (!chat?.length) {
-      throw new BadRequestException('Chat not found');
+      throw new BadRequestException('Chat not found.');
     }
     return chat?.[0];
   }
