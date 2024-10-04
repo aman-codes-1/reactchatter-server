@@ -64,6 +64,7 @@ export default [
       '@typescript-eslint/no-require-imports': 'off',
       'no-unused-vars': 'off',
       'no-undef': 'off',
+      'no-useless-escape': 'off',
       camelcase: 'off',
     },
   },
