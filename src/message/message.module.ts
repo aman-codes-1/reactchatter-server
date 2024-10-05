@@ -7,7 +7,7 @@ import { DateScalar } from '../common/scalars/date.scalar';
 import { MessageResolver } from './message.resolver';
 import { MessageService } from './message.service';
 import { Message, MessageSchema } from './message.schema';
-import { Friend, FriendSchema } from '../friend/friend.schema';
+import { ChatService } from '../chat/chat.service';
 import { Chat, ChatSchema } from '../chat/chat.schema';
 import { User, UserSchema } from '../user/user.schema';
 import { AuthService } from '../auth/auth.service';
@@ -27,13 +27,10 @@ import { JwtStrategy } from '../auth/strategies/jwt.strategy';
       }),
     }),
     MongooseModule.forFeature([
-      { name: Chat.name, schema: ChatSchema, collection: 'chats' },
-    ]),
-    MongooseModule.forFeature([
       { name: Message.name, schema: MessageSchema, collection: 'messages' },
     ]),
     MongooseModule.forFeature([
-      { name: Friend.name, schema: FriendSchema, collection: 'friends' },
+      { name: Chat.name, schema: ChatSchema, collection: 'chats' },
     ]),
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema, collection: 'users' },
@@ -42,6 +39,7 @@ import { JwtStrategy } from '../auth/strategies/jwt.strategy';
   providers: [
     MessageResolver,
     MessageService,
+    ChatService,
     DateScalar,
     AuthService,
     JwtStrategy,
