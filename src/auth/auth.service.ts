@@ -77,7 +77,7 @@ export class AuthService {
     const { email } = userDetails || {};
     const user = await this.UserModel.findOne({ email }).lean();
     if (!user) {
-      const newUser = new this.UserModel({ ...userDetails });
+      const newUser = new this.UserModel(userDetails);
       const savedUser = await newUser.save();
       return savedUser.toObject();
     }

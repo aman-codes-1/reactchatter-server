@@ -6,14 +6,14 @@ import { MessageArgs } from './dto/message.args';
 import { CreateMessageInput } from './dto/message.input';
 import { Message } from './models/message.model';
 import { Message as MessageSchema, MessageDocument } from './message.schema';
-import { Chat as ChatSchema, ChatDocument } from '../chat/chat.schema';
+import { ChatService } from '../chat/chat.service';
 
 @Injectable()
 export class MessageService {
   constructor(
     @InjectModel(MessageSchema.name)
     private MessageModel: Model<MessageDocument>,
-    @InjectModel(ChatSchema.name) private ChatModel: Model<ChatDocument>,
+    private chatService: ChatService,
   ) {
     //
   }
@@ -39,7 +39,7 @@ export class MessageService {
     const { chatId, senderId, timestamp, ...rest } = data || {};
     const chatObjectId = new ObjectId(chatId);
     const senderObjectId = new ObjectId(senderId);
-    const chat = await this.ChatModel.findById(chatObjectId).lean();
+    const chat = await this.chatService.findOneById(chatId);
     if (!chat) {
       throw new BadRequestException('Chat not found.');
     }
@@ -68,7 +68,7 @@ export class MessageService {
 
   async findAll(chatId: string, messageArgs: MessageArgs): Promise<Message[]> {
     const chatObjectId = new ObjectId(chatId);
-    const chat = await this.ChatModel.findById(chatObjectId);
+    const chat = await this.chatService.findOneById(chatId);
     if (!chat) {
       throw new BadRequestException('Chat not found.');
     }
