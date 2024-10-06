@@ -47,6 +47,9 @@ export class Chat {
   @Field(() => String)
   type: string;
 
+  @Field(() => String, { nullable: true })
+  queueId: string;
+
   @Field(() => [ChatMember])
   members: ChatMember[];
 }
