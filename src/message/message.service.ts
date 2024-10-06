@@ -36,13 +36,19 @@ export class MessageService {
   }
 
   async create(data: CreateMessageInput): Promise<MessageSchema> {
-    const { chatId, senderId, timestamp, ...rest } = data || {};
-    const chatObjectId = new ObjectId(chatId);
-    const senderObjectId = new ObjectId(senderId);
+    const { chatId, senderId, queueId, timestamp, ...rest } = data || {};
+    const duplicateMessage = await this.MessageModel.findOne({
+      queueId,
+    }).lean();
+    if (duplicateMessage) {
+      throw new BadRequestException('Duplicate Message found.');
+    }
     const chat = await this.chatService.findOneById(chatId);
     if (!chat) {
       throw new BadRequestException('Chat not found.');
     }
+    const chatObjectId = new ObjectId(chatId);
+    const senderObjectId = new ObjectId(senderId);
     const { members } = chat || {};
     const otherMembers = members
       .filter((el) => String(el?._id) !== String(senderId))
@@ -52,6 +58,7 @@ export class MessageService {
     const newMessageData = {
       ...rest,
       chatId: chatObjectId,
+      queueId,
       sender: {
         _id: senderObjectId,
         sentStatus: {

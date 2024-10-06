@@ -6,6 +6,7 @@
 type Chat {
   _id: String!
   members: [ChatMember!]!
+  queueId: String
   type: String!
 }
 
@@ -48,6 +49,7 @@ input ChatsInput {
 input CreateChatInput {
   friendId: String!
   friendUserId: String!
+  queueId: String
   type: String!
   userId: String!
 }

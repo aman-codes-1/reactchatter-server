@@ -54,6 +54,7 @@ export class ChatService {
       {
         $group: {
           _id: '$_id',
+          queueId: { $first: '$queueId' },
           type: { $first: '$type' },
           createdAt: { $first: '$createdAt' },
           updatedAt: { $first: '$updatedAt' },
@@ -69,12 +70,17 @@ export class ChatService {
   }
 
   async create(data: CreateChatInput): Promise<ChatSchema> {
-    const { userId, type, friendUserId } = data;
+    const { userId, queueId, type, friendUserId } = data;
+    const duplicateChat = await this.ChatModel.findOne({ queueId }).lean();
+    if (duplicateChat) {
+      throw new BadRequestException('Duplicate Chat found.');
+    }
     const members = [userId, friendUserId].map((id, idx) => ({
       _id: new ObjectId(id),
       hasAdded: idx === 0,
     }));
     const newChat = new this.ChatModel({
+      queueId,
       type,
       members,
     });

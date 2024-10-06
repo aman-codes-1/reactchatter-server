@@ -19,6 +19,9 @@ export class CreateChatInput {
   @Field(() => String)
   friendId: string;
 
+  @Field(() => String, { nullable: true })
+  queueId: string;
+
   @Field(() => String)
   type: string;
 

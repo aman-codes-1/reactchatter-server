@@ -14,6 +14,9 @@ class Member {
 
 @Schema({ timestamps: true })
 export class Chat {
+  @Prop({ required: false })
+  queueId?: string;
+
   @Prop()
   type: string;
 
