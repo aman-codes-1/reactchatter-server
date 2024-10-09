@@ -131,7 +131,7 @@ type Message {
 """MessageDataObject"""
 type MessageData {
   chatId: String!
-  message: [Message!]!
+  message: Message!
 }
 
 """MessageInput"""

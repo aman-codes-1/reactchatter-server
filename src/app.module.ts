@@ -55,6 +55,7 @@ import configuration from './config/configuration';
               return ctx;
             },
           },
+          'subscriptions-transport-ws': true,
         },
         context: ({ req, res }) => ({ req, res }),
       }),
