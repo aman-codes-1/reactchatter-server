@@ -74,6 +74,6 @@ export class MessageData {
   @Field(() => String)
   chatId: string;
 
-  @Field(() => [Message])
-  message: Message[];
+  @Field(() => Message)
+  message: Message;
 }
