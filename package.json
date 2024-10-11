@@ -45,7 +45,7 @@
     "express": "^4.21.1",
     "express-rate-limit": "^7.4.1",
     "express-session": "^1.18.1",
-    "google-auth-library": "^9.14.1",
+    "google-auth-library": "^9.14.2",
     "graphql": "^16.9.0",
     "graphql-subscriptions": "^2.0.0",
     "graphql-ws": "^5.16.0",
