@@ -66,7 +66,9 @@ export class AuthService {
 
   async findOneById(userId: string): Promise<UserDocument> {
     const userObjectId = new ObjectId(userId);
-    const user = await this.UserModel.findById(userObjectId).lean();
+    const user = (await this.UserModel.findById(
+      userObjectId,
+    ).lean()) as UserDocument;
     if (!user) {
       throw new BadRequestException('User not found.');
     }
@@ -75,7 +77,9 @@ export class AuthService {
 
   async validateUser(userDetails: UserDocument): Promise<UserDocument> {
     const { email } = userDetails || {};
-    const user = await this.UserModel.findOne({ email }).lean();
+    const user = (await this.UserModel.findOne({
+      email,
+    }).lean()) as UserDocument;
     if (!user) {
       const newUser = new this.UserModel(userDetails);
       const savedUser = await newUser.save();
@@ -90,11 +94,11 @@ export class AuthService {
     } = userDetails;
     const areEqual = this.compareObjects(restUser, restUserDetails);
     if (!areEqual) {
-      const updatedUser = await this.UserModel.findByIdAndUpdate(
+      const updatedUser = (await this.UserModel.findByIdAndUpdate(
         { _id },
         { $set: userDetails },
         { upsert: true, new: true },
-      ).lean();
+      ).lean()) as UserDocument;
       return updatedUser;
     }
     return user;
