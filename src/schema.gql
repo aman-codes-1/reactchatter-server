@@ -118,6 +118,12 @@ input FriendsInput {
   userId: String!
 }
 
+"""GroupObject"""
+type Group {
+  data: [Message!]!
+  side: String!
+}
+
 """MessageObject"""
 type Message {
   _id: String!
@@ -134,6 +140,18 @@ type MessageData {
   message: Message!
 }
 
+"""MessageGroupObject"""
+type MessageGroup {
+  dateLabel: String!
+  groups: [Group!]!
+}
+
+"""MessageGroupsDataObject"""
+type MessageGroupsData {
+  data: [MessageGroup!]!
+  pageInfo: PageInfo!
+}
+
 """MessageInput"""
 input MessageInput {
   messageId: String!
@@ -142,6 +160,12 @@ input MessageInput {
 """MessageQueuedInput"""
 input MessageQueuedInput {
   queueId: String!
+}
+
+"""MessagesDataObject"""
+type MessagesData {
+  edges: [Message!]!
+  pageInfo: PageInfo!
 }
 
 """MessagesInput"""
@@ -169,6 +193,12 @@ type OtherMember {
   readStatus: ReadStatus
 }
 
+"""PageInfoObject"""
+type PageInfo {
+  endCursor: String
+  hasNextPage: Boolean!
+}
+
 """PaginatedRequestObject"""
 type PaginatedRequest {
   data: [Request!]!
@@ -181,10 +211,10 @@ type Query {
   friend(input: FriendInput!): Friend!
   friends(input: FriendsInput!, limit: Int! = 25, skip: Int! = 0): [Friend!]!
   message(input: MessageInput!): Message!
+  messageGroups(input: MessagesInput!): MessageGroupsData!
   messageQueued(input: MessageQueuedInput!): Message!
-  messages(input: MessagesInput!, limit: Int! = 25, skip: Int! = 0): [Message!]!
+  messages(after: ID, input: MessagesInput!, limit: Int! = 25): MessagesData!
   otherFriends(input: FriendsInput!, limit: Int! = 25, skip: Int! = 0): [Friend!]!
-  pendingRequest(input: RequestInput!): Request!
   pendingRequests(input: RequestsInput!, limit: Int! = 25, skip: Int! = 0): PaginatedRequest!
   sentRequests(input: RequestsInput!, limit: Int! = 25, skip: Int! = 0): PaginatedRequest!
 }
@@ -205,11 +235,6 @@ type Request {
 """RequestDataObject"""
 type RequestData {
   request: Request!
-}
-
-"""RequestInput"""
-input RequestInput {
-  requestId: String!
 }
 
 """RequestMemberObject"""

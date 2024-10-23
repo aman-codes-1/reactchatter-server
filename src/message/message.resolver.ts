@@ -8,7 +8,12 @@ import {
   MessagesInput,
   MessageQueuedInput,
 } from './dto/message.input';
-import { Message, MessageData } from './models/message.model';
+import {
+  Message,
+  MessageData,
+  MessageGroupsData,
+  MessagesData,
+} from './models/message.model';
 import { Message as MessageSchema } from './message.schema';
 import { MessageService } from './message.service';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
@@ -39,15 +44,29 @@ export class MessageResolver {
     return message;
   }
 
-  @UseGuards(GqlAuthGuard)
-  @Query(() => [Message])
+  // @UseGuards(GqlAuthGuard)
+  @Query(() => MessagesData)
   async messages(
     @Args('input') input: MessagesInput,
     @Args() args: MessageArgs,
-  ): Promise<Message[]> {
+  ): Promise<MessagesData> {
     const { chatId } = input;
     const messages = await this.messageService.findAll(chatId, args);
     return messages;
+  }
+
+  @UseGuards(GqlAuthGuard)
+  @Query(() => MessageGroupsData)
+  async messageGroups(
+    @Args('input') input: MessagesInput,
+  ): Promise<MessageGroupsData> {
+    return {
+      data: [],
+      pageInfo: {
+        endCursor: '',
+        hasNextPage: false,
+      },
+    };
   }
 
   @UseGuards(GqlAuthGuard)

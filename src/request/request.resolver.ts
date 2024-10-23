@@ -22,16 +22,6 @@ export class RequestResolver {
   }
 
   @UseGuards(GqlAuthGuard)
-  @Query(() => Request)
-  async pendingRequest(
-    @Args('input') input: RequestInput,
-  ): Promise<RequestSchema> {
-    const { requestId } = input;
-    const request = await this.requestService.findOneById(requestId);
-    return request;
-  }
-
-  @UseGuards(GqlAuthGuard)
   @Query(() => PaginatedRequest)
   async pendingRequests(
     @Args('input') input: RequestsInput,
