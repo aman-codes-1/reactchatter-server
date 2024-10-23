@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { MessageArgs } from './dto/message.args';
 import { CreateMessageInput } from './dto/message.input';
-import { Message } from './models/message.model';
+import { Message, MessagesData, PageInfo } from './models/message.model';
 import { Message as MessageSchema, MessageDocument } from './message.schema';
 import { ChatService } from '../chat/chat.service';
 
@@ -73,19 +73,50 @@ export class MessageService {
     return savedMessage.toObject();
   }
 
-  async findAll(chatId: string, messageArgs: MessageArgs): Promise<Message[]> {
+  async findAll(
+    chatId: string,
+    messageArgs: MessageArgs,
+  ): Promise<MessagesData> {
     const chatObjectId = new ObjectId(chatId);
     const chat = await this.chatService.findOneById(chatId);
     if (!chat) {
       throw new BadRequestException('Chat not found.');
     }
-    const { limit, skip } = messageArgs;
-    const messages = await this.MessageModel.find({ chatId: chatObjectId })
+    const { limit, after } = messageArgs;
+    const query: { chatId: ObjectId; _id?: { $lt: ObjectId } } = {
+      chatId: chatObjectId,
+    };
+
+    if (after) {
+      const afterObjectId = new ObjectId(after);
+      query._id = { $lt: afterObjectId };
+    }
+
+    const messages = await this.MessageModel.find(query)
+      .sort({ _id: -1 })
       .limit(limit)
-      .skip(skip)
-      .sort({ $natural: -1 })
       .lean();
-    return messages.reverse() as unknown as Message[];
+
+    let edges: Message[] = [];
+    let lastMessage: Message;
+    let pageInfo: PageInfo = {
+      endCursor: null,
+      hasNextPage: false,
+    };
+
+    if (messages?.length) {
+      edges = messages?.reverse() as unknown as Message[];
+      lastMessage = messages[0] as unknown as Message;
+      pageInfo = {
+        endCursor: lastMessage ? lastMessage?._id.toString() : null,
+        hasNextPage: messages?.length === limit,
+      };
+    }
+
+    return {
+      edges,
+      pageInfo,
+    };
   }
 
   async remove(messageId: string): Promise<boolean> {

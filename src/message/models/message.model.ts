@@ -77,3 +77,48 @@ export class MessageData {
   @Field(() => Message)
   message: Message;
 }
+
+@ObjectType({ description: 'PageInfoObject' })
+export class PageInfo {
+  @Field(() => String, { nullable: true })
+  endCursor: string;
+
+  @Field(() => Boolean)
+  hasNextPage: boolean;
+}
+
+@ObjectType({ description: 'MessagesDataObject' })
+export class MessagesData {
+  @Field(() => [Message])
+  edges: Message[];
+
+  @Field(() => PageInfo)
+  pageInfo: PageInfo;
+}
+
+@ObjectType({ description: 'GroupObject' })
+export class Group {
+  @Field(() => String)
+  side: string;
+
+  @Field(() => [Message])
+  data: Message[];
+}
+
+@ObjectType({ description: 'MessageGroupObject' })
+export class MessageGroup {
+  @Field(() => String)
+  dateLabel: string;
+
+  @Field(() => [Group])
+  groups: Group[];
+}
+
+@ObjectType({ description: 'MessageGroupsDataObject' })
+export class MessageGroupsData {
+  @Field(() => [MessageGroup])
+  data: MessageGroup[];
+
+  @Field(() => PageInfo)
+  pageInfo: PageInfo;
+}
