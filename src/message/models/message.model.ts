@@ -1,46 +1,61 @@
 import { Field, Float, ObjectType } from '@nestjs/graphql';
 
-@ObjectType({ description: 'SentStatusObject' })
-class SentStatus {
-  @Field(() => Boolean)
-  isSent: boolean;
-
+@ObjectType({ description: 'CommonTimestampObject' })
+class CommonTimestamp {
   @Field(() => Float)
   timestamp: number;
+}
+
+@ObjectType({ description: 'RetryStatusObject' })
+class RetryStatus extends CommonTimestamp {
+  @Field(() => Boolean)
+  isRetry: boolean;
+}
+
+@ObjectType({ description: 'QueuedStatusObject' })
+class QueuedStatus extends CommonTimestamp {
+  @Field(() => Boolean)
+  isQueued: boolean;
+}
+
+@ObjectType({ description: 'SentStatusObject' })
+class SentStatus extends CommonTimestamp {
+  @Field(() => Boolean)
+  isSent: boolean;
 }
 
 @ObjectType({ description: 'DeliveredStatusObject' })
-class DeliveredStatus {
+class DeliveredStatus extends CommonTimestamp {
   @Field(() => Boolean)
   isDelivered: boolean;
-
-  @Field(() => Float)
-  timestamp: number;
 }
 
 @ObjectType({ description: 'ReadStatusObject' })
-class ReadStatus {
+class ReadStatus extends CommonTimestamp {
   @Field(() => Boolean)
   isRead: boolean;
+}
 
-  @Field(() => Float)
-  timestamp: number;
+@ObjectType({ description: 'CommonIdObject' })
+class CommonId {
+  @Field(() => String)
+  _id: string;
 }
 
 @ObjectType({ description: 'SenderObject' })
-export class Sender {
-  @Field(() => String)
-  _id: string;
+export class Sender extends CommonId {
+  @Field(() => RetryStatus, { nullable: true })
+  retryStatus: RetryStatus;
+
+  @Field(() => QueuedStatus)
+  queuedStatus: QueuedStatus;
 
   @Field(() => SentStatus)
   sentStatus: SentStatus;
 }
 
 @ObjectType({ description: 'OtherMemberObject' })
-export class OtherMember {
-  @Field(() => String)
-  _id: string;
-
+export class OtherMember extends CommonId {
   @Field(() => DeliveredStatus, { nullable: true })
   deliveredStatus: DeliveredStatus;
 
@@ -49,10 +64,7 @@ export class OtherMember {
 }
 
 @ObjectType({ description: 'MessageObject' })
-export class Message {
-  @Field(() => String)
-  _id: string;
-
+export class Message extends CommonId {
   @Field(() => String)
   chatId: string;
 
@@ -67,6 +79,9 @@ export class Message {
 
   @Field(() => [OtherMember])
   otherMembers: OtherMember[];
+
+  @Field(() => Float, { nullable: true })
+  timestamp: number;
 }
 
 @ObjectType({ description: 'MessageDataObject' })
@@ -117,7 +132,7 @@ export class MessageGroup {
 @ObjectType({ description: 'MessageGroupsDataObject' })
 export class MessageGroupsData {
   @Field(() => [MessageGroup])
-  data: MessageGroup[];
+  edges: MessageGroup[];
 
   @Field(() => PageInfo)
   pageInfo: PageInfo;

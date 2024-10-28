@@ -6,6 +6,16 @@ class CommonTimestamp {
   timestamp?: number;
 }
 
+class RetryStatus extends CommonTimestamp {
+  @Prop({ required: false })
+  isRetry?: boolean;
+}
+
+class QueuedStatus extends CommonTimestamp {
+  @Prop()
+  isQueued: boolean;
+}
+
 class SentStatus extends CommonTimestamp {
   @Prop()
   isSent: boolean;
@@ -27,6 +37,12 @@ class CommonId {
 }
 
 class Sender extends CommonId {
+  @Prop({ type: RetryStatus, required: false })
+  retryStatus?: RetryStatus;
+
+  @Prop({ type: QueuedStatus })
+  queuedStatus: QueuedStatus;
+
   @Prop({ type: SentStatus })
   sentStatus: SentStatus;
 }
@@ -40,7 +56,7 @@ class OtherMember extends CommonId {
 }
 
 @Schema({ timestamps: true })
-export class Message {
+export class Message extends CommonTimestamp {
   @Prop()
   chatId: Types.ObjectId;
 

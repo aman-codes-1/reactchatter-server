@@ -36,7 +36,16 @@ export class MessageService {
   }
 
   async create(data: CreateMessageInput): Promise<MessageSchema> {
-    const { chatId, senderId, queueId, timestamp, ...rest } = data || {};
+    const {
+      chatId,
+      senderId,
+      queueId,
+      isQueued,
+      queuedTimestamp,
+      isSent,
+      sentTimestamp,
+      ...rest
+    } = data || {};
     const duplicateMessage = await this.MessageModel.findOne({
       queueId,
     }).lean();
@@ -61,12 +70,17 @@ export class MessageService {
       queueId,
       sender: {
         _id: senderObjectId,
+        queuedStatus: {
+          isQueued,
+          timestamp: queuedTimestamp,
+        },
         sentStatus: {
-          isSent: true,
-          timestamp,
+          isSent,
+          timestamp: sentTimestamp,
         },
       },
       otherMembers,
+      timestamp: queuedTimestamp || sentTimestamp,
     };
     const newMessage = new this.MessageModel(newMessageData);
     const savedMessage = await newMessage.save();

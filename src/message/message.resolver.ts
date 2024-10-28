@@ -44,7 +44,7 @@ export class MessageResolver {
     return message;
   }
 
-  // @UseGuards(GqlAuthGuard)
+  @UseGuards(GqlAuthGuard)
   @Query(() => MessagesData)
   async messages(
     @Args('input') input: MessagesInput,
@@ -61,7 +61,7 @@ export class MessageResolver {
     @Args('input') input: MessagesInput,
   ): Promise<MessageGroupsData> {
     return {
-      data: [],
+      edges: [],
       pageInfo: {
         endCursor: '',
         hasNextPage: false,

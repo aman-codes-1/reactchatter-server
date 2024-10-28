@@ -30,10 +30,19 @@ export class CreateMessageInput {
   @Field(() => String, { nullable: true })
   queueId: string;
 
+  @Field(() => Boolean, { nullable: true })
+  isQueued: boolean;
+
+  @Field(() => Float, { nullable: true })
+  queuedTimestamp: number;
+
+  @Field(() => Boolean)
+  isSent: boolean;
+
+  @Field(() => Float)
+  sentTimestamp: number;
+
   @Field(() => String)
   @MaxLength(4096)
   message: string;
-
-  @Field(() => Float)
-  timestamp: number;
 }

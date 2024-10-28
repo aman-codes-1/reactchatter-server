@@ -57,10 +57,13 @@ input CreateChatInput {
 """CreateMessageInput"""
 input CreateMessageInput {
   chatId: String!
+  isQueued: Boolean
+  isSent: Boolean!
   message: String!
   queueId: String
+  queuedTimestamp: Float
   senderId: String!
-  timestamp: Float!
+  sentTimestamp: Float!
 }
 
 """CreateRequestInput"""
@@ -132,6 +135,7 @@ type Message {
   otherMembers: [OtherMember!]!
   queueId: String
   sender: Sender!
+  timestamp: Float
 }
 
 """MessageDataObject"""
@@ -148,7 +152,7 @@ type MessageGroup {
 
 """MessageGroupsDataObject"""
 type MessageGroupsData {
-  data: [MessageGroup!]!
+  edges: [MessageGroup!]!
   pageInfo: PageInfo!
 }
 
@@ -219,6 +223,12 @@ type Query {
   sentRequests(input: RequestsInput!, limit: Int! = 25, skip: Int! = 0): PaginatedRequest!
 }
 
+"""QueuedStatusObject"""
+type QueuedStatus {
+  isQueued: Boolean!
+  timestamp: Float!
+}
+
 """ReadStatusObject"""
 type ReadStatus {
   isRead: Boolean!
@@ -260,9 +270,17 @@ input RequestsInput {
   userId: String!
 }
 
+"""RetryStatusObject"""
+type RetryStatus {
+  isRetry: Boolean!
+  timestamp: Float!
+}
+
 """SenderObject"""
 type Sender {
   _id: String!
+  queuedStatus: QueuedStatus!
+  retryStatus: RetryStatus
   sentStatus: SentStatus!
 }
 
