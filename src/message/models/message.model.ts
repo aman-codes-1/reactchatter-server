@@ -1,4 +1,4 @@
-import { Field, Float, ObjectType } from '@nestjs/graphql';
+import { Field, Float, Int, ObjectType } from '@nestjs/graphql';
 
 @ObjectType({ description: 'CommonTimestampObject' })
 class CommonTimestamp {
@@ -45,7 +45,7 @@ class CommonId {
 @ObjectType({ description: 'SenderObject' })
 export class Sender extends CommonId {
   @Field(() => RetryStatus, { nullable: true })
-  retryStatus: RetryStatus;
+  retryStatus?: RetryStatus;
 
   @Field(() => QueuedStatus)
   queuedStatus: QueuedStatus;
@@ -57,10 +57,10 @@ export class Sender extends CommonId {
 @ObjectType({ description: 'OtherMemberObject' })
 export class OtherMember extends CommonId {
   @Field(() => DeliveredStatus, { nullable: true })
-  deliveredStatus: DeliveredStatus;
+  deliveredStatus?: DeliveredStatus;
 
   @Field(() => ReadStatus, { nullable: true })
-  readStatus: ReadStatus;
+  readStatus?: ReadStatus;
 }
 
 @ObjectType({ description: 'MessageObject' })
@@ -68,7 +68,7 @@ export class Message extends CommonId {
   @Field(() => String)
   chatId: string;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => String)
   queueId: string;
 
   @Field(() => String)
@@ -80,22 +80,13 @@ export class Message extends CommonId {
   @Field(() => [OtherMember])
   otherMembers: OtherMember[];
 
-  @Field(() => Float, { nullable: true })
+  @Field(() => Float)
   timestamp: number;
-}
-
-@ObjectType({ description: 'MessageDataObject' })
-export class MessageData {
-  @Field(() => String)
-  chatId: string;
-
-  @Field(() => Message)
-  message: Message;
 }
 
 @ObjectType({ description: 'PageInfoObject' })
 export class PageInfo {
-  @Field(() => String, { nullable: true })
+  @Field(() => String)
   endCursor: string;
 
   @Field(() => Boolean)
@@ -109,6 +100,15 @@ export class MessagesData {
 
   @Field(() => PageInfo)
   pageInfo: PageInfo;
+}
+
+@ObjectType({ description: 'MessageDataObject' })
+export class MessageData {
+  @Field(() => String)
+  chatId: string;
+
+  @Field(() => Message)
+  message: Message;
 }
 
 @ObjectType({ description: 'GroupObject' })
@@ -136,4 +136,7 @@ export class MessageGroupsData {
 
   @Field(() => PageInfo)
   pageInfo: PageInfo;
+
+  @Field(() => Int)
+  scrollPosition: number;
 }

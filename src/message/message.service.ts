@@ -35,7 +35,7 @@ export class MessageService {
     return message as unknown as Message;
   }
 
-  async create(data: CreateMessageInput): Promise<MessageSchema> {
+  async create(data: CreateMessageInput): Promise<Message> {
     const {
       chatId,
       senderId,
@@ -46,11 +46,13 @@ export class MessageService {
       sentTimestamp,
       ...rest
     } = data || {};
-    const duplicateMessage = await this.MessageModel.findOne({
-      queueId,
-    }).lean();
-    if (duplicateMessage) {
-      throw new BadRequestException('Duplicate Message found.');
+    if (queueId) {
+      const duplicateMessage = await this.MessageModel.findOne({
+        queueId,
+      }).lean();
+      if (duplicateMessage) {
+        throw new BadRequestException('Duplicate Message found.');
+      }
     }
     const chat = await this.chatService.findOneById(chatId);
     if (!chat) {
@@ -84,7 +86,7 @@ export class MessageService {
     };
     const newMessage = new this.MessageModel(newMessageData);
     const savedMessage = await newMessage.save();
-    return savedMessage.toObject();
+    return savedMessage.toObject() as unknown as Message;
   }
 
   async findAll(
@@ -96,7 +98,7 @@ export class MessageService {
     if (!chat) {
       throw new BadRequestException('Chat not found.');
     }
-    const { limit, after } = messageArgs;
+    const { limit, after } = messageArgs || {};
     const query: { chatId: ObjectId; _id?: { $lt: ObjectId } } = {
       chatId: chatObjectId,
     };
@@ -114,7 +116,7 @@ export class MessageService {
     let edges: Message[] = [];
     let lastMessage: Message;
     let pageInfo: PageInfo = {
-      endCursor: null,
+      endCursor: '',
       hasNextPage: false,
     };
 
@@ -122,7 +124,7 @@ export class MessageService {
       edges = messages?.reverse() as unknown as Message[];
       lastMessage = messages[0] as unknown as Message;
       pageInfo = {
-        endCursor: lastMessage ? lastMessage?._id.toString() : null,
+        endCursor: lastMessage?._id?.toString(),
         hasNextPage: messages?.length === limit,
       };
     }

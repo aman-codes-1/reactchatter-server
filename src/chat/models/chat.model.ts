@@ -33,10 +33,10 @@ class ChatMember {
   hasAdded: boolean;
 
   @Field(() => Boolean, { nullable: true })
-  isAdmin: boolean;
+  isAdmin?: boolean;
 
   @Field(() => ChatMemberDetails, { nullable: true })
-  memberDetails: ChatMemberDetails;
+  memberDetails?: ChatMemberDetails;
 }
 
 @ObjectType({ description: 'ChatObject' })
@@ -47,7 +47,7 @@ export class Chat {
   @Field(() => String)
   type: string;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => String)
   queueId: string;
 
   @Field(() => [ChatMember])

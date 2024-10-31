@@ -6,7 +6,7 @@
 type Chat {
   _id: String!
   members: [ChatMember!]!
-  queueId: String
+  queueId: String!
   type: String!
 }
 
@@ -49,7 +49,7 @@ input ChatsInput {
 input CreateChatInput {
   friendId: String!
   friendUserId: String!
-  queueId: String
+  queueId: String!
   type: String!
   userId: String!
 }
@@ -57,11 +57,11 @@ input CreateChatInput {
 """CreateMessageInput"""
 input CreateMessageInput {
   chatId: String!
-  isQueued: Boolean
+  isQueued: Boolean!
   isSent: Boolean!
   message: String!
-  queueId: String
-  queuedTimestamp: Float
+  queueId: String!
+  queuedTimestamp: Float!
   senderId: String!
   sentTimestamp: Float!
 }
@@ -133,9 +133,9 @@ type Message {
   chatId: String!
   message: String!
   otherMembers: [OtherMember!]!
-  queueId: String
+  queueId: String!
   sender: Sender!
-  timestamp: Float
+  timestamp: Float!
 }
 
 """MessageDataObject"""
@@ -154,6 +154,7 @@ type MessageGroup {
 type MessageGroupsData {
   edges: [MessageGroup!]!
   pageInfo: PageInfo!
+  scrollPosition: Int!
 }
 
 """MessageInput"""
@@ -199,7 +200,7 @@ type OtherMember {
 
 """PageInfoObject"""
 type PageInfo {
-  endCursor: String
+  endCursor: String!
   hasNextPage: Boolean!
 }
 

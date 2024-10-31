@@ -33,7 +33,7 @@ class RequestMember {
   hasSent: boolean;
 
   @Field(() => RequestMemberDetails, { nullable: true })
-  memberDetails: RequestMemberDetails;
+  memberDetails?: RequestMemberDetails;
 }
 
 @ObjectType({ description: 'RequestObject' })

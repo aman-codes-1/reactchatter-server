@@ -8,14 +8,14 @@ class Member {
   @Prop()
   hasAdded: boolean;
 
-  @Prop({ isRequired: false })
+  @Prop({ required: false })
   isAdmin: boolean;
 }
 
 @Schema({ timestamps: true })
 export class Chat {
-  @Prop({ required: false })
-  queueId?: string;
+  @Prop()
+  queueId: string;
 
   @Prop()
   type: string;

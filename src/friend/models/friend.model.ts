@@ -33,7 +33,7 @@ class FriendMember {
   hasAdded: boolean;
 
   @Field(() => FriendMemberDetails, { nullable: true })
-  memberDetails: FriendMemberDetails;
+  memberDetails?: FriendMemberDetails;
 }
 
 @ObjectType({ description: 'FriendObject' })

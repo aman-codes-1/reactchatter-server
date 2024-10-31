@@ -2,13 +2,13 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, SchemaTimestampsConfig, Types } from 'mongoose';
 
 class CommonTimestamp {
-  @Prop({ required: false })
-  timestamp?: number;
+  @Prop()
+  timestamp: number;
 }
 
 class RetryStatus extends CommonTimestamp {
-  @Prop({ required: false })
-  isRetry?: boolean;
+  @Prop()
+  isRetry: boolean;
 }
 
 class QueuedStatus extends CommonTimestamp {
@@ -22,13 +22,13 @@ class SentStatus extends CommonTimestamp {
 }
 
 class DeliveredStatus extends CommonTimestamp {
-  @Prop({ required: false })
-  isDelivered?: boolean;
+  @Prop()
+  isDelivered: boolean;
 }
 
 class ReadStatus extends CommonTimestamp {
-  @Prop({ required: false })
-  isRead?: boolean;
+  @Prop()
+  isRead: boolean;
 }
 
 class CommonId {
@@ -60,8 +60,8 @@ export class Message extends CommonTimestamp {
   @Prop()
   chatId: Types.ObjectId;
 
-  @Prop({ required: false })
-  queueId?: string;
+  @Prop()
+  queueId: string;
 
   @Prop()
   message: string;

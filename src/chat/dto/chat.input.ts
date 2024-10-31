@@ -19,7 +19,7 @@ export class CreateChatInput {
   @Field(() => String)
   friendId: string;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => String)
   queueId: string;
 
   @Field(() => String)

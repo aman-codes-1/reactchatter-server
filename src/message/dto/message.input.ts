@@ -27,13 +27,13 @@ export class CreateMessageInput {
   @Field(() => String)
   senderId: string;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => String)
   queueId: string;
 
-  @Field(() => Boolean, { nullable: true })
+  @Field(() => Boolean)
   isQueued: boolean;
 
-  @Field(() => Float, { nullable: true })
+  @Field(() => Float)
   queuedTimestamp: number;
 
   @Field(() => Boolean)
