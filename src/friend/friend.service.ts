@@ -202,14 +202,14 @@ export class FriendService {
       {
         $lookup: {
           from: 'chats',
-          let: { friendId: '$members._id' },
+          let: { friendId: '$members._id', userId: userObjectId },
           pipeline: [
             {
               $match: {
                 $expr: {
                   $and: [
                     { $in: ['$$friendId', '$members._id'] },
-                    { $in: [userObjectId, '$members._id'] },
+                    { $in: ['$$userId', '$members._id'] },
                   ],
                 },
               },

@@ -13,19 +13,13 @@ export class RequestsInput {
 }
 
 @InputType({ description: 'CreateRequestInput' })
-export class CreateRequestInput {
-  @Field(() => String)
-  userId: string;
-
+export class CreateRequestInput extends RequestsInput {
   @Field(() => String)
   sendToEmail: string;
 }
 
 @InputType({ description: 'UpdateRequestInput' })
-export class UpdateRequestInput {
-  @Field(() => String)
-  requestId: string;
-
+export class UpdateRequestInput extends RequestInput {
   @Field(() => String)
   status: string;
 }

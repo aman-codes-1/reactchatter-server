@@ -44,8 +44,14 @@ export class Friend {
   @Field(() => Boolean)
   isFriend: boolean;
 
+  @Field(() => FriendMemberDetails)
+  friendDetails: FriendMemberDetails;
+
   @Field(() => [FriendMember])
   members: FriendMember[];
+
+  @Field(() => Boolean, { nullable: true })
+  hasChats?: boolean;
 }
 
 @ObjectType({ description: 'FriendDataObject' })

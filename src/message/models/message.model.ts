@@ -137,6 +137,9 @@ export class MessageGroupsData {
   @Field(() => PageInfo)
   pageInfo: PageInfo;
 
+  @Field(() => PageInfo)
+  queuedPageInfo: PageInfo;
+
   @Field(() => Int)
   scrollPosition: number;
 }

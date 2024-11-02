@@ -65,7 +65,11 @@ export class MessageResolver {
         endCursor: '',
         hasNextPage: false,
       },
-      scrollPosition: 0,
+      queuedPageInfo: {
+        endCursor: '',
+        hasNextPage: false,
+      },
+      scrollPosition: -1,
     };
   }
 

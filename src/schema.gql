@@ -84,6 +84,8 @@ type DeliveredStatus {
 """FriendObject"""
 type Friend {
   _id: String!
+  friendDetails: FriendMemberDetails!
+  hasChats: Boolean
   isFriend: Boolean!
   members: [FriendMember!]!
 }
@@ -154,6 +156,7 @@ type MessageGroup {
 type MessageGroupsData {
   edges: [MessageGroup!]!
   pageInfo: PageInfo!
+  queuedPageInfo: PageInfo!
   scrollPosition: Int!
 }
 
