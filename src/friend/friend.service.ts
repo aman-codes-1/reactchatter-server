@@ -3,8 +3,9 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { FriendArgs } from './dto/friend.args';
+import { Friend } from './models/friend.model';
 import { Friend as FriendSchema, FriendDocument } from './friend.schema';
-import { Request } from '../request/request.schema';
+import { Request } from '../request/models/request.model';
 
 @Injectable()
 export class FriendService {
@@ -14,96 +15,40 @@ export class FriendService {
     //
   }
 
-  async findOneById(friendId: string): Promise<FriendSchema> {
-    const friendObjectId = new ObjectId(friendId);
-    const friend = await this.FriendModel.aggregate([
-      { $match: { _id: friendObjectId } },
-      {
-        $unwind: '$members',
-      },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'members._id',
-          foreignField: '_id',
-          pipeline: [
-            {
-              $project: {
-                _id: 1,
-                name: 1,
-                email: 1,
-                email_verified: 1,
-                picture: 1,
-                given_name: 1,
-                family_name: 1,
-              },
-            },
-          ],
-          as: 'memberDetails',
-        },
-      },
-      {
-        $unwind: '$memberDetails',
-      },
-      {
-        $addFields: {
-          'members.memberDetails': '$memberDetails',
-        },
-      },
+  async groupsPipeline(): Promise<any> {
+    return [
       {
         $group: {
           _id: '$_id',
-          isFriend: { $first: '$isFriend' },
+          isActive: { $first: '$isActive' },
+          members: { $first: '$members' },
+          details: { $first: '$details' },
+          hasChats: { $first: '$hasChats' },
           createdAt: { $first: '$createdAt' },
           updatedAt: { $first: '$updatedAt' },
-          members: { $push: '$members' },
         },
       },
-      { $limit: 1 },
-    ]);
-    if (!friend?.length) {
-      throw new BadRequestException('Friend not found.');
-    }
-    return friend?.[0];
+    ];
   }
 
-  async create(data: Request): Promise<FriendSchema> {
-    const { members } = data;
-    const Members = members.map((member) => ({
-      _id: new ObjectId(member?._id),
-      hasAdded: member?.hasSent,
-    }));
-    const newFriend = new this.FriendModel({
-      members: Members,
-      isFriend: true,
-    });
-    const savedFriend = await newFriend.save();
-    const { _id: friendId } = savedFriend.toObject();
-    const friend = await this.findOneById(String(friendId));
-    return friend || savedFriend.toObject();
-  }
-
-  async findAll(userId: string, args: FriendArgs): Promise<FriendSchema[]> {
-    const userObjectId = new ObjectId(userId);
-    const { limit, skip } = args;
-    const friends = await this.FriendModel.aggregate([
+  async membersPipeline(userObjectId: ObjectId): Promise<any> {
+    return [
       {
-        $match: {
-          $expr: {
-            $and: [
-              { $eq: ['$isFriend', true] },
-              { $in: [userObjectId, '$members._id'] },
-            ],
+        $set: {
+          filteredMembers: {
+            $filter: {
+              input: '$members',
+              as: 'member',
+              cond: { $ne: ['$$member._id', userObjectId] },
+            },
           },
         },
       },
-      {
-        $unwind: '$members',
-      },
+      { $unwind: '$filteredMembers' },
       {
         $lookup: {
           from: 'users',
-          localField: 'members._id',
+          localField: 'filteredMembers._id',
           foreignField: '_id',
           pipeline: [
             {
@@ -118,91 +63,14 @@ export class FriendService {
               },
             },
           ],
-          as: 'memberDetails',
+          as: 'details',
         },
       },
-      {
-        $unwind: '$memberDetails',
-      },
-      {
-        $addFields: {
-          'members.memberDetails': '$memberDetails',
-        },
-      },
-      {
-        $group: {
-          _id: '$_id',
-          isFriend: { $first: '$isFriend' },
-          createdAt: { $first: '$createdAt' },
-          updatedAt: { $first: '$updatedAt' },
-          members: { $push: '$members' },
-        },
-      },
-      { $skip: skip },
-      { $limit: limit },
-      { $sort: { createdAt: -1 } },
-    ]);
-    return friends;
-  }
-
-  async findAllOtherFriends(
-    userId: string,
-    args: FriendArgs,
-  ): Promise<FriendSchema[]> {
-    const userObjectId = new ObjectId(userId);
-    const { limit, skip } = args;
-    const otherFriends = await this.FriendModel.aggregate([
-      {
-        $match: {
-          $expr: {
-            $and: [
-              { $eq: ['$isFriend', true] },
-              { $in: [userObjectId, '$members._id'] },
-            ],
-          },
-        },
-      },
-      {
-        $unwind: '$members',
-      },
-      {
-        $match: {
-          'members._id': { $ne: userObjectId },
-        },
-      },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'members._id',
-          foreignField: '_id',
-          pipeline: [
-            {
-              $project: {
-                _id: 1,
-                name: 1,
-                email: 1,
-                email_verified: 1,
-                picture: 1,
-                given_name: 1,
-                family_name: 1,
-              },
-            },
-          ],
-          as: 'memberDetails',
-        },
-      },
-      {
-        $unwind: '$memberDetails',
-      },
-      {
-        $addFields: {
-          'members.memberDetails': '$memberDetails',
-        },
-      },
+      { $unwind: '$details' },
       {
         $lookup: {
           from: 'chats',
-          let: { friendId: '$members._id', userId: userObjectId },
+          let: { friendId: '$filteredMembers._id', userId: userObjectId },
           pipeline: [
             {
               $match: {
@@ -210,6 +78,7 @@ export class FriendService {
                   $and: [
                     { $in: ['$$friendId', '$members._id'] },
                     { $in: ['$$userId', '$members._id'] },
+                    { $eq: ['$isActive', true] },
                   ],
                 },
               },
@@ -222,23 +91,100 @@ export class FriendService {
         },
       },
       {
+        $addFields: {
+          hasChats: { $gt: [{ $size: '$chatsWithFriend' }, 0] },
+        },
+      },
+    ];
+  }
+
+  async findOneById(friendId: string, userId: string): Promise<Friend> {
+    const friendObjectId = new ObjectId(friendId);
+    const userObjectId = new ObjectId(userId);
+    const membersPipeline = await this.membersPipeline(userObjectId);
+    const groupsPipeline = await this.groupsPipeline();
+    const friend = await this.FriendModel.aggregate([
+      { $match: { _id: friendObjectId, isActive: true } },
+      ...membersPipeline,
+      ...groupsPipeline,
+      { $limit: 1 },
+    ]);
+    console.log(friend);
+    if (!friend?.length) {
+      throw new BadRequestException('Friend not found.');
+    }
+    return friend?.[0];
+  }
+
+  async create(data: Request, userId: string): Promise<Friend> {
+    const { members } = data;
+    const Members = members.map((member) => ({
+      _id: new ObjectId(member?._id),
+      hasConfirmed: String(member?._id) === userId,
+    }));
+    const newFriend = new this.FriendModel({
+      members: Members,
+    });
+    const savedFriend = (await newFriend.save()).toObject();
+    const { _id: friendId } = savedFriend;
+    const friend = await this.findOneById(String(friendId), userId);
+    return friend;
+  }
+
+  async findAll(userId: string, args: FriendArgs): Promise<Friend[]> {
+    const userObjectId = new ObjectId(userId);
+    const { limit, skip } = args;
+    const membersPipeline = await this.membersPipeline(userObjectId);
+    const groupsPipeline = await this.groupsPipeline();
+    const friends = await this.FriendModel.aggregate([
+      {
+        $match: {
+          $expr: {
+            $and: [
+              { $in: [userObjectId, '$members._id'] },
+              { $eq: ['$isActive', true] },
+            ],
+          },
+        },
+      },
+      ...membersPipeline,
+      ...groupsPipeline,
+      { $skip: skip },
+      { $limit: limit },
+      { $sort: { _id: -1 } },
+    ]);
+    return friends;
+  }
+
+  async findAllOtherFriends(
+    userId: string,
+    args: FriendArgs,
+  ): Promise<Friend[]> {
+    const userObjectId = new ObjectId(userId);
+    const { limit, skip } = args;
+    const membersPipeline = await this.membersPipeline(userObjectId);
+    const groupsPipeline = await this.groupsPipeline();
+    const otherFriends = await this.FriendModel.aggregate([
+      {
+        $match: {
+          $expr: {
+            $and: [
+              { $in: [userObjectId, '$members._id'] },
+              { $eq: ['$isActive', true] },
+            ],
+          },
+        },
+      },
+      ...membersPipeline,
+      {
         $match: {
           chatsWithFriend: { $size: 0 },
         },
       },
-      {
-        $group: {
-          _id: '$_id',
-          isFriend: { $first: '$isFriend' },
-          createdAt: { $first: '$createdAt' },
-          updatedAt: { $first: '$updatedAt' },
-          __v: { $first: '$__v' },
-          members: { $push: '$members' },
-        },
-      },
+      ...groupsPipeline,
       { $skip: skip },
       { $limit: limit },
-      { $sort: { createdAt: -1 } },
+      { $sort: { _id: -1 } },
     ]);
     return otherFriends;
   }

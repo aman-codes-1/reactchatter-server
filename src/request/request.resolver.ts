@@ -4,12 +4,10 @@ import { PubSub } from 'graphql-subscriptions';
 import { RequestArgs } from './dto/request.args';
 import {
   CreateRequestInput,
-  RequestInput,
   RequestsInput,
   UpdateRequestInput,
 } from './dto/request.input';
-import { PaginatedRequest, Request, RequestData } from './models/request.model';
-import { Request as RequestSchema } from './request.schema';
+import { Request, RequestData, RequestsData } from './models/request.model';
 import { RequestService } from './request.service';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 
@@ -22,11 +20,11 @@ export class RequestResolver {
   }
 
   @UseGuards(GqlAuthGuard)
-  @Query(() => PaginatedRequest)
+  @Query(() => RequestsData)
   async pendingRequests(
     @Args('input') input: RequestsInput,
     @Args() args: RequestArgs,
-  ): Promise<PaginatedRequest> {
+  ): Promise<RequestsData> {
     const { userId } = input;
     const pendingRequests = await this.requestService.findAllPending(
       userId,
@@ -36,11 +34,11 @@ export class RequestResolver {
   }
 
   @UseGuards(GqlAuthGuard)
-  @Query(() => PaginatedRequest)
+  @Query(() => RequestsData)
   async sentRequests(
     @Args('input') input: RequestsInput,
     @Args() args: RequestArgs,
-  ): Promise<PaginatedRequest> {
+  ): Promise<RequestsData> {
     const { userId } = input;
     const sentRequests = await this.requestService.findAllSent(userId, args);
     return sentRequests;
@@ -50,7 +48,7 @@ export class RequestResolver {
   @Mutation(() => Request)
   async createRequest(
     @Args('input') input: CreateRequestInput,
-  ): Promise<RequestSchema> {
+  ): Promise<Request> {
     const newRequest = await this.requestService.create(input);
     pubSub.publish('OnRequestAdded', {
       OnRequestAdded: {
@@ -64,7 +62,7 @@ export class RequestResolver {
   @Mutation(() => Request)
   async updateRequest(
     @Args('input') input: UpdateRequestInput,
-  ): Promise<RequestSchema> {
+  ): Promise<Request> {
     const updatedRequest =
       await this.requestService.findOneByIdAndUpdate(input);
     pubSub.publish('OnRequestUpdated', {

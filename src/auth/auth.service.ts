@@ -82,8 +82,8 @@ export class AuthService {
     }).lean()) as UserDocument;
     if (!user) {
       const newUser = new this.UserModel(userDetails);
-      const savedUser = await newUser.save();
-      return savedUser.toObject();
+      const savedUser = (await newUser.save()).toObject();
+      return savedUser;
     }
     const { _id, createdAt, updatedAt, ...restUser } = user;
     const {

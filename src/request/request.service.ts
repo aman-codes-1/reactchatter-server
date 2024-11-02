@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { User, UserDocument } from '../user/user.schema';
-import { PaginatedRequest } from './models/request.model';
+import { Request, RequestsData } from './models/request.model';
 import { Request as RequestSchema, RequestDocument } from './request.schema';
 import { CreateRequestInput, UpdateRequestInput } from './dto/request.input';
 import { RequestArgs } from './dto/request.args';
@@ -26,19 +26,39 @@ export class RequestService {
     //
   }
 
-  async findOneById(requestId: string): Promise<RequestSchema> {
-    const requestObjectId = new ObjectId(requestId);
-    const request = await this.RequestModel.aggregate([
+  async groupsPipeline(): Promise<any> {
+    return [
       {
-        $match: { _id: requestObjectId },
+        $group: {
+          _id: '$_id',
+          status: { $first: '$status' },
+          members: { $first: '$members' },
+          details: { $first: '$details' },
+          createdAt: { $first: '$createdAt' },
+          updatedAt: { $first: '$updatedAt' },
+        },
       },
+    ];
+  }
+
+  async membersPipeline(userObjectId: ObjectId): Promise<any> {
+    return [
       {
-        $unwind: '$members',
+        $set: {
+          filteredMembers: {
+            $filter: {
+              input: '$members',
+              as: 'member',
+              cond: { $ne: ['$$member._id', userObjectId] },
+            },
+          },
+        },
       },
+      { $unwind: '$filteredMembers' },
       {
         $lookup: {
           from: 'users',
-          localField: 'members._id',
+          localField: 'filteredMembers._id',
           foreignField: '_id',
           pipeline: [
             {
@@ -53,26 +73,24 @@ export class RequestService {
               },
             },
           ],
-          as: 'memberDetails',
+          as: 'details',
         },
       },
+      { $unwind: '$details' },
+    ];
+  }
+
+  async findOneById(requestId: string, userId: string): Promise<Request> {
+    const requestObjectId = new ObjectId(requestId);
+    const userObjectId = new ObjectId(userId);
+    const membersPipeline = await this.membersPipeline(userObjectId);
+    const groupsPipeline = await this.groupsPipeline();
+    const request = await this.RequestModel.aggregate([
       {
-        $unwind: '$memberDetails',
+        $match: { _id: requestObjectId },
       },
-      {
-        $addFields: {
-          'members.memberDetails': '$memberDetails',
-        },
-      },
-      {
-        $group: {
-          _id: '$_id',
-          status: { $first: '$status' },
-          createdAt: { $first: '$createdAt' },
-          updatedAt: { $first: '$updatedAt' },
-          members: { $push: '$members' },
-        },
-      },
+      ...membersPipeline,
+      ...groupsPipeline,
       { $limit: 1 },
     ]);
     if (!request?.length) {
@@ -81,7 +99,7 @@ export class RequestService {
     return request?.[0];
   }
 
-  async create(data: CreateRequestInput): Promise<RequestSchema> {
+  async create(data: CreateRequestInput): Promise<Request> {
     const { userId, sendToEmail } = data;
     const userObjectId = new ObjectId(userId);
     const user = await this.UserModel.findOne({
@@ -164,15 +182,15 @@ export class RequestService {
       members,
       status: 'pending',
     });
-    const savedRequest = await newRequest.save();
-    const { _id: requestId } = savedRequest.toObject();
-    const request = await this.findOneById(String(requestId));
-    return request || savedRequest.toObject();
+    const savedRequest = (await newRequest.save()).toObject();
+    const { _id: requestId } = savedRequest;
+    const request = await this.findOneById(String(requestId), userId);
+    return request;
   }
 
-  async findOneByIdAndUpdate(data: UpdateRequestInput): Promise<RequestSchema> {
-    const { requestId, status } = data;
-    const request = await this.findOneById(requestId);
+  async findOneByIdAndUpdate(data: UpdateRequestInput): Promise<Request> {
+    const { userId, requestId, status } = data;
+    const request = await this.findOneById(requestId, userId);
     const { members } = request;
     const memberIds = members?.map((member) => member?._id);
     const [id1, id2] = memberIds;
@@ -182,7 +200,7 @@ export class RequestService {
       $and: [
         { members: { $elemMatch: { _id: id1ObjectId } } },
         { members: { $elemMatch: { _id: id2ObjectId } } },
-        { isFriend: true },
+        { isActive: true },
       ],
     }).lean();
     if (duplicateFriend) {
@@ -193,10 +211,10 @@ export class RequestService {
       { $set: { status } },
       { new: true },
     ).lean();
-    const updatedRequest = await this.findOneById(String(_id));
+    const updatedRequest = await this.findOneById(String(_id), userId);
     const { status: updatedRequestStatus } = updatedRequest;
     if (updatedRequestStatus === 'accepted') {
-      const newFriend = await this.friendService.create(request);
+      const newFriend = await this.friendService.create(request, userId);
       friendPubSub.publish('OnFriendAdded', {
         OnFriendAdded: {
           friend: newFriend,
@@ -209,9 +227,11 @@ export class RequestService {
   async findAllPending(
     userId: string,
     args: RequestArgs,
-  ): Promise<PaginatedRequest> {
+  ): Promise<RequestsData> {
     const { limit, skip } = args;
     const userObjectId = new ObjectId(userId);
+    const membersPipeline = await this.membersPipeline(userObjectId);
+    const groupsPipeline = await this.groupsPipeline();
     const pendingRequests = await this.RequestModel.aggregate([
       {
         $match: {
@@ -223,54 +243,11 @@ export class RequestService {
           ],
         },
       },
-      {
-        $unwind: '$members',
-      },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'members._id',
-          foreignField: '_id',
-          pipeline: [
-            {
-              $project: {
-                _id: 1,
-                name: 1,
-                email: 1,
-                email_verified: 1,
-                picture: 1,
-                given_name: 1,
-                family_name: 1,
-              },
-            },
-          ],
-          as: 'memberDetails',
-        },
-      },
-      {
-        $unwind: '$memberDetails',
-      },
-      {
-        $addFields: {
-          'members.memberDetails': '$memberDetails',
-        },
-      },
-      {
-        $group: {
-          _id: '$_id',
-          status: { $first: '$status' },
-          createdAt: { $first: '$createdAt' },
-          updatedAt: { $first: '$updatedAt' },
-          members: { $push: '$members' },
-        },
-      },
+      ...membersPipeline,
+      ...groupsPipeline,
       {
         $facet: {
-          data: [
-            { $skip: skip },
-            { $limit: limit },
-            { $sort: { createdAt: -1 } },
-          ],
+          data: [{ $skip: skip }, { $limit: limit }, { $sort: { _id: -1 } }],
           totalCount: [{ $count: 'count' }],
         },
       },
@@ -286,12 +263,11 @@ export class RequestService {
     };
   }
 
-  async findAllSent(
-    userId: string,
-    args: RequestArgs,
-  ): Promise<PaginatedRequest> {
+  async findAllSent(userId: string, args: RequestArgs): Promise<RequestsData> {
     const { limit, skip } = args;
     const userObjectId = new ObjectId(userId);
+    const membersPipeline = await this.membersPipeline(userObjectId);
+    const groupsPipeline = await this.groupsPipeline();
     const sentRequests = await this.RequestModel.aggregate([
       {
         $match: {
@@ -303,54 +279,11 @@ export class RequestService {
           ],
         },
       },
-      {
-        $unwind: '$members',
-      },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'members._id',
-          foreignField: '_id',
-          pipeline: [
-            {
-              $project: {
-                _id: 1,
-                name: 1,
-                email: 1,
-                email_verified: 1,
-                picture: 1,
-                given_name: 1,
-                family_name: 1,
-              },
-            },
-          ],
-          as: 'memberDetails',
-        },
-      },
-      {
-        $unwind: '$memberDetails',
-      },
-      {
-        $addFields: {
-          'members.memberDetails': '$memberDetails',
-        },
-      },
-      {
-        $group: {
-          _id: '$_id',
-          status: { $first: '$status' },
-          createdAt: { $first: '$createdAt' },
-          updatedAt: { $first: '$updatedAt' },
-          members: { $push: '$members' },
-        },
-      },
+      ...membersPipeline,
+      ...groupsPipeline,
       {
         $facet: {
-          data: [
-            { $skip: skip },
-            { $limit: limit },
-            { $sort: { createdAt: -1 } },
-          ],
+          data: [{ $skip: skip }, { $limit: limit }, { $sort: { _id: -1 } }],
           totalCount: [{ $count: 'count' }],
         },
       },

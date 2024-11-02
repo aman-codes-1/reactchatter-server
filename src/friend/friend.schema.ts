@@ -6,16 +6,16 @@ class Member {
   _id: Types.ObjectId;
 
   @Prop()
-  hasAdded: boolean;
+  hasConfirmed: boolean;
 }
 
 @Schema({ timestamps: true })
 export class Friend {
-  @Prop()
-  members: Member[];
+  @Prop({ default: true })
+  isActive: boolean;
 
   @Prop()
-  isFriend: boolean;
+  members: Member[];
 }
 
 export const FriendSchema = SchemaFactory.createForClass(Friend);

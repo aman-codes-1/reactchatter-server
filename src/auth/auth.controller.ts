@@ -2,7 +2,6 @@ import { Controller, Get, Req, Res, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
-import { UserDocument } from '../user/user.schema';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
@@ -35,7 +34,7 @@ export class AuthController {
     const {
       google_auth: { tokens: { expires_in = 0, expiry_date = 0 } = {} } = {},
       ...rest
-    } = user as UserDocument;
+    } = user;
     const { accessToken } =
       (await this.authService.login(rest, response, expires_in, expiry_date)) ||
       {};

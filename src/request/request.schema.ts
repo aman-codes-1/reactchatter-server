@@ -12,10 +12,10 @@ export class Member {
 @Schema({ timestamps: true })
 export class Request {
   @Prop()
-  members: Member[];
+  status: string;
 
   @Prop()
-  status: string;
+  members: Member[];
 }
 
 export const RequestSchema = SchemaFactory.createForClass(Request);

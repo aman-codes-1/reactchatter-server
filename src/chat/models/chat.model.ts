@@ -1,28 +1,5 @@
 import { Field, ObjectType } from '@nestjs/graphql';
-
-@ObjectType({ description: 'ChatMemberDetailsObject' })
-class ChatMemberDetails {
-  @Field(() => String)
-  _id: string;
-
-  @Field(() => String)
-  name: string;
-
-  @Field(() => String)
-  email: string;
-
-  @Field(() => Boolean)
-  email_verified: boolean;
-
-  @Field(() => String)
-  picture: string;
-
-  @Field(() => String)
-  given_name: string;
-
-  @Field(() => String)
-  family_name: string;
-}
+import { Auth } from '../../auth/models/auth.model';
 
 @ObjectType({ description: 'ChatMemberObject' })
 class ChatMember {
@@ -30,13 +7,13 @@ class ChatMember {
   _id: string;
 
   @Field(() => Boolean)
-  hasAdded: boolean;
+  hasCreated: boolean;
 
   @Field(() => Boolean, { nullable: true })
   isAdmin?: boolean;
 
-  @Field(() => ChatMemberDetails, { nullable: true })
-  memberDetails?: ChatMemberDetails;
+  @Field(() => Auth, { nullable: true })
+  memberDetails?: Auth;
 }
 
 @ObjectType({ description: 'ChatObject' })
@@ -45,10 +22,13 @@ export class Chat {
   _id: string;
 
   @Field(() => String)
-  type: string;
+  queueId: string;
+
+  @Field(() => Boolean)
+  isActive: boolean;
 
   @Field(() => String)
-  queueId: string;
+  type: string;
 
   @Field(() => [ChatMember])
   members: ChatMember[];

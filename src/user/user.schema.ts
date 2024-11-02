@@ -63,7 +63,7 @@ class GoogleAuth {
 }
 
 @Schema({ timestamps: true })
-export class User extends GoogleAuth {
+export class User {
   @Prop()
   name: string;
 

@@ -85,8 +85,8 @@ export class MessageService {
       timestamp: queuedTimestamp || sentTimestamp,
     };
     const newMessage = new this.MessageModel(newMessageData);
-    const savedMessage = await newMessage.save();
-    return savedMessage.toObject() as unknown as Message;
+    const savedMessage = (await newMessage.save()).toObject();
+    return savedMessage as unknown as Message;
   }
 
   async findAll(
@@ -108,10 +108,10 @@ export class MessageService {
       query._id = { $lt: afterObjectId };
     }
 
-    const messages = await this.MessageModel.find(query)
+    const messages = (await this.MessageModel.find(query)
       .sort({ _id: -1 })
       .limit(limit)
-      .lean();
+      .lean()) as unknown as Message[];
 
     let edges: Message[] = [];
     let lastMessage: Message;
@@ -121,8 +121,8 @@ export class MessageService {
     };
 
     if (messages?.length) {
-      edges = messages?.reverse() as unknown as Message[];
-      lastMessage = messages[0] as unknown as Message;
+      edges = messages?.reverse();
+      lastMessage = messages[0];
       pageInfo = {
         endCursor: lastMessage?._id?.toString(),
         hasNextPage: messages?.length === limit,

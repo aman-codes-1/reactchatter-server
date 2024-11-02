@@ -1,4 +1,5 @@
 import { Field, Float, Int, ObjectType } from '@nestjs/graphql';
+import { Types } from 'mongoose';
 
 @ObjectType({ description: 'CommonTimestampObject' })
 class CommonTimestamp {
@@ -66,7 +67,7 @@ export class OtherMember extends CommonId {
 @ObjectType({ description: 'MessageObject' })
 export class Message extends CommonId {
   @Field(() => String)
-  chatId: string;
+  chatId: Types.ObjectId;
 
   @Field(() => String)
   queueId: string;

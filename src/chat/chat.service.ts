@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { ChatArgs } from './dto/chat.args';
 import { CreateChatInput } from './dto/chat.input';
+import { Chat } from './models/chat.model';
 import { Chat as ChatSchema, ChatDocument } from './chat.schema';
 
 @Injectable()
@@ -15,10 +16,10 @@ export class ChatService {
     //
   }
 
-  async findOneById(chatId: string): Promise<ChatSchema> {
+  async findOneById(chatId: string): Promise<Chat> {
     const chatObjectId = new ObjectId(chatId);
     const chat = await this.ChatModel.aggregate([
-      { $match: { _id: chatObjectId } },
+      { $match: { _id: chatObjectId, isActive: true } },
       {
         $unwind: '$members',
       },
@@ -69,7 +70,7 @@ export class ChatService {
     return chat?.[0];
   }
 
-  async create(data: CreateChatInput): Promise<ChatSchema> {
+  async create(data: CreateChatInput): Promise<Chat> {
     const { userId, queueId, type, friendUserId } = data;
     if (queueId) {
       const duplicateChat = await this.ChatModel.findOne({ queueId }).lean();
@@ -79,26 +80,27 @@ export class ChatService {
     }
     const members = [userId, friendUserId].map((id, idx) => ({
       _id: new ObjectId(id),
-      hasAdded: idx === 0,
+      hasCreated: idx === 0,
     }));
     const newChat = new this.ChatModel({
       queueId,
       type,
       members,
     });
-    const savedChat = await newChat.save();
-    const { _id: chatId } = savedChat.toObject();
+    const savedChat = (await newChat.save()).toObject();
+    const { _id: chatId } = savedChat;
     const chat = await this.findOneById(String(chatId));
-    return chat || savedChat.toObject();
+    return chat;
   }
 
-  async findAll(userId: string, args: ChatArgs): Promise<ChatSchema[]> {
+  async findAll(userId: string, args: ChatArgs): Promise<Chat[]> {
     const userObjectId = new ObjectId(userId);
     const { limit, skip } = args;
     const chats = await this.ChatModel.aggregate([
       {
         $match: {
           members: { $elemMatch: { _id: userObjectId } },
+          isActive: true,
         },
       },
       {
@@ -145,7 +147,7 @@ export class ChatService {
       },
       { $skip: skip },
       { $limit: limit },
-      { $sort: { createdAt: -1 } },
+      { $sort: { _id: -1 } },
     ]);
     return chats;
   }

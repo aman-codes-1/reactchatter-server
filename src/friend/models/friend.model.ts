@@ -1,39 +1,16 @@
 import { Field, ObjectType } from '@nestjs/graphql';
-
-@ObjectType({ description: 'FriendMemberDetailsObject' })
-class FriendMemberDetails {
-  @Field(() => String)
-  _id: string;
-
-  @Field(() => String)
-  name: string;
-
-  @Field(() => String)
-  email: string;
-
-  @Field(() => Boolean)
-  email_verified: boolean;
-
-  @Field(() => String)
-  picture: string;
-
-  @Field(() => String)
-  given_name: string;
-
-  @Field(() => String)
-  family_name: string;
-}
+import { Auth } from '../../auth/models/auth.model';
 
 @ObjectType({ description: 'FriendMemberObject' })
-class FriendMember {
+class Member {
   @Field(() => String)
   _id: string;
 
   @Field(() => Boolean)
-  hasAdded: boolean;
+  hasConfirmed: boolean;
 
-  @Field(() => FriendMemberDetails, { nullable: true })
-  memberDetails?: FriendMemberDetails;
+  @Field(() => Auth, { nullable: true })
+  memberDetails?: Auth;
 }
 
 @ObjectType({ description: 'FriendObject' })
@@ -42,13 +19,13 @@ export class Friend {
   _id: string;
 
   @Field(() => Boolean)
-  isFriend: boolean;
+  isActive: boolean;
 
-  @Field(() => FriendMemberDetails)
-  friendDetails: FriendMemberDetails;
+  @Field(() => [Member])
+  members: Member[];
 
-  @Field(() => [FriendMember])
-  members: FriendMember[];
+  @Field(() => Auth, { nullable: true })
+  details?: Auth;
 
   @Field(() => Boolean, { nullable: true })
   hasChats?: boolean;
