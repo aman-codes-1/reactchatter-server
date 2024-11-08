@@ -1,19 +1,13 @@
 import { Field, ObjectType } from '@nestjs/graphql';
-import { Auth } from '../../auth/models/auth.model';
+import { User } from '../../auth/models/auth.model';
 
 @ObjectType({ description: 'ChatMemberObject' })
-class ChatMember {
-  @Field(() => String)
-  _id: string;
-
-  @Field(() => Boolean)
-  hasCreated: boolean;
+class ChatMember extends User {
+  @Field(() => Boolean, { nullable: true })
+  hasCreated?: boolean;
 
   @Field(() => Boolean, { nullable: true })
   isAdmin?: boolean;
-
-  @Field(() => Auth, { nullable: true })
-  memberDetails?: Auth;
 }
 
 @ObjectType({ description: 'ChatObject' })
@@ -36,8 +30,8 @@ export class Chat {
 
 @ObjectType({ description: 'ChatDataObject' })
 export class ChatData {
-  @Field(() => String)
-  friendId: string;
+  @Field(() => [String])
+  friendIds: string[];
 
   @Field(() => Chat)
   chat: Chat;

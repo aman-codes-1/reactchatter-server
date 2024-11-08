@@ -63,29 +63,32 @@ class GoogleAuth {
   tokens: Tokens;
 }
 
-@ObjectType({ description: 'AuthObject' })
-export class Auth {
+@ObjectType({ description: 'UserObject' })
+export class User {
   @Field(() => String)
   _id: string;
 
-  @Field(() => String)
-  name: string;
+  @Field(() => String, { nullable: true })
+  name?: string;
 
-  @Field(() => String)
-  picture: string;
+  @Field(() => String, { nullable: true })
+  picture?: string;
 
-  @Field(() => String)
-  email: string;
+  @Field(() => String, { nullable: true })
+  email?: string;
 
-  @Field(() => Boolean)
-  email_verified: boolean;
+  @Field(() => Boolean, { nullable: true })
+  email_verified?: boolean;
 
-  @Field(() => String)
-  given_name: string;
+  @Field(() => String, { nullable: true })
+  given_name?: string;
 
-  @Field(() => String)
-  family_name: string;
+  @Field(() => String, { nullable: true })
+  family_name?: string;
+}
 
+@ObjectType({ description: 'AuthObject' })
+export class Auth extends User {
   @Field(() => String, { nullable: true })
   provider?: string;
 

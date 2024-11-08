@@ -18,27 +18,112 @@ export class MessageService {
     //
   }
 
-  async findOneById(messageId: string): Promise<Message> {
-    const messageObjectId = new ObjectId(messageId);
-    const message = await this.MessageModel.findById(messageObjectId).lean();
-    if (!message) {
-      throw new BadRequestException('Message not found.');
-    }
-    return message as unknown as Message;
+  async groupPipeline(): Promise<any> {
+    return [
+      {
+        $group: {
+          _id: '$_id',
+          chatId: { $first: '$chatId' },
+          queueId: { $first: '$queueId' },
+          isActive: { $first: '$isActive' },
+          message: { $first: '$message' },
+          sender: { $first: '$sender' },
+          otherMembers: { $push: '$otherMembers' },
+          timestamp: { $first: '$timestamp' },
+          createdAt: { $first: '$createdAt' },
+          updatedAt: { $first: '$updatedAt' },
+        },
+      },
+    ];
   }
 
-  async findOneByQueueId(queueId: string): Promise<Message> {
-    const message = await this.MessageModel.findOne({ queueId }).lean();
-    if (!message) {
+  async membersPipeline(): Promise<any> {
+    return [
+      {
+        $unwind: '$otherMembers',
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'otherMembers._id',
+          foreignField: '_id',
+          pipeline: [
+            {
+              $project: {
+                name: 1,
+                picture: 1,
+                email: 1,
+                email_verified: 1,
+                given_name: 1,
+                family_name: 1,
+              },
+            },
+          ],
+          as: 'userDetails',
+        },
+      },
+      {
+        $set: {
+          otherMembers: {
+            $mergeObjects: [
+              '$otherMembers',
+              { $arrayElemAt: ['$userDetails', 0] },
+            ],
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'sender._id',
+          foreignField: '_id',
+          pipeline: [
+            {
+              $project: {
+                name: 1,
+                picture: 1,
+                email: 1,
+                email_verified: 1,
+                given_name: 1,
+                family_name: 1,
+              },
+            },
+          ],
+          as: 'senderDetails',
+        },
+      },
+      {
+        $set: {
+          sender: {
+            $mergeObjects: ['$sender', { $arrayElemAt: ['$senderDetails', 0] }],
+          },
+        },
+      },
+    ];
+  }
+
+  async findOneById(messageId: string): Promise<Message> {
+    const messageObjectId = new ObjectId(messageId);
+    const membersPipeline = await this.membersPipeline();
+    const groupPipeline = await this.groupPipeline();
+    const message = await this.MessageModel.aggregate([
+      { $match: { _id: messageObjectId, isActive: true } },
+      ...membersPipeline,
+      ...groupPipeline,
+      {
+        $limit: 1,
+      },
+    ]);
+    if (!message?.length) {
       throw new BadRequestException('Message not found.');
     }
-    return message as unknown as Message;
+    return message?.[0];
   }
 
   async create(data: CreateMessageInput): Promise<Message> {
     const {
+      userId,
       chatId,
-      senderId,
       queueId,
       isQueued,
       queuedTimestamp,
@@ -59,10 +144,10 @@ export class MessageService {
       throw new BadRequestException('Chat not found.');
     }
     const chatObjectId = new ObjectId(chatId);
-    const senderObjectId = new ObjectId(senderId);
+    const userObjectId = new ObjectId(userId);
     const { members } = chat || {};
     const otherMembers = members
-      .filter((el) => String(el?._id) !== String(senderId))
+      .filter((el) => String(el?._id) !== String(userId))
       .map((el) => ({
         _id: new ObjectId(el?._id),
       }));
@@ -71,7 +156,7 @@ export class MessageService {
       chatId: chatObjectId,
       queueId,
       sender: {
-        _id: senderObjectId,
+        _id: userObjectId,
         queuedStatus: {
           isQueued,
           timestamp: queuedTimestamp,
@@ -86,7 +171,9 @@ export class MessageService {
     };
     const newMessage = new this.MessageModel(newMessageData);
     const savedMessage = (await newMessage.save()).toObject();
-    return savedMessage as unknown as Message;
+    const { _id: messageId } = savedMessage;
+    const message = await this.findOneById(String(messageId));
+    return message;
   }
 
   async findAll(
@@ -99,19 +186,25 @@ export class MessageService {
       throw new BadRequestException('Chat not found.');
     }
     const { limit, after } = messageArgs || {};
-    const query: { chatId: ObjectId; _id?: { $lt: ObjectId } } = {
-      chatId: chatObjectId,
-    };
-
-    if (after) {
-      const afterObjectId = new ObjectId(after);
-      query._id = { $lt: afterObjectId };
-    }
-
-    const messages = (await this.MessageModel.find(query)
-      .sort({ _id: -1 })
-      .limit(limit)
-      .lean()) as unknown as Message[];
+    const membersPipeline = await this.membersPipeline();
+    const groupPipeline = await this.groupPipeline();
+    const messages = await this.MessageModel.aggregate([
+      {
+        $match: {
+          chatId: chatObjectId,
+          ...(after ? { _id: { $lt: new ObjectId(after) } } : {}),
+          isActive: true,
+        },
+      },
+      ...membersPipeline,
+      ...groupPipeline,
+      {
+        $sort: { _id: -1 },
+      },
+      {
+        $limit: limit,
+      },
+    ]);
 
     let edges: Message[] = [];
     let lastMessage: Message;

@@ -63,6 +63,9 @@ export class Message extends CommonTimestamp {
   @Prop()
   queueId: string;
 
+  @Prop({ default: true })
+  isActive: boolean;
+
   @Prop()
   message: string;
 

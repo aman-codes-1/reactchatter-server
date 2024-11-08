@@ -1,16 +1,10 @@
 import { Field, ObjectType } from '@nestjs/graphql';
-import { Auth } from '../../auth/models/auth.model';
+import { User } from '../../auth/models/auth.model';
 
 @ObjectType({ description: 'FriendMemberObject' })
-class Member {
-  @Field(() => String)
-  _id: string;
-
-  @Field(() => Boolean)
-  hasConfirmed: boolean;
-
-  @Field(() => Auth, { nullable: true })
-  memberDetails?: Auth;
+class Member extends User {
+  @Field(() => Boolean, { nullable: true })
+  hasConfirmed?: boolean;
 }
 
 @ObjectType({ description: 'FriendObject' })
@@ -23,9 +17,6 @@ export class Friend {
 
   @Field(() => [Member])
   members: Member[];
-
-  @Field(() => Auth, { nullable: true })
-  details?: Auth;
 
   @Field(() => Boolean, { nullable: true })
   hasChats?: boolean;

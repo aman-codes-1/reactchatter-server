@@ -1,4 +1,4 @@
-import { UseGuards } from '@nestjs/common';
+import { BadRequestException, UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
 import { RequestArgs } from './dto/request.args';
@@ -9,6 +9,7 @@ import {
 } from './dto/request.input';
 import { Request, RequestData, RequestsData } from './models/request.model';
 import { RequestService } from './request.service';
+import { pubSub as friendPubSub } from '../friend/friend.resolver';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 
 export const pubSub = new PubSub();
@@ -63,13 +64,28 @@ export class RequestResolver {
   async updateRequest(
     @Args('input') input: UpdateRequestInput,
   ): Promise<Request> {
-    const updatedRequest =
+    const { updatedRequest, newFriend, isError } =
       await this.requestService.findOneByIdAndUpdate(input);
+    if (newFriend) {
+      friendPubSub.publish('OnFriendAdded', {
+        OnFriendAdded: {
+          friend: newFriend,
+        },
+      });
+    }
     pubSub.publish('OnRequestUpdated', {
       OnRequestUpdated: {
         request: updatedRequest,
       },
     });
+    if (isError) {
+      const status =
+        updatedRequest?.status === 'accepted'
+          ? 'rejected'
+          : updatedRequest?.status;
+      const Status = status?.charAt(0)?.toUpperCase() + status?.slice(1);
+      throw new BadRequestException(`Already a Friend. ${Status} Request.`);
+    }
     return updatedRequest;
   }
 

@@ -2,19 +2,6 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-"""AuthObject"""
-type Auth {
-  _id: String!
-  email: String!
-  email_verified: Boolean!
-  family_name: String!
-  given_name: String!
-  google_auth: GoogleAuth
-  name: String!
-  picture: String!
-  provider: String
-}
-
 """ChatObject"""
 type Chat {
   _id: String!
@@ -27,7 +14,7 @@ type Chat {
 """ChatDataObject"""
 type ChatData {
   chat: Chat!
-  friendId: String!
+  friendIds: [String!]!
 }
 
 """ChatInput"""
@@ -38,9 +25,14 @@ input ChatInput {
 """ChatMemberObject"""
 type ChatMember {
   _id: String!
-  hasCreated: Boolean!
+  email: String
+  email_verified: Boolean
+  family_name: String
+  given_name: String
+  hasCreated: Boolean
   isAdmin: Boolean
-  memberDetails: Auth
+  name: String
+  picture: String
 }
 
 """ChatsInput"""
@@ -50,8 +42,8 @@ input ChatsInput {
 
 """CreateChatInput"""
 input CreateChatInput {
-  friendId: String!
-  friendUserId: String!
+  friendIds: [String!]!
+  friendUserIds: [String!]!
   queueId: String!
   type: String!
   userId: String!
@@ -65,8 +57,8 @@ input CreateMessageInput {
   message: String!
   queueId: String!
   queuedTimestamp: Float!
-  senderId: String!
   sentTimestamp: Float!
+  userId: String!
 }
 
 """CreateRequestInput"""
@@ -87,7 +79,6 @@ type DeliveredStatus {
 """FriendObject"""
 type Friend {
   _id: String!
-  details: Auth
   hasChats: Boolean
   isActive: Boolean!
   members: [Member!]!
@@ -128,20 +119,27 @@ type GoogleAuth {
 """GroupObject"""
 type Group {
   data: [Message!]!
+  groupDetails: User!
   side: String!
 }
 
 """FriendMemberObject"""
 type Member {
   _id: String!
-  hasConfirmed: Boolean!
-  memberDetails: Auth
+  email: String
+  email_verified: Boolean
+  family_name: String
+  given_name: String
+  hasConfirmed: Boolean
+  name: String
+  picture: String
 }
 
 """MessageObject"""
 type Message {
   _id: String!
   chatId: String!
+  isActive: Boolean!
   message: String!
   otherMembers: [OtherMember!]!
   queueId: String!
@@ -174,11 +172,6 @@ input MessageInput {
   messageId: String!
 }
 
-"""MessageQueuedInput"""
-input MessageQueuedInput {
-  queueId: String!
-}
-
 """MessagesDataObject"""
 type MessagesData {
   edges: [Message!]!
@@ -207,6 +200,12 @@ type Mutation {
 type OtherMember {
   _id: String!
   deliveredStatus: DeliveredStatus
+  email: String
+  email_verified: Boolean
+  family_name: String
+  given_name: String
+  name: String
+  picture: String
   readStatus: ReadStatus
 }
 
@@ -223,7 +222,6 @@ type Query {
   friends(input: FriendsInput!, limit: Int! = 25, skip: Int! = 0): [Friend!]!
   message(input: MessageInput!): Message!
   messageGroups(input: MessagesInput!): MessageGroupsData!
-  messageQueued(input: MessageQueuedInput!): Message!
   messages(after: ID, input: MessagesInput!, limit: Int! = 25): MessagesData!
   otherFriends(input: FriendsInput!, limit: Int! = 25, skip: Int! = 0): [Friend!]!
   pendingRequests(input: RequestsInput!, limit: Int! = 25, skip: Int! = 0): RequestsData!
@@ -245,7 +243,6 @@ type ReadStatus {
 """RequestObject"""
 type Request {
   _id: String!
-  details: Auth
   members: [RequestMember!]!
   status: String!
 }
@@ -258,8 +255,13 @@ type RequestData {
 """RequestMemberObject"""
 type RequestMember {
   _id: String!
-  hasSent: Boolean!
-  memberDetails: Auth
+  email: String
+  email_verified: Boolean
+  family_name: String
+  given_name: String
+  hasSent: Boolean
+  name: String
+  picture: String
 }
 
 """RequestsDataObject"""
@@ -282,6 +284,12 @@ type RetryStatus {
 """SenderObject"""
 type Sender {
   _id: String!
+  email: String
+  email_verified: Boolean
+  family_name: String
+  given_name: String
+  name: String
+  picture: String
   queuedStatus: QueuedStatus!
   retryStatus: RetryStatus
   sentStatus: SentStatus!
@@ -319,4 +327,15 @@ input UpdateRequestInput {
   requestId: String!
   status: String!
   userId: String!
+}
+
+"""UserObject"""
+type User {
+  _id: String!
+  email: String
+  email_verified: Boolean
+  family_name: String
+  given_name: String
+  name: String
+  picture: String
 }

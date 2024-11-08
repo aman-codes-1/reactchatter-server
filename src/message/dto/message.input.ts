@@ -13,19 +13,13 @@ export class MessagesInput {
   chatId: string;
 }
 
-@InputType({ description: 'MessageQueuedInput' })
-export class MessageQueuedInput {
-  @Field(() => String)
-  queueId: string;
-}
-
 @InputType({ description: 'CreateMessageInput' })
 export class CreateMessageInput {
   @Field(() => String)
-  chatId: string;
+  userId: string;
 
   @Field(() => String)
-  senderId: string;
+  chatId: string;
 
   @Field(() => String)
   queueId: string;

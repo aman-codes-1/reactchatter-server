@@ -15,14 +15,13 @@ export class FriendService {
     //
   }
 
-  async groupsPipeline(): Promise<any> {
+  async groupPipeline(): Promise<any> {
     return [
       {
         $group: {
           _id: '$_id',
           isActive: { $first: '$isActive' },
-          members: { $first: '$members' },
-          details: { $first: '$details' },
+          members: { $push: '$members' },
           hasChats: { $first: '$hasChats' },
           createdAt: { $first: '$createdAt' },
           updatedAt: { $first: '$updatedAt' },
@@ -31,7 +30,7 @@ export class FriendService {
     ];
   }
 
-  async membersPipeline(userObjectId: ObjectId): Promise<any> {
+  async hasChatsPipeline(userObjectId: ObjectId): Promise<any> {
     return [
       {
         $set: {
@@ -45,28 +44,6 @@ export class FriendService {
         },
       },
       { $unwind: '$filteredMembers' },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'filteredMembers._id',
-          foreignField: '_id',
-          pipeline: [
-            {
-              $project: {
-                _id: 1,
-                name: 1,
-                email: 1,
-                email_verified: 1,
-                picture: 1,
-                given_name: 1,
-                family_name: 1,
-              },
-            },
-          ],
-          as: 'details',
-        },
-      },
-      { $unwind: '$details' },
       {
         $lookup: {
           from: 'chats',
@@ -98,18 +75,54 @@ export class FriendService {
     ];
   }
 
+  async membersPipeline(): Promise<any> {
+    return [
+      {
+        $unwind: '$members',
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'members._id',
+          foreignField: '_id',
+          pipeline: [
+            {
+              $project: {
+                name: 1,
+                picture: 1,
+                email: 1,
+                email_verified: 1,
+                given_name: 1,
+                family_name: 1,
+              },
+            },
+          ],
+          as: 'userDetails',
+        },
+      },
+      {
+        $set: {
+          members: {
+            $mergeObjects: ['$members', { $arrayElemAt: ['$userDetails', 0] }],
+          },
+        },
+      },
+    ];
+  }
+
   async findOneById(friendId: string, userId: string): Promise<Friend> {
     const friendObjectId = new ObjectId(friendId);
     const userObjectId = new ObjectId(userId);
-    const membersPipeline = await this.membersPipeline(userObjectId);
-    const groupsPipeline = await this.groupsPipeline();
+    const hasChatsPipeline = await this.hasChatsPipeline(userObjectId);
+    const membersPipeline = await this.membersPipeline();
+    const groupPipeline = await this.groupPipeline();
     const friend = await this.FriendModel.aggregate([
       { $match: { _id: friendObjectId, isActive: true } },
+      ...hasChatsPipeline,
       ...membersPipeline,
-      ...groupsPipeline,
+      ...groupPipeline,
       { $limit: 1 },
     ]);
-    console.log(friend);
     if (!friend?.length) {
       throw new BadRequestException('Friend not found.');
     }
@@ -134,24 +147,22 @@ export class FriendService {
   async findAll(userId: string, args: FriendArgs): Promise<Friend[]> {
     const userObjectId = new ObjectId(userId);
     const { limit, skip } = args;
-    const membersPipeline = await this.membersPipeline(userObjectId);
-    const groupsPipeline = await this.groupsPipeline();
+    const hasChatsPipeline = await this.hasChatsPipeline(userObjectId);
+    const membersPipeline = await this.membersPipeline();
+    const groupPipeline = await this.groupPipeline();
     const friends = await this.FriendModel.aggregate([
       {
         $match: {
-          $expr: {
-            $and: [
-              { $in: [userObjectId, '$members._id'] },
-              { $eq: ['$isActive', true] },
-            ],
-          },
+          members: { $elemMatch: { _id: userObjectId } },
+          isActive: true,
         },
       },
+      ...hasChatsPipeline,
       ...membersPipeline,
-      ...groupsPipeline,
+      ...groupPipeline,
+      { $sort: { _id: -1 } },
       { $skip: skip },
       { $limit: limit },
-      { $sort: { _id: -1 } },
     ]);
     return friends;
   }
@@ -162,29 +173,27 @@ export class FriendService {
   ): Promise<Friend[]> {
     const userObjectId = new ObjectId(userId);
     const { limit, skip } = args;
-    const membersPipeline = await this.membersPipeline(userObjectId);
-    const groupsPipeline = await this.groupsPipeline();
+    const hasChatsPipeline = await this.hasChatsPipeline(userObjectId);
+    const membersPipeline = await this.membersPipeline();
+    const groupPipeline = await this.groupPipeline();
     const otherFriends = await this.FriendModel.aggregate([
       {
         $match: {
-          $expr: {
-            $and: [
-              { $in: [userObjectId, '$members._id'] },
-              { $eq: ['$isActive', true] },
-            ],
-          },
+          members: { $elemMatch: { _id: userObjectId } },
+          isActive: true,
         },
       },
+      ...hasChatsPipeline,
       ...membersPipeline,
       {
         $match: {
           chatsWithFriend: { $size: 0 },
         },
       },
-      ...groupsPipeline,
+      ...groupPipeline,
+      { $sort: { _id: -1 } },
       { $skip: skip },
       { $limit: limit },
-      { $sort: { _id: -1 } },
     ]);
     return otherFriends;
   }

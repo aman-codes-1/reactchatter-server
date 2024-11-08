@@ -1,5 +1,6 @@
 import { Field, Float, Int, ObjectType } from '@nestjs/graphql';
 import { Types } from 'mongoose';
+import { User } from '../../auth/models/auth.model';
 
 @ObjectType({ description: 'CommonTimestampObject' })
 class CommonTimestamp {
@@ -44,7 +45,7 @@ class CommonId {
 }
 
 @ObjectType({ description: 'SenderObject' })
-export class Sender extends CommonId {
+export class Sender extends User {
   @Field(() => RetryStatus, { nullable: true })
   retryStatus?: RetryStatus;
 
@@ -56,7 +57,7 @@ export class Sender extends CommonId {
 }
 
 @ObjectType({ description: 'OtherMemberObject' })
-export class OtherMember extends CommonId {
+export class OtherMember extends User {
   @Field(() => DeliveredStatus, { nullable: true })
   deliveredStatus?: DeliveredStatus;
 
@@ -71,6 +72,9 @@ export class Message extends CommonId {
 
   @Field(() => String)
   queueId: string;
+
+  @Field(() => Boolean)
+  isActive: boolean;
 
   @Field(() => String)
   message: string;
@@ -119,6 +123,9 @@ export class Group {
 
   @Field(() => [Message])
   data: Message[];
+
+  @Field(() => User)
+  groupDetails: User;
 }
 
 @ObjectType({ description: 'MessageGroupObject' })

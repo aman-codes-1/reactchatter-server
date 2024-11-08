@@ -1,16 +1,10 @@
 import { Field, ObjectType } from '@nestjs/graphql';
-import { Auth } from '../../auth/models/auth.model';
+import { User } from '../../auth/models/auth.model';
 
 @ObjectType({ description: 'RequestMemberObject' })
-class RequestMember {
-  @Field(() => String)
-  _id: string;
-
-  @Field(() => Boolean)
-  hasSent: boolean;
-
-  @Field(() => Auth, { nullable: true })
-  memberDetails?: Auth;
+class RequestMember extends User {
+  @Field(() => Boolean, { nullable: true })
+  hasSent?: boolean;
 }
 
 @ObjectType({ description: 'RequestObject' })
@@ -23,9 +17,6 @@ export class Request {
 
   @Field(() => [RequestMember])
   members: RequestMember[];
-
-  @Field(() => Auth, { nullable: true })
-  details?: Auth;
 }
 
 @ObjectType({ description: 'RequestsDataObject' })

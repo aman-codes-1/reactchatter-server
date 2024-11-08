@@ -12,19 +12,16 @@ export class ChatsInput {
 }
 
 @InputType({ description: 'CreateChatInput' })
-export class CreateChatInput {
-  @Field(() => String)
-  userId: string;
-
-  @Field(() => String)
-  friendId: string;
-
+export class CreateChatInput extends ChatsInput {
   @Field(() => String)
   queueId: string;
 
   @Field(() => String)
   type: string;
 
-  @Field(() => String)
-  friendUserId: string;
+  @Field(() => [String])
+  friendIds: string[];
+
+  @Field(() => [String])
+  friendUserIds: string[];
 }

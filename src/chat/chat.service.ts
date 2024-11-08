@@ -16,10 +16,24 @@ export class ChatService {
     //
   }
 
-  async findOneById(chatId: string): Promise<Chat> {
-    const chatObjectId = new ObjectId(chatId);
-    const chat = await this.ChatModel.aggregate([
-      { $match: { _id: chatObjectId, isActive: true } },
+  async groupPipeline(): Promise<any> {
+    return [
+      {
+        $group: {
+          _id: '$_id',
+          queueId: { $first: '$queueId' },
+          isActive: { $first: '$isActive' },
+          type: { $first: '$type' },
+          members: { $push: '$members' },
+          createdAt: { $first: '$createdAt' },
+          updatedAt: { $first: '$updatedAt' },
+        },
+      },
+    ];
+  }
+
+  async membersPipeline(): Promise<any> {
+    return [
       {
         $unwind: '$members',
       },
@@ -31,37 +45,36 @@ export class ChatService {
           pipeline: [
             {
               $project: {
-                _id: 1,
                 name: 1,
+                picture: 1,
                 email: 1,
                 email_verified: 1,
-                picture: 1,
                 given_name: 1,
                 family_name: 1,
               },
             },
           ],
-          as: 'memberDetails',
+          as: 'userDetails',
         },
       },
       {
-        $unwind: '$memberDetails',
-      },
-      {
-        $addFields: {
-          'members.memberDetails': '$memberDetails',
+        $set: {
+          members: {
+            $mergeObjects: ['$members', { $arrayElemAt: ['$userDetails', 0] }],
+          },
         },
       },
-      {
-        $group: {
-          _id: '$_id',
-          queueId: { $first: '$queueId' },
-          type: { $first: '$type' },
-          createdAt: { $first: '$createdAt' },
-          updatedAt: { $first: '$updatedAt' },
-          members: { $push: '$members' },
-        },
-      },
+    ];
+  }
+
+  async findOneById(chatId: string): Promise<Chat> {
+    const chatObjectId = new ObjectId(chatId);
+    const membersPipeline = await this.membersPipeline();
+    const groupPipeline = await this.groupPipeline();
+    const chat = await this.ChatModel.aggregate([
+      { $match: { _id: chatObjectId, isActive: true } },
+      ...membersPipeline,
+      ...groupPipeline,
       { $limit: 1 },
     ]);
     if (!chat?.length) {
@@ -71,14 +84,14 @@ export class ChatService {
   }
 
   async create(data: CreateChatInput): Promise<Chat> {
-    const { userId, queueId, type, friendUserId } = data;
+    const { userId, queueId, type, friendUserIds } = data;
     if (queueId) {
       const duplicateChat = await this.ChatModel.findOne({ queueId }).lean();
       if (duplicateChat) {
         throw new BadRequestException('Duplicate Chat found.');
       }
     }
-    const members = [userId, friendUserId].map((id, idx) => ({
+    const members = [userId, ...friendUserIds].map((id, idx) => ({
       _id: new ObjectId(id),
       hasCreated: idx === 0,
     }));
@@ -96,6 +109,8 @@ export class ChatService {
   async findAll(userId: string, args: ChatArgs): Promise<Chat[]> {
     const userObjectId = new ObjectId(userId);
     const { limit, skip } = args;
+    const membersPipeline = await this.membersPipeline();
+    const groupPipeline = await this.groupPipeline();
     const chats = await this.ChatModel.aggregate([
       {
         $match: {
@@ -103,51 +118,11 @@ export class ChatService {
           isActive: true,
         },
       },
-      {
-        $unwind: '$members',
-      },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'members._id',
-          foreignField: '_id',
-          pipeline: [
-            {
-              $project: {
-                _id: 1,
-                name: 1,
-                email: 1,
-                email_verified: 1,
-                picture: 1,
-                given_name: 1,
-                family_name: 1,
-              },
-            },
-          ],
-          as: 'memberDetails',
-        },
-      },
-      {
-        $unwind: '$memberDetails',
-      },
-      {
-        $addFields: {
-          'members.memberDetails': '$memberDetails',
-        },
-      },
-      {
-        $group: {
-          _id: '$_id',
-          queueId: { $first: '$queueId' },
-          type: { $first: '$type' },
-          createdAt: { $first: '$createdAt' },
-          updatedAt: { $first: '$updatedAt' },
-          members: { $push: '$members' },
-        },
-      },
+      ...membersPipeline,
+      ...groupPipeline,
+      { $sort: { _id: -1 } },
       { $skip: skip },
       { $limit: limit },
-      { $sort: { _id: -1 } },
     ]);
     return chats;
   }

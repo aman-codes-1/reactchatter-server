@@ -6,7 +6,6 @@ import {
   CreateMessageInput,
   MessageInput,
   MessagesInput,
-  MessageQueuedInput,
 } from './dto/message.input';
 import {
   Message,
@@ -30,16 +29,6 @@ export class MessageResolver {
   async message(@Args('input') input: MessageInput): Promise<Message> {
     const { messageId } = input;
     const message = await this.messageService.findOneById(messageId);
-    return message;
-  }
-
-  @UseGuards(GqlAuthGuard)
-  @Query(() => Message)
-  async messageQueued(
-    @Args('input') input: MessageQueuedInput,
-  ): Promise<Message> {
-    const { queueId } = input;
-    const message = await this.messageService.findOneByQueueId(queueId);
     return message;
   }
 
