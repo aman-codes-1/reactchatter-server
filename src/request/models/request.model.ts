@@ -3,8 +3,8 @@ import { User } from '../../auth/models/auth.model';
 
 @ObjectType({ description: 'RequestMemberObject' })
 class RequestMember extends User {
-  @Field(() => Boolean, { nullable: true })
-  hasSent?: boolean;
+  @Field(() => Boolean)
+  hasSent: boolean;
 }
 
 @ObjectType({ description: 'RequestObject' })

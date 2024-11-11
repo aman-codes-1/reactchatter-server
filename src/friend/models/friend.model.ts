@@ -3,8 +3,8 @@ import { User } from '../../auth/models/auth.model';
 
 @ObjectType({ description: 'FriendMemberObject' })
 class Member extends User {
-  @Field(() => Boolean, { nullable: true })
-  hasConfirmed?: boolean;
+  @Field(() => Boolean)
+  hasConfirmed: boolean;
 }
 
 @ObjectType({ description: 'FriendObject' })

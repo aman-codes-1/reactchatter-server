@@ -25,6 +25,7 @@ export class ChatService {
           isActive: { $first: '$isActive' },
           type: { $first: '$type' },
           members: { $push: '$members' },
+          lastMessage: { $first: '$lastMessage' },
           createdAt: { $first: '$createdAt' },
           updatedAt: { $first: '$updatedAt' },
         },
@@ -62,6 +63,23 @@ export class ChatService {
           members: {
             $mergeObjects: ['$members', { $arrayElemAt: ['$userDetails', 0] }],
           },
+        },
+      },
+      {
+        $lookup: {
+          from: 'messages',
+          let: { chatId: '$_id' },
+          pipeline: [
+            { $match: { $expr: { $eq: ['$chatId', '$$chatId'] } } },
+            { $sort: { _id: -1 } },
+            { $limit: 1 },
+          ],
+          as: 'lastMessage',
+        },
+      },
+      {
+        $unwind: {
+          path: '$lastMessage',
         },
       },
     ];
