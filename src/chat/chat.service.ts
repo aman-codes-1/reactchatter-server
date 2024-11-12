@@ -80,6 +80,7 @@ export class ChatService {
       {
         $unwind: {
           path: '$lastMessage',
+          preserveNullAndEmptyArrays: true,
         },
       },
     ];
