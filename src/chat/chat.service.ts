@@ -140,7 +140,22 @@ export class ChatService {
       },
       ...membersPipeline,
       ...groupPipeline,
-      { $sort: { _id: -1 } },
+      {
+        $addFields: {
+          sortField: {
+            $cond: {
+              if: {
+                $gt: [{ $ifNull: ['$lastMessage.createdAt', null] }, null],
+              },
+              then: '$lastMessage.createdAt',
+              else: '$_id',
+            },
+          },
+        },
+      },
+      {
+        $sort: { sortField: -1 },
+      },
       { $limit: limit },
     ]);
     return chats;
