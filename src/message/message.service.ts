@@ -110,9 +110,7 @@ export class MessageService {
       { $match: { _id: messageObjectId, isActive: true } },
       ...membersPipeline,
       ...groupPipeline,
-      {
-        $limit: 1,
-      },
+      { $limit: 1 },
     ]);
     if (!message?.length) {
       throw new BadRequestException('Message not found.');
@@ -176,16 +174,13 @@ export class MessageService {
     return message;
   }
 
-  async findAll(
-    chatId: string,
-    messageArgs: MessageArgs,
-  ): Promise<MessagesData> {
+  async findAll(chatId: string, args: MessageArgs): Promise<MessagesData> {
     const chatObjectId = new ObjectId(chatId);
     const chat = await this.chatService.findOneById(chatId);
     if (!chat) {
       throw new BadRequestException('Chat not found.');
     }
-    const { limit, after } = messageArgs || {};
+    const { limit, after } = args || {};
     const membersPipeline = await this.membersPipeline();
     const groupPipeline = await this.groupPipeline();
     const messages = await this.MessageModel.aggregate([
@@ -198,12 +193,8 @@ export class MessageService {
       },
       ...membersPipeline,
       ...groupPipeline,
-      {
-        $sort: { _id: -1 },
-      },
-      {
-        $limit: limit,
-      },
+      { $sort: { _id: -1 } },
+      { $limit: limit },
     ]);
 
     let edges: Message[] = [];

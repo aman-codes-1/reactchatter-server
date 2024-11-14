@@ -127,20 +127,20 @@ export class ChatService {
 
   async findAll(userId: string, args: ChatArgs): Promise<Chat[]> {
     const userObjectId = new ObjectId(userId);
-    const { limit, skip } = args;
+    const { limit, after } = args;
     const membersPipeline = await this.membersPipeline();
     const groupPipeline = await this.groupPipeline();
     const chats = await this.ChatModel.aggregate([
       {
         $match: {
           members: { $elemMatch: { _id: userObjectId } },
+          ...(after ? { _id: { $gt: new ObjectId(after) } } : {}),
           isActive: true,
         },
       },
       ...membersPipeline,
       ...groupPipeline,
       { $sort: { _id: -1 } },
-      { $skip: skip },
       { $limit: limit },
     ]);
     return chats;

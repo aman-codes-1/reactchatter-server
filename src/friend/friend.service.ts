@@ -146,7 +146,7 @@ export class FriendService {
 
   async findAll(userId: string, args: FriendArgs): Promise<Friend[]> {
     const userObjectId = new ObjectId(userId);
-    const { limit, skip } = args;
+    const { limit, after } = args;
     const hasChatsPipeline = await this.hasChatsPipeline(userObjectId);
     const membersPipeline = await this.membersPipeline();
     const groupPipeline = await this.groupPipeline();
@@ -154,6 +154,7 @@ export class FriendService {
       {
         $match: {
           members: { $elemMatch: { _id: userObjectId } },
+          ...(after ? { _id: { $gt: new ObjectId(after) } } : {}),
           isActive: true,
         },
       },
@@ -161,7 +162,6 @@ export class FriendService {
       ...membersPipeline,
       ...groupPipeline,
       { $sort: { _id: -1 } },
-      { $skip: skip },
       { $limit: limit },
     ]);
     return friends;
@@ -172,7 +172,7 @@ export class FriendService {
     args: FriendArgs,
   ): Promise<Friend[]> {
     const userObjectId = new ObjectId(userId);
-    const { limit, skip } = args;
+    const { limit, after } = args;
     const hasChatsPipeline = await this.hasChatsPipeline(userObjectId);
     const membersPipeline = await this.membersPipeline();
     const groupPipeline = await this.groupPipeline();
@@ -180,6 +180,7 @@ export class FriendService {
       {
         $match: {
           members: { $elemMatch: { _id: userObjectId } },
+          ...(after ? { _id: { $gt: new ObjectId(after) } } : {}),
           isActive: true,
         },
       },
@@ -192,7 +193,6 @@ export class FriendService {
       },
       ...groupPipeline,
       { $sort: { _id: -1 } },
-      { $skip: skip },
       { $limit: limit },
     ]);
     return otherFriends;

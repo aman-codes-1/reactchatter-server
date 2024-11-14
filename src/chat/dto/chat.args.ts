@@ -1,14 +1,14 @@
-import { ArgsType, Field, Int } from '@nestjs/graphql';
-import { Max, Min } from 'class-validator';
+import { ArgsType, Field, ID, Int } from '@nestjs/graphql';
+import { IsOptional, Min } from 'class-validator';
 
 @ArgsType()
 export class ChatArgs {
-  @Field(() => Int)
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
   @Min(1)
-  @Max(50)
-  limit = 25;
+  limit?: number = 25;
 
-  @Field(() => Int)
-  @Min(0)
-  skip = 0;
+  @Field(() => ID, { nullable: true })
+  @IsOptional()
+  after?: string;
 }

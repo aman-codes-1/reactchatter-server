@@ -221,22 +221,23 @@ export class RequestService {
     userId: string,
     args: RequestArgs,
   ): Promise<RequestsData> {
-    const { limit, skip } = args;
     const userObjectId = new ObjectId(userId);
+    const { limit, after } = args;
     const membersPipeline = await this.membersPipeline();
     const groupPipeline = await this.groupPipeline();
     const pendingRequests = await this.RequestModel.aggregate([
       {
         $match: {
-          status: 'pending',
           members: { $elemMatch: { _id: userObjectId, hasSent: false } },
+          ...(after ? { _id: { $gt: new ObjectId(after) } } : {}),
+          status: 'pending',
         },
       },
       ...membersPipeline,
       ...groupPipeline,
       {
         $facet: {
-          data: [{ $sort: { _id: -1 } }, { $skip: skip }, { $limit: limit }],
+          data: [{ $sort: { _id: -1 } }, { $limit: limit }],
           totalCount: [{ $count: 'count' }],
         },
       },
@@ -253,22 +254,23 @@ export class RequestService {
   }
 
   async findAllSent(userId: string, args: RequestArgs): Promise<RequestsData> {
-    const { limit, skip } = args;
     const userObjectId = new ObjectId(userId);
+    const { limit, after } = args;
     const membersPipeline = await this.membersPipeline();
     const groupPipeline = await this.groupPipeline();
     const sentRequests = await this.RequestModel.aggregate([
       {
         $match: {
-          status: 'pending',
           members: { $elemMatch: { _id: userObjectId, hasSent: true } },
+          ...(after ? { _id: { $gt: new ObjectId(after) } } : {}),
+          status: 'pending',
         },
       },
       ...membersPipeline,
       ...groupPipeline,
       {
         $facet: {
-          data: [{ $sort: { _id: -1 } }, { $skip: skip }, { $limit: limit }],
+          data: [{ $sort: { _id: -1 } }, { $limit: limit }],
           totalCount: [{ $count: 'count' }],
         },
       },

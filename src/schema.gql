@@ -218,15 +218,15 @@ type PageInfo {
 
 type Query {
   chat(input: ChatInput!): Chat!
-  chats(input: ChatsInput!, limit: Int! = 25, skip: Int! = 0): [Chat!]!
+  chats(after: ID, input: ChatsInput!, limit: Int = 25): [Chat!]!
   friend(input: FriendInput!): Friend!
-  friends(input: FriendsInput!, limit: Int! = 25, skip: Int! = 0): [Friend!]!
+  friends(after: ID, input: FriendsInput!, limit: Int = 25): [Friend!]!
   message(input: MessageInput!): Message!
   messageGroups(input: MessagesInput!): MessageGroupsData!
-  messages(after: ID, input: MessagesInput!, limit: Int! = 25): MessagesData!
-  otherFriends(input: FriendsInput!, limit: Int! = 25, skip: Int! = 0): [Friend!]!
-  pendingRequests(input: RequestsInput!, limit: Int! = 25, skip: Int! = 0): RequestsData!
-  sentRequests(input: RequestsInput!, limit: Int! = 25, skip: Int! = 0): RequestsData!
+  messages(after: ID, input: MessagesInput!, limit: Int = 25): MessagesData!
+  otherFriends(after: ID, input: FriendsInput!, limit: Int = 25): [Friend!]!
+  pendingRequests(after: ID, input: RequestsInput!, limit: Int = 25): RequestsData!
+  sentRequests(after: ID, input: RequestsInput!, limit: Int = 25): RequestsData!
 }
 
 """QueuedStatusObject"""
