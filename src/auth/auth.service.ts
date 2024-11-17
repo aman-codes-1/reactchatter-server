@@ -76,7 +76,7 @@ export class AuthService {
   }
 
   async validateUser(userDetails: UserDocument): Promise<UserDocument> {
-    const { email } = userDetails || {};
+    const { email } = userDetails;
     const user = (await this.UserModel.findOne({
       email,
     }).lean()) as UserDocument;

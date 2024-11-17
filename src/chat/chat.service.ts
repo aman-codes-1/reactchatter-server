@@ -71,7 +71,7 @@ export class ChatService {
           let: { chatId: '$_id' },
           pipeline: [
             { $match: { $expr: { $eq: ['$chatId', '$$chatId'] } } },
-            { $sort: { _id: -1 } },
+            { $sort: { timestamp: -1 } },
             { $limit: 1 },
           ],
           as: 'lastMessage',
@@ -145,10 +145,10 @@ export class ChatService {
           sortField: {
             $cond: {
               if: {
-                $gt: [{ $ifNull: ['$lastMessage.createdAt', null] }, null],
+                $gt: [{ $ifNull: ['$lastMessage.timestamp', null] }, null],
               },
-              then: '$lastMessage.createdAt',
-              else: '$_id',
+              then: '$lastMessage.timestamp',
+              else: { $toLong: '$createdAt' },
             },
           },
         },
@@ -156,8 +156,10 @@ export class ChatService {
       {
         $sort: { sortField: -1 },
       },
+      { $unset: 'sortField' },
       { $limit: limit },
     ]);
+    console.log(chats);
     return chats;
   }
 

@@ -128,7 +128,7 @@ export class MessageService {
       isSent,
       sentTimestamp,
       ...rest
-    } = data || {};
+    } = data;
     if (queueId) {
       const duplicateMessage = await this.MessageModel.findOne({
         queueId,
@@ -143,7 +143,7 @@ export class MessageService {
     }
     const chatObjectId = new ObjectId(chatId);
     const userObjectId = new ObjectId(userId);
-    const { members } = chat || {};
+    const { members } = chat;
     const otherMembers = members
       .filter((el) => String(el?._id) !== String(userId))
       .map((el) => ({
@@ -180,7 +180,7 @@ export class MessageService {
     if (!chat) {
       throw new BadRequestException('Chat not found.');
     }
-    const { limit, after } = args || {};
+    const { limit, after } = args;
     const membersPipeline = await this.membersPipeline();
     const groupPipeline = await this.groupPipeline();
     const messages = await this.MessageModel.aggregate([
@@ -193,7 +193,7 @@ export class MessageService {
       },
       ...membersPipeline,
       ...groupPipeline,
-      { $sort: { _id: -1 } },
+      { $sort: { timestamp: -1 } },
       { $limit: limit },
     ]);
 
