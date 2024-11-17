@@ -159,7 +159,6 @@ export class ChatService {
       { $unset: 'sortField' },
       { $limit: limit },
     ]);
-    console.log(chats);
     return chats;
   }
 
