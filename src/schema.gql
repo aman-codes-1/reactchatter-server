@@ -5,11 +5,13 @@
 """ChatObject"""
 type Chat {
   _id: String!
+  createdAt: Date!
   isActive: Boolean!
   lastMessage: Message
   members: [ChatMember!]!
   queueId: String!
   type: String!
+  updatedAt: Date!
 }
 
 """ChatDataObject"""
@@ -80,9 +82,12 @@ type DeliveredStatus {
 """FriendObject"""
 type Friend {
   _id: String!
+  createdAt: Date!
   hasChats: Boolean
   isActive: Boolean!
+  lastMessage: Message
   members: [Member!]!
+  updatedAt: Date!
 }
 
 """FriendDataObject"""

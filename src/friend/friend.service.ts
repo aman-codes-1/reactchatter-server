@@ -22,6 +22,7 @@ export class FriendService {
           _id: '$_id',
           isActive: { $first: '$isActive' },
           members: { $push: '$members' },
+          lastMessage: { $first: '$lastMessage' },
           hasChats: { $first: '$hasChats' },
           createdAt: { $first: '$createdAt' },
           updatedAt: { $first: '$updatedAt' },

@@ -30,6 +30,12 @@ export class Chat {
 
   @Field(() => Message, { nullable: true })
   lastMessage?: Message;
+
+  @Field(() => Date)
+  createdAt: Date;
+
+  @Field(() => Date)
+  updatedAt: Date;
 }
 
 @ObjectType({ description: 'ChatDataObject' })
