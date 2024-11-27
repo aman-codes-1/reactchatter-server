@@ -5,7 +5,7 @@ import { Message } from '../../message/models/message.model';
 @ObjectType({ description: 'FriendMemberObject' })
 class Member extends User {
   @Field(() => Boolean)
-  hasConfirmed: boolean;
+  hasAdded: boolean;
 }
 
 @ObjectType({ description: 'FriendObject' })
@@ -13,8 +13,14 @@ export class Friend {
   @Field(() => String)
   _id: string;
 
+  @Field(() => String, { nullable: true })
+  queueId?: string;
+
   @Field(() => Boolean)
   isActive: boolean;
+
+  @Field(() => String, { nullable: true })
+  type?: string;
 
   @Field(() => [Member])
   members: Member[];

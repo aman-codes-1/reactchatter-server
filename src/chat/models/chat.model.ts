@@ -5,7 +5,7 @@ import { Message } from '../../message/models/message.model';
 @ObjectType({ description: 'ChatMemberObject' })
 class ChatMember extends User {
   @Field(() => Boolean)
-  hasCreated: boolean;
+  hasAdded: boolean;
 
   @Field(() => Boolean, { nullable: true })
   isAdmin?: boolean;
@@ -40,8 +40,8 @@ export class Chat {
 
 @ObjectType({ description: 'ChatDataObject' })
 export class ChatData {
-  @Field(() => [String])
-  friendIds: string[];
+  @Field(() => [String], { nullable: true })
+  friendIds?: string[];
 
   @Field(() => Chat)
   chat: Chat;

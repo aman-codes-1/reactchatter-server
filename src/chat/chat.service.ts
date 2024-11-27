@@ -112,7 +112,7 @@ export class ChatService {
     }
     const members = [userId, ...friendUserIds].map((id, idx) => ({
       _id: new ObjectId(id),
-      hasCreated: idx === 0,
+      hasAdded: idx === 0,
     }));
     const newChat = new this.ChatModel({
       queueId,

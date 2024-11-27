@@ -7,7 +7,7 @@ import { Chat, ChatData } from './models/chat.model';
 import { ChatService } from './chat.service';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 
-const pubSub = new PubSub();
+export const pubSub = new PubSub();
 
 @Resolver(() => Chat)
 export class ChatResolver {
@@ -51,11 +51,9 @@ export class ChatResolver {
   @UseGuards(GqlAuthGuard)
   @Mutation(() => Chat)
   async updateChat(@Args('input') input: CreateChatInput): Promise<Chat> {
-    const { friendIds } = input;
     const updatedChat = await this.chatService.create(input);
     pubSub.publish('OnChatUpdated', {
       OnChatUpdated: {
-        friendIds,
         chat: updatedChat,
       },
     });

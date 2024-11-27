@@ -12,7 +12,7 @@ import { RequestService } from './request.service';
 import { pubSub as friendPubSub } from '../friend/friend.resolver';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 
-export const pubSub = new PubSub();
+const pubSub = new PubSub();
 
 @Resolver(() => Request)
 export class RequestResolver {

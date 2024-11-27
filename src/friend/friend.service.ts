@@ -21,11 +21,16 @@ export class FriendService {
         $group: {
           _id: '$_id',
           isActive: { $first: '$isActive' },
+          type: { $first: '$type' },
           members: { $push: '$members' },
-          lastMessage: { $first: '$lastMessage' },
           hasChats: { $first: '$hasChats' },
           createdAt: { $first: '$createdAt' },
           updatedAt: { $first: '$updatedAt' },
+        },
+      },
+      {
+        $addFields: {
+          type: 'friend',
         },
       },
     ];
@@ -134,7 +139,7 @@ export class FriendService {
     const { members } = data;
     const Members = members.map((member) => ({
       _id: new ObjectId(member?._id),
-      hasConfirmed: String(member?._id) === userId,
+      hasAdded: String(member?._id) === userId,
     }));
     const newFriend = new this.FriendModel({
       members: Members,

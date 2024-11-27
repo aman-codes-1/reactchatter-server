@@ -14,13 +14,18 @@ import {
   MessagesData,
 } from './models/message.model';
 import { MessageService } from './message.service';
+import { ChatService } from '../chat/chat.service';
+import { pubSub as chatPubSub } from '../chat/chat.resolver';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 
 const pubSub = new PubSub();
 
 @Resolver(() => Message)
 export class MessageResolver {
-  constructor(private readonly messageService: MessageService) {
+  constructor(
+    private readonly messageService: MessageService,
+    private readonly chatService: ChatService,
+  ) {
     //
   }
 
@@ -71,8 +76,13 @@ export class MessageResolver {
     const newMessage = await this.messageService.create(input);
     pubSub.publish('OnMessageAdded', {
       OnMessageAdded: {
-        chatId,
         message: newMessage,
+      },
+    });
+    const updatedChat = await this.chatService.findOneById(String(chatId));
+    chatPubSub.publish('OnChatUpdated', {
+      OnChatUpdated: {
+        chat: updatedChat,
       },
     });
     return newMessage;
@@ -83,11 +93,9 @@ export class MessageResolver {
   async updateMessage(
     @Args('input') input: CreateMessageInput,
   ): Promise<Message> {
-    const { chatId } = input;
     const updatedMessage = await this.messageService.create(input);
     pubSub.publish('OnMessageUpdated', {
       OnMessageUpdated: {
-        chatId,
         message: updatedMessage,
       },
     });

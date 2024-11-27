@@ -109,9 +109,6 @@ export class MessagesData {
 
 @ObjectType({ description: 'MessageDataObject' })
 export class MessageData {
-  @Field(() => String)
-  chatId: string;
-
   @Field(() => Message)
   message: Message;
 }

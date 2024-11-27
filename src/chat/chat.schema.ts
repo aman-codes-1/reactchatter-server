@@ -6,7 +6,7 @@ class Member {
   _id: Types.ObjectId;
 
   @Prop()
-  hasCreated: boolean;
+  hasAdded: boolean;
 
   @Prop({ required: false })
   isAdmin: boolean;

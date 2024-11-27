@@ -17,7 +17,7 @@ type Chat {
 """ChatDataObject"""
 type ChatData {
   chat: Chat!
-  friendIds: [String!]!
+  friendIds: [String!]
 }
 
 """ChatInput"""
@@ -32,7 +32,7 @@ type ChatMember {
   email_verified: Boolean
   family_name: String
   given_name: String
-  hasCreated: Boolean!
+  hasAdded: Boolean!
   isAdmin: Boolean
   name: String
   picture: String
@@ -87,6 +87,8 @@ type Friend {
   isActive: Boolean!
   lastMessage: Message
   members: [Member!]!
+  queueId: String
+  type: String
   updatedAt: Date!
 }
 
@@ -136,7 +138,7 @@ type Member {
   email_verified: Boolean
   family_name: String
   given_name: String
-  hasConfirmed: Boolean!
+  hasAdded: Boolean!
   name: String
   picture: String
 }
@@ -155,7 +157,6 @@ type Message {
 
 """MessageDataObject"""
 type MessageData {
-  chatId: String!
   message: Message!
 }
 

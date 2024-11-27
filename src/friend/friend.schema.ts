@@ -6,7 +6,7 @@ class Member {
   _id: Types.ObjectId;
 
   @Prop()
-  hasConfirmed: boolean;
+  hasAdded: boolean;
 }
 
 @Schema({ timestamps: true })
