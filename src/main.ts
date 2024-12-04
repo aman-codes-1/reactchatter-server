@@ -18,7 +18,7 @@ async function bootstrap() {
   const SESSION_SECRET = configService.get('SESSION_SECRET');
   const COOKIE_SECRET = configService.get('COOKIE_SECRET');
   const COOKIE_MAX_AGE = configService.get('COOKIE_MAX_AGE');
-  const isDevelopment = configService.get('isDevelopment');
+  const isProduction = configService.get('isProduction');
   const HTTP_ONLY_COOKIE = configService.get('HTTP_ONLY_COOKIE');
   // const RATE_LIMIT_MS = configService.get('RATE_LIMIT_MS');
   // const RATE_LIMIT_MAX = configService.get('RATE_LIMIT_MAX');
@@ -47,13 +47,10 @@ async function bootstrap() {
     },
   };
   app.set('trust proxy', 1);
-  app.use(
-    helmet({
-      contentSecurityPolicy: isDevelopment
-        ? developmentContentSecurityPolicy
-        : undefined,
-    }),
-  );
+  const helmetOptions = isProduction
+    ? {}
+    : { contentSecurityPolicy: developmentContentSecurityPolicy };
+  app.use(helmet(helmetOptions));
   app.enableCors({
     origin: [...new Set(ORIGINS)],
     methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'],
@@ -76,7 +73,7 @@ async function bootstrap() {
       resave: false,
       saveUninitialized: false,
       cookie: HTTP_ONLY_COOKIE,
-      proxy: !isDevelopment,
+      proxy: isProduction,
       store: new MemoryStore({
         checkPeriod: Number(COOKIE_MAX_AGE) * 1000,
       }),

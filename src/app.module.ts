@@ -45,7 +45,7 @@ import configuration from './config/configuration';
         sortSchema: true,
         fieldResolverEnhancers: ['interceptors'] as Enhancer[],
         autoTransformHttpErrors: true,
-        introspection: !!configService.get('isDevelopment'),
+        introspection: !configService.get('isProduction'),
         installSubscriptionHandlers: true,
         subscriptions: {
           'graphql-ws': {

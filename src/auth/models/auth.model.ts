@@ -63,6 +63,15 @@ class GoogleAuth {
   tokens: Tokens;
 }
 
+@ObjectType({ description: 'OnlineStatusObject' })
+class OnlineStatus {
+  @Field(() => Boolean, { nullable: true })
+  isOnline?: boolean;
+
+  @Field(() => Float)
+  timestamp: number;
+}
+
 @ObjectType({ description: 'UserObject' })
 export class User {
   @Field(() => String)
@@ -85,6 +94,9 @@ export class User {
 
   @Field(() => String, { nullable: true })
   family_name?: string;
+
+  @Field(() => OnlineStatus, { nullable: true })
+  onlineStatus?: OnlineStatus;
 }
 
 @ObjectType({ description: 'AuthObject' })
@@ -94,4 +106,10 @@ export class Auth extends User {
 
   @Field(() => GoogleAuth, { nullable: true })
   google_auth?: GoogleAuth;
+}
+
+@ObjectType({ description: 'AuthDataObject' })
+export class AuthData {
+  @Field(() => Auth)
+  auth: Auth;
 }

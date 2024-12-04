@@ -10,7 +10,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { Model } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { CookieOptions, Request, Response } from 'express';
-import { User, UserDocument } from '../user/user.schema';
+import { OnlineStatus, User, UserDocument } from '../user/user.schema';
 
 @Injectable()
 export class AuthService {
@@ -198,5 +198,15 @@ export class AuthService {
     if (request) {
       request?.logOut((err: any) => err);
     }
+  }
+
+  async updateOnlineStatus(userId: string, onlineStatus: OnlineStatus) {
+    const userObjectId = new ObjectId(userId);
+    const updatedUser = (await this.UserModel.findByIdAndUpdate(
+      { _id: userObjectId },
+      { $set: { onlineStatus } },
+      { upsert: true, new: true },
+    ).lean()) as UserDocument;
+    return updatedUser;
   }
 }

@@ -5,6 +5,7 @@ export class ChatInput {
   @Field(() => String)
   chatId: string;
 }
+
 @InputType({ description: 'ChatsInput' })
 export class ChatsInput {
   @Field(() => String)

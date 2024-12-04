@@ -5,6 +5,7 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { User, UserSchema } from '../user/user.schema';
 import { AuthController } from './auth.controller';
+import { AuthResolver } from './auth.resolver';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
@@ -28,6 +29,12 @@ import { SessionSerializer } from './serializers/Serializer';
     ]),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, GoogleStrategy, SessionSerializer],
+  providers: [
+    AuthResolver,
+    AuthService,
+    JwtStrategy,
+    GoogleStrategy,
+    SessionSerializer,
+  ],
 })
 export class AuthModule {}

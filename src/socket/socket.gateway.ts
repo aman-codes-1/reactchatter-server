@@ -1,48 +1,88 @@
 import {
+  MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { Auth } from '../auth/models/auth.model';
+import { AuthService } from '../auth/auth.service';
+import { pubSub as authPubSub } from '../auth/auth.resolver';
 
 @WebSocketGateway({ transports: ['websocket'] })
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  constructor() {
+  constructor(private authService: AuthService) {
     //
   }
 
-  public connectedUsers: Map<string, any> = new Map();
-
-  public clientId: any;
-
   @WebSocketServer() server: Server;
 
-  handleConnection(client: any) {
-    const clientId = client?.id;
-    this.clientId = clientId;
-    const { auth: user } = client.handshake;
-    const userId = user?._id;
-    if (userId) {
-      this.server.emit('connection', { clientId });
-      this.connectedUsers.set(clientId, user);
-      // console.log(
-      //   `User ${user?.email} is ${user?.isOnline === false ? 'offline' : 'online'}.`,
-      // );
-    } else {
-      // console.error('userId is undefined');
+  async handleConnection(client: Socket) {
+    const { auth } = client.handshake;
+    const { _id, onlineStatus } = auth || {};
+
+    if (!_id || !onlineStatus) {
+      client.disconnect();
+      return;
     }
-    // console.log(this.connectedUsers.size);
+
+    const { timestamp } = onlineStatus || {};
+    const isOnline = true;
+
+    const updatedUser = await this.authService.updateOnlineStatus(_id, {
+      timestamp,
+    });
+
+    authPubSub.publish('OnUserUpdated', {
+      OnUserUpdated: {
+        auth: {
+          ...updatedUser,
+          onlineStatus: {
+            ...updatedUser?.onlineStatus,
+            isOnline,
+          },
+        },
+      },
+    });
   }
 
-  handleDisconnect(client: Socket) {
-    const clientId = client?.id;
-    this.clientId = clientId;
-    const user = this.connectedUsers.get(clientId);
-    if (user) {
-      // console.log(`User ${user?.email} disconnected.`);
-      this.connectedUsers.delete(clientId);
-    }
-    // console.log(this.connectedUsers.size);
+  async handleDisconnect(client: Socket) {
+    const { auth } = client.handshake;
+    const { _id, onlineStatus } = auth || {};
+
+    if (!_id || !onlineStatus) return;
+
+    const { timestamp } = onlineStatus || {};
+
+    await this.authService.updateOnlineStatus(_id, {
+      timestamp,
+    });
+  }
+
+  @SubscribeMessage('updateUserOnlineStatus')
+  async handleStatusUpdate(@MessageBody() payload: Auth) {
+    const { _id, onlineStatus } = payload || {};
+
+    if (!_id || !onlineStatus) return;
+
+    const { isOnline, timestamp } = onlineStatus || {};
+
+    const updatedUser = await this.authService.updateOnlineStatus(_id, {
+      timestamp,
+    });
+
+    authPubSub.publish('OnUserUpdated', {
+      OnUserUpdated: {
+        auth: {
+          ...updatedUser,
+          onlineStatus: {
+            ...updatedUser?.onlineStatus,
+            isOnline,
+          },
+        },
+      },
+    });
   }
 }

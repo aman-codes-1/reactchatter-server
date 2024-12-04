@@ -62,6 +62,25 @@ class GoogleAuth {
   tokens: Tokens;
 }
 
+// class Connection {
+//   @Prop()
+//   clientId: string;
+
+//   @Prop()
+//   lastActive: number;
+// }
+
+export class OnlineStatus {
+  // @Prop({ default: false })
+  // isOnline: boolean;
+
+  @Prop()
+  timestamp: number;
+
+  // @Prop()
+  // connections: Connection[];
+}
+
 @Schema({ timestamps: true })
 export class User {
   @Prop()
@@ -84,6 +103,9 @@ export class User {
 
   @Prop()
   provider: string;
+
+  @Prop()
+  onlineStatus: OnlineStatus;
 
   @Prop({ required: false })
   google_auth?: GoogleAuth;

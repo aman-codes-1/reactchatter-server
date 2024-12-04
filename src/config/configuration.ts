@@ -1,11 +1,16 @@
 import * as dotenv from 'dotenv';
 
-const isLocalProd = process.env.NODE_ENV === 'production';
+dotenv.config();
 
-dotenv.config(isLocalProd ? { path: '.env.production.local' } : {});
+const NODE_ENV = process.env.NODE_ENV || 'development';
+
+const isProduction = NODE_ENV === 'production';
+
+if (isProduction) {
+  dotenv.config({ path: '.env.production.local', override: true });
+}
 
 const PORT = process.env.PORT || 4000;
-const NODE_ENV = process.env.NODE_ENV;
 const DOMAIN = process.env.DOMAIN || 'localhost';
 const CLIENT_PORT = process.env.CLIENT_PORT || 3001;
 const CLIENT_URI = process.env.CLIENT_URI || '';
@@ -23,26 +28,24 @@ const JWT_EXPIRATION_TIME = process.env.JWT_EXPIRATION_TIME || 3599;
 const RATE_LIMIT_MS = process.env.RATE_LIMIT_MS || 60000;
 const RATE_LIMIT_MAX = process.env.RATE_LIMIT_MAX || 100;
 
-const isDevelopment = NODE_ENV === 'development';
+const CLIENT_URL = isProduction
+  ? CLIENT_URI
+  : `http://${DOMAIN}:${CLIENT_PORT}`;
 
-const CLIENT_URL = isDevelopment
-  ? `http://${DOMAIN}:${CLIENT_PORT}`
-  : CLIENT_URI;
-
-const SERVER_URL = isDevelopment ? `http://${DOMAIN}:${PORT}` : SERVER_URI;
+const SERVER_URL = isProduction ? SERVER_URI : `http://${DOMAIN}:${PORT}`;
 
 const HTTP_ONLY_COOKIE = {
   httpOnly: true,
   signed: true,
   sameSite: SAME_SITE,
-  secure: !isDevelopment,
+  secure: isProduction,
   maxAge: Number(COOKIE_MAX_AGE) * 1000,
 };
 
 const USERS_COOKIE = {
   httpOnly: true,
   sameSite: SAME_SITE,
-  secure: !isDevelopment,
+  secure: isProduction,
   maxAge: Number(COOKIE_MAX_AGE) * 1000,
 };
 
@@ -64,7 +67,7 @@ export default () => ({
   JWT_EXPIRATION_TIME,
   RATE_LIMIT_MS,
   RATE_LIMIT_MAX,
-  isDevelopment,
+  isProduction,
   CLIENT_URL,
   SERVER_URL,
   HTTP_ONLY_COOKIE,
