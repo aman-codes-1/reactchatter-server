@@ -27,6 +27,7 @@ const JWT_SECRET = process.env.JWT_SECRET || '';
 const JWT_EXPIRATION_TIME = process.env.JWT_EXPIRATION_TIME || 3599;
 const RATE_LIMIT_MS = process.env.RATE_LIMIT_MS || 60000;
 const RATE_LIMIT_MAX = process.env.RATE_LIMIT_MAX || 100;
+const ENCRYPTION_SECRET = process.env.ENCRYPTION_SECRET || '';
 
 const CLIENT_URL = isProduction
   ? CLIENT_URI
@@ -50,8 +51,8 @@ const USERS_COOKIE = {
 };
 
 export default () => ({
-  PORT,
   NODE_ENV,
+  PORT,
   DOMAIN,
   CLIENT_PORT,
   CLIENT_URI,
@@ -67,6 +68,7 @@ export default () => ({
   JWT_EXPIRATION_TIME,
   RATE_LIMIT_MS,
   RATE_LIMIT_MAX,
+  ENCRYPTION_SECRET,
   isProduction,
   CLIENT_URL,
   SERVER_URL,

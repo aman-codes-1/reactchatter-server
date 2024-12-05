@@ -104,6 +104,68 @@ export class AuthService {
     return user;
   }
 
+  getTextEncoding(text: string) {
+    const enc = new TextEncoder();
+    return enc.encode(text);
+  }
+
+  async getCryptoKey(key: string) {
+    const encodedKey = new TextEncoder().encode(key);
+    const res = await crypto.subtle.importKey(
+      'raw',
+      encodedKey,
+      { name: 'AES-GCM' },
+      false,
+      ['encrypt', 'decrypt'],
+    );
+    return res;
+  }
+
+  decodeBase64ToUint8Array(data: string) {
+    try {
+      if (!data || typeof data !== 'string') {
+        throw new Error('Invalid Base64 input');
+      }
+      const binaryString = atob(data);
+      return new Uint8Array(
+        Array.from(binaryString).map((char) => char.charCodeAt(0)),
+      );
+    } catch (error) {
+      console.error('Failed to decode Base64 string:', error);
+      throw error;
+    }
+  }
+
+  async encrypt(data: string, secretKey: string) {
+    const encoded = this.getTextEncoding(data);
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const key = await this.getCryptoKey(secretKey);
+    const encryptedData = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      encoded,
+    );
+    const combined = new Uint8Array(iv.length + encryptedData.byteLength);
+    combined.set(iv, 0);
+    combined.set(new Uint8Array(encryptedData), iv.length);
+    const res = btoa(String.fromCharCode(...combined));
+    return res;
+  }
+
+  async decrypt(data: string, secretKey: string) {
+    const combined = this.decodeBase64ToUint8Array(data);
+    const iv = combined.slice(0, 12);
+    const encryptedData = combined.slice(12);
+    const key = await this.getCryptoKey(secretKey);
+    const decryptedData = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      encryptedData,
+    );
+    const res = new TextDecoder().decode(decryptedData);
+    return res;
+  }
+
   async login(
     payload: User,
     response: Response,

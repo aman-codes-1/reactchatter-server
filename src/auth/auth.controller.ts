@@ -8,12 +8,14 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 @Controller('auth')
 export class AuthController {
   private CLIENT_URL: string;
+  private ENCRYPTION_SECRET: string;
 
   constructor(
     private authService: AuthService,
     private readonly configService: ConfigService,
   ) {
     this.CLIENT_URL = configService.get('CLIENT_URL');
+    this.ENCRYPTION_SECRET = configService.get('ENCRYPTION_SECRET');
   }
 
   @Get('google/login/:from')
@@ -38,8 +40,12 @@ export class AuthController {
     const { accessToken } =
       (await this.authService.login(rest, response, expires_in, expiry_date)) ||
       {};
+    const encryptedAccessToken = await this.authService.encrypt(
+      accessToken,
+      this.ENCRYPTION_SECRET,
+    );
     const { from } = request?.params || {};
-    const redirectUrl = `${this.CLIENT_URL}/?token=${encodeURIComponent(accessToken)}&from=${encodeURIComponent(from || '/')}`;
+    const redirectUrl = `${this.CLIENT_URL}/?code=${encodeURIComponent(encryptedAccessToken)}&from=${encodeURIComponent(from || '/')}`;
     return response.redirect(redirectUrl);
   }
 
