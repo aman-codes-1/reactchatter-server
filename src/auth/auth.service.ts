@@ -46,7 +46,7 @@ export class AuthService {
     this.oauth2Client = new OAuth2Client({
       clientId: this.GOOGLE_CLIENT_ID,
       clientSecret: this.GOOGLE_CLIENT_SECRET,
-      redirectUri: `${this.CLIENT_URL}/login`,
+      redirectUri: this.CLIENT_URL,
     });
   }
 

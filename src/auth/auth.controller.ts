@@ -39,15 +39,14 @@ export class AuthController {
       (await this.authService.login(rest, response, expires_in, expiry_date)) ||
       {};
     const { from } = request?.params || {};
-    return response.redirect(
-      `${this.CLIENT_URL}/login?token=${accessToken}&from=${from}`,
-    );
+    const redirectUrl = `${this.CLIENT_URL}/?token=${encodeURIComponent(accessToken)}&from=${encodeURIComponent(from || '/')}`;
+    return response.redirect(redirectUrl);
   }
 
   @Get('google/cancel')
   @UseGuards(GoogleOAuthGuard)
   cancel(@Res() response: Response) {
-    return response.redirect(`${this.CLIENT_URL}/login`);
+    return response.redirect(this.CLIENT_URL);
   }
 
   @Get('profile')
