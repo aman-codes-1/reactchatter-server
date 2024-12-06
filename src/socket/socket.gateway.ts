@@ -7,7 +7,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Auth } from '../auth/models/auth.model';
+import { User } from '../auth/models/auth.model';
 import { AuthService } from '../auth/auth.service';
 import { pubSub as authPubSub } from '../auth/auth.resolver';
 
@@ -62,7 +62,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('updateUserOnlineStatus')
-  async handleStatusUpdate(@MessageBody() payload: Auth) {
+  async handleStatusUpdate(@MessageBody() payload: User) {
     const { _id, onlineStatus } = payload || {};
 
     if (!_id || !onlineStatus) return;

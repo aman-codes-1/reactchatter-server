@@ -1,4 +1,11 @@
-import { Controller, Get, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Req,
+  Res,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
@@ -8,14 +15,12 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 @Controller('auth')
 export class AuthController {
   private CLIENT_URL: string;
-  private ENCRYPTION_SECRET: string;
 
   constructor(
     private authService: AuthService,
     private readonly configService: ConfigService,
   ) {
     this.CLIENT_URL = configService.get('CLIENT_URL');
-    this.ENCRYPTION_SECRET = configService.get('ENCRYPTION_SECRET');
   }
 
   @Get('google/login/:from')
@@ -32,18 +37,12 @@ export class AuthController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const user = request?.user;
-    const {
-      google_auth: { tokens: { expires_in = 0, expiry_date = 0 } = {} } = {},
-      ...rest
-    } = user;
-    const { accessToken } =
-      (await this.authService.login(rest, response, expires_in, expiry_date)) ||
-      {};
-    const encryptedAccessToken = await this.authService.encrypt(
-      accessToken,
-      this.ENCRYPTION_SECRET,
-    );
+    const { user } = request || {};
+    const { accessToken } = await this.authService.login(user, response);
+    if (!accessToken) {
+      throw new UnauthorizedException();
+    }
+    const encryptedAccessToken = await this.authService.encrypt(accessToken);
     const { from } = request?.params || {};
     const redirectUrl = `${this.CLIENT_URL}/?code=${encodeURIComponent(encryptedAccessToken)}&from=${encodeURIComponent(from || '/')}`;
     return response.redirect(redirectUrl);

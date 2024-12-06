@@ -62,27 +62,32 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(req: Request, payload: any) {
-    const today = new Date();
-    today.setMinutes(today.getMinutes() - 1);
-    const currentTime = Math.floor(today.getTime() / 1000);
-    if (payload && !Number.isNaN(payload?.exp) && payload?.exp < currentTime) {
-      const accessToken = await this.authService.refreshToken(
-        payload,
-        req?.res,
-      );
-      if (accessToken) {
-        const JWT_SECRET = this.configService.get('JWT_SECRET');
-        const { payload: Payload } = this.authService.verifyToken(
-          accessToken,
-          JWT_SECRET,
-        );
-        if (Payload) {
-          return Payload;
+    if (req?.res) {
+      const today = new Date();
+      today.setMinutes(today.getMinutes() - 1);
+      const currentTime = Math.floor(today.getTime() / 1000);
+      if (
+        payload &&
+        !Number.isNaN(payload?.exp) &&
+        payload?.exp < currentTime
+      ) {
+        const { newAccessToken, reAuthenticatedUser } =
+          await this.authService.refreshToken(payload, req?.res);
+        if (newAccessToken && reAuthenticatedUser) {
+          const JWT_SECRET = this.configService.get('JWT_SECRET');
+          const { payload: Payload } = await this.authService.verifyToken(
+            newAccessToken,
+            JWT_SECRET,
+          );
+          if (Payload) {
+            return reAuthenticatedUser;
+          }
+          throw new UnauthorizedException();
         }
         throw new UnauthorizedException();
       }
-      throw new UnauthorizedException();
+      return req?.user;
     }
-    return payload;
+    return req?.user;
   }
 }

@@ -5,21 +5,20 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
+import MongoStore from 'connect-mongo';
 import passport from 'passport';
 // import rateLimit from 'express-rate-limit';
 import { AppModule } from './app.module';
-
-const MemoryStore = require('memorystore')(session);
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const configService = app.get(ConfigService);
   const PORT = configService.get('PORT');
-  const SESSION_SECRET = configService.get('SESSION_SECRET');
   const COOKIE_SECRET = configService.get('COOKIE_SECRET');
   const COOKIE_MAX_AGE = configService.get('COOKIE_MAX_AGE');
-  const isProduction = configService.get('isProduction');
+  const SESSION_SECRET = configService.get('SESSION_SECRET');
   const HTTP_ONLY_COOKIE = configService.get('HTTP_ONLY_COOKIE');
+  const MONGO_URI = configService.get('MONGO_URI');
   // const RATE_LIMIT_MS = configService.get('RATE_LIMIT_MS');
   // const RATE_LIMIT_MAX = configService.get('RATE_LIMIT_MAX');
   const CLIENT_URL = configService.get('CLIENT_URL');
@@ -31,6 +30,7 @@ async function bootstrap() {
   const ORIGINS = [ALLOWED_ORIGIN, CLIENT_URL]
     .filter((origin) => origin)
     .flat(1);
+  const isProduction = configService.get('isProduction');
   const developmentContentSecurityPolicy = {
     directives: {
       imgSrc: [
@@ -74,8 +74,12 @@ async function bootstrap() {
       saveUninitialized: false,
       cookie: HTTP_ONLY_COOKIE,
       proxy: isProduction,
-      store: new MemoryStore({
-        checkPeriod: Number(COOKIE_MAX_AGE) * 1000,
+      store: new MongoStore({
+        mongoUrl: MONGO_URI,
+        collectionName: 'userSessions',
+        dbName: 'ReactChatter',
+        ttl: Number(COOKIE_MAX_AGE) * 1000,
+        autoRemove: 'native',
       }),
     }),
   );

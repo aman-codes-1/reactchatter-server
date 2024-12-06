@@ -28,6 +28,8 @@ export class AuthService {
 
   private GOOGLE_CLIENT_SECRET: string;
 
+  private ENCRYPTION_SECRET: string;
+
   private oauth2Client: OAuth2Client;
 
   constructor(
@@ -42,6 +44,7 @@ export class AuthService {
     this.CLIENT_URL = configService.get('CLIENT_URL');
     this.GOOGLE_CLIENT_ID = configService.get('GOOGLE_CLIENT_ID');
     this.GOOGLE_CLIENT_SECRET = configService.get('GOOGLE_CLIENT_SECRET');
+    this.ENCRYPTION_SECRET = configService.get('ENCRYPTION_SECRET');
 
     this.oauth2Client = new OAuth2Client({
       clientId: this.GOOGLE_CLIENT_ID,
@@ -136,10 +139,10 @@ export class AuthService {
     }
   }
 
-  async encrypt(data: string, secretKey: string) {
+  async encrypt(data: string) {
     const encoded = this.getTextEncoding(data);
     const iv = crypto.getRandomValues(new Uint8Array(12));
-    const key = await this.getCryptoKey(secretKey);
+    const key = await this.getCryptoKey(this.ENCRYPTION_SECRET);
     const encryptedData = await crypto.subtle.encrypt(
       { name: 'AES-GCM', iv },
       key,
@@ -152,11 +155,11 @@ export class AuthService {
     return res;
   }
 
-  async decrypt(data: string, secretKey: string) {
+  async decrypt(data: string) {
     const combined = this.decodeBase64ToUint8Array(data);
     const iv = combined.slice(0, 12);
     const encryptedData = combined.slice(12);
-    const key = await this.getCryptoKey(secretKey);
+    const key = await this.getCryptoKey(this.ENCRYPTION_SECRET);
     const decryptedData = await crypto.subtle.decrypt(
       { name: 'AES-GCM', iv },
       key,
@@ -166,13 +169,10 @@ export class AuthService {
     return res;
   }
 
-  async login(
-    payload: User,
-    response: Response,
-    expires_in: number,
-    expiry_date: number,
-  ): Promise<any> {
-    const accessToken = await this.jwtService.signAsync(payload, {
+  async login(user: UserDocument, response: Response): Promise<any> {
+    const { authTokens: { expires_in = 0, expiry_date = 0 } = {}, ...rest } =
+      user || {};
+    const accessToken = await this.jwtService.signAsync(rest, {
       secret: this.JWT_SECRET,
       expiresIn: `${expires_in || this.JWT_EXPIRATION_TIME}s`,
     });
@@ -192,73 +192,62 @@ export class AuthService {
 
   async refreshToken(payload: UserDocument, response: Response) {
     const user = await this.findOneById(String(payload?._id));
-    if (user) {
-      if (user?.provider === 'google') {
-        const accessToken = await this.googleRefreshToken(user, response);
-        return accessToken;
-      }
-      throw new UnauthorizedException();
+    if (user && user?.provider === 'google') {
+      const res = await this.googleRefreshToken(user, response);
+      return res;
     }
     throw new UnauthorizedException();
   }
 
   async googleRefreshToken(user: UserDocument, response: Response) {
-    const { google_auth: { tokens: { refresh_token = '' } = {} } = {} } = user;
+    let newAccessToken: string;
+    let reAuthenticatedUser: UserDocument;
+    const { authTokens: { refresh_token = '' } = {} } = user || {};
     this.oauth2Client.setCredentials({
       refresh_token,
     });
     const { res: { data = {} } = {} } =
       await this.oauth2Client.getAccessToken();
     if (data) {
+      newAccessToken = data?.access_token;
       this.oauth2Client.setCredentials(data);
-      const auth = {
+      reAuthenticatedUser = {
         ...user,
-        google_auth: {
-          ...user.google_auth,
-          tokens: data,
-        },
+        authTokens: data,
       } as UserDocument;
-      const {
-        google_auth: { tokens: { expires_in = 0, expiry_date = 0 } = {} } = {},
-        ...rest
-      } = await this.validateUser(auth);
-      const { accessToken } =
-        (await this.login(rest, response, expires_in, expiry_date)) || {};
-      if (accessToken) {
-        return accessToken;
+      const validatedUser = await this.validateUser(reAuthenticatedUser);
+      if (validatedUser) {
+        reAuthenticatedUser = validatedUser;
+        const { accessToken } = await this.login(reAuthenticatedUser, response);
+        if (accessToken) {
+          newAccessToken = accessToken;
+        }
       }
-      throw new UnauthorizedException();
     }
-    throw new UnauthorizedException();
+    return {
+      newAccessToken,
+      reAuthenticatedUser,
+    };
   }
 
-  verifyToken(token: string, secret: string): any {
+  async verifyToken(token: string, secret: string) {
     try {
-      const payload = this.jwtService.verify(token, {
+      const payload = await this.jwtService.verifyAsync(token, {
         secret,
       });
-      if (payload) {
-        return {
-          payload,
-        };
-      }
-      return {
-        payload: null,
-      };
+      return { payload: payload || null };
     } catch (err) {
-      return {
-        payload: null,
-      };
+      return { payload: null };
     }
   }
 
   logout(request: Request, response?: Response): any {
+    if (request) {
+      request?.logOut((err: any) => err);
+    }
     if (response) {
       response?.cookie('token', '', this.HTTP_ONLY_COOKIE);
       response?.cookie('token-expires', '', this.USERS_COOKIE);
-    }
-    if (request) {
-      request?.logOut((err: any) => err);
     }
   }
 

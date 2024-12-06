@@ -34,42 +34,22 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         profile: Profile,
         done: VerifyCallback,
       ) => {
-        const { expires_in } = params;
+        const { expires_in } = params || {};
         const expiresInMs = Number(expires_in) * 1000;
         const expiry_date = new Date().getTime() + expiresInMs;
         const tokens = {
+          ...params,
           access_token: accessToken,
           refresh_token: refreshToken,
           expiry_date,
-          ...params,
         };
-        const {
-          _json: {
-            name = '',
-            picture = '',
-            email = '',
-            email_verified = false,
-            given_name = '',
-            family_name = '',
-            ...rest
-          } = {},
-          provider,
-        } = profile || {};
         const user = {
-          name,
-          picture,
-          email,
-          email_verified: Boolean(email_verified),
-          given_name,
-          family_name,
-          provider,
-          google_auth: {
-            ...rest,
-            tokens,
-          },
-        } as UserDocument;
+          ...profile?._json,
+          provider: profile?.provider,
+          authTokens: tokens,
+        } as unknown as UserDocument;
         const googleUser = await this.authService.validateUser(user);
-        done(null, googleUser);
+        return done(null, googleUser);
       },
     );
   }

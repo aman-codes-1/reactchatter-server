@@ -1,12 +1,15 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, SchemaTimestampsConfig } from 'mongoose';
 
-class Tokens {
+class AuthTokens {
   @Prop()
   access_token: string;
 
   @Prop()
   refresh_token: string;
+
+  @Prop()
+  id_token: string;
 
   @Prop()
   scope: string;
@@ -15,51 +18,10 @@ class Tokens {
   token_type: string;
 
   @Prop()
-  id_token: string;
-
-  @Prop()
   expires_in: number;
 
   @Prop()
   expiry_date: number;
-}
-
-class GoogleAuth {
-  @Prop()
-  iat: number;
-
-  @Prop()
-  exp: number;
-
-  @Prop()
-  iss: string;
-
-  @Prop()
-  azp: string;
-
-  @Prop()
-  aud: string;
-
-  @Prop()
-  sub: string;
-
-  @Prop()
-  at_hash: string;
-
-  @Prop()
-  hd: string;
-
-  @Prop()
-  locale: string;
-
-  @Prop()
-  nonce: string;
-
-  @Prop()
-  profile: string;
-
-  @Prop()
-  tokens: Tokens;
 }
 
 // class Connection {
@@ -101,14 +63,14 @@ export class User {
   @Prop()
   family_name: string;
 
-  @Prop()
+  @Prop({ default: 'default' })
   provider: string;
 
-  @Prop()
-  onlineStatus: OnlineStatus;
-
   @Prop({ required: false })
-  google_auth?: GoogleAuth;
+  onlineStatus?: OnlineStatus;
+
+  @Prop()
+  authTokens: AuthTokens;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
