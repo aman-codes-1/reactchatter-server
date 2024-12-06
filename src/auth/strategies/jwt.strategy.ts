@@ -85,12 +85,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           if (Payload) {
             return reAuthenticatedUser;
           }
-          return req?.user;
+          return req?.user || payload;
         }
-        return req?.user;
+        return req?.user || payload;
       }
-      return req?.user;
+      return req?.user || payload;
     }
-    return req?.user;
+    return req?.user || payload;
   }
 }

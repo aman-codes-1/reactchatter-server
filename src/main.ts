@@ -46,7 +46,6 @@ async function bootstrap() {
       frameSrc: [`'self'`, 'sandbox.embed.apollographql.com'],
     },
   };
-  app.set('trust proxy', 1);
   const helmetOptions = isProduction
     ? {}
     : { contentSecurityPolicy: developmentContentSecurityPolicy };
@@ -54,8 +53,6 @@ async function bootstrap() {
   app.enableCors({
     origin: [...new Set(ORIGINS)],
     methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders:
-      'X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept, Observe',
     credentials: true,
   });
   app.useGlobalPipes(
@@ -67,18 +64,22 @@ async function bootstrap() {
   );
   app.use(cookieParser(COOKIE_SECRET));
   app.setGlobalPrefix('api');
+  app.set('trust proxy', 1);
   app.use(
     session({
       secret: SESSION_SECRET,
       resave: false,
       saveUninitialized: false,
-      cookie: HTTP_ONLY_COOKIE,
+      cookie: {
+        ...HTTP_ONLY_COOKIE,
+        secure: false,
+      },
       proxy: isProduction,
       store: new MongoStore({
         mongoUrl: MONGO_URI,
         collectionName: 'userSessions',
         dbName: 'ReactChatter',
-        ttl: Number(COOKIE_MAX_AGE) * 1000,
+        ttl: Number(COOKIE_MAX_AGE),
         autoRemove: 'native',
       }),
     }),
