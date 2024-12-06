@@ -81,6 +81,7 @@ async function bootstrap() {
         dbName: 'ReactChatter',
         ttl: Number(COOKIE_MAX_AGE),
         autoRemove: 'native',
+        stringify: false,
       }),
     }),
   );

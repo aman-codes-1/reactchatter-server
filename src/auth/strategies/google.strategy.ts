@@ -1,12 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
+import { Request } from 'express';
 import {
   GoogleCallbackParameters,
   Profile,
   Strategy,
   VerifyCallback,
 } from 'passport-google-oauth20';
+import { UAParser } from 'ua-parser-js';
 import { AuthService } from '../auth.service';
 import { UserDocument } from '../../user/user.schema';
 
@@ -26,8 +28,10 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         clientSecret: GOOGLE_CLIENT_SECRET,
         callbackURL: `${SERVER_URL}/api/auth/google/redirect`,
         scope: ['profile', 'email'],
+        passReqToCallback: true,
       },
       async (
+        req: Request,
         accessToken: string,
         refreshToken: string,
         params: GoogleCallbackParameters,
@@ -49,7 +53,10 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
           authTokens: tokens,
         } as unknown as UserDocument;
         const googleUser = await this.authService.validateUser(user);
-        return done(null, googleUser);
+        return done(null, {
+          ...googleUser,
+          deviceDetails: this.getDeviceDetails(req),
+        });
       },
     );
   }
@@ -71,5 +78,29 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       access_type: 'offline',
       prompt: 'consent',
     };
+  }
+
+  private browserNameMapping = {
+    Chrome: 'Google Chrome',
+    Firefox: 'Mozilla Firefox',
+    Edge: 'Microsoft Edge',
+    IE: 'Internet Explorer',
+  };
+
+  private getMappedBrowserName(browserName: string) {
+    return this.browserNameMapping[browserName] || browserName;
+  }
+
+  private getDeviceDetails(req: any) {
+    const userAgentString = req?.headers?.['user-agent'] || '';
+    const parserResults = new UAParser(userAgentString).getResult();
+    const res = {
+      ...parserResults,
+      browser: {
+        ...parserResults.browser,
+        name: this.getMappedBrowserName(parserResults.browser.name),
+      },
+    };
+    return res;
   }
 }

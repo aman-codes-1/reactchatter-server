@@ -9,9 +9,9 @@ export class SessionSerializer extends PassportSerializer {
     super();
   }
 
-  serializeUser(user: UserDocument, done: any) {
-    const { _id } = user || {};
-    return _id ? done(null, { _id }) : done(null, null);
+  serializeUser(user: any, done: any) {
+    const { _id, deviceDetails } = user || {};
+    return _id ? done(null, { _id, deviceDetails }) : done(null, null);
   }
 
   async deserializeUser(user: UserDocument, done: any) {
