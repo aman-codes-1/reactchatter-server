@@ -69,10 +69,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       if (
         payload &&
         !Number.isNaN(payload?.exp) &&
-        payload?.exp < currentTime
+        payload?.exp > currentTime
       ) {
         const { newAccessToken, reAuthenticatedUser } =
-          await this.authService.refreshToken(payload, req?.res);
+          await this.authService.googleRefreshToken(
+            req?.user || payload,
+            req?.res,
+          );
         if (newAccessToken && reAuthenticatedUser) {
           const JWT_SECRET = this.configService.get('JWT_SECRET');
           const { payload: Payload } = await this.authService.verifyToken(
