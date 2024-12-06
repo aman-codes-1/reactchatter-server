@@ -202,19 +202,27 @@ export class AuthService {
   async googleRefreshToken(user: UserDocument, response: Response) {
     let newAccessToken: string;
     let reAuthenticatedUser: UserDocument;
-    const { authTokens: { refresh_token = '' } = {} } = user || {};
-    this.oauth2Client.setCredentials({
-      refresh_token,
-    });
-    const { res: { data = {} } = {} } =
-      await this.oauth2Client.getAccessToken();
-    if (data) {
+
+    try {
+      const { authTokens: { refresh_token = '' } = {} } = user || {};
+      this.oauth2Client.setCredentials({
+        refresh_token,
+      });
+      const { res: { data = {} } = {} } =
+        await this.oauth2Client.getAccessToken();
+
+      if (!data?.access_token) {
+        throw new UnauthorizedException('Refresh token is revoked or expired.');
+      }
+
       newAccessToken = data?.access_token;
       this.oauth2Client.setCredentials(data);
+
       reAuthenticatedUser = {
         ...user,
         authTokens: data,
       } as UserDocument;
+
       const validatedUser = await this.validateUser(reAuthenticatedUser);
       if (validatedUser) {
         reAuthenticatedUser = validatedUser;
@@ -223,7 +231,10 @@ export class AuthService {
           newAccessToken = accessToken;
         }
       }
+    } catch (err) {
+      throw new UnauthorizedException('Refresh token is revoked or expired.');
     }
+
     return {
       newAccessToken,
       reAuthenticatedUser,
