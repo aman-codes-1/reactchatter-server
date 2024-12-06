@@ -79,12 +79,13 @@ export class AuthService {
   }
 
   async validateUser(userDetails: UserDocument): Promise<UserDocument> {
-    const { email } = userDetails;
+    const { deviceDetails, ...rest } = userDetails;
+    const { email } = rest;
     const user = (await this.UserModel.findOne({
       email,
     }).lean()) as UserDocument;
     if (!user) {
-      const newUser = new this.UserModel(userDetails);
+      const newUser = new this.UserModel(rest);
       const savedUser = (await newUser.save()).toObject();
       return savedUser;
     }
@@ -94,12 +95,12 @@ export class AuthService {
       createdAt: createdAt2,
       updatedAt: updatedAt2,
       ...restUserDetails
-    } = userDetails;
+    } = rest;
     const areEqual = this.compareObjects(restUser, restUserDetails);
     if (!areEqual) {
       const updatedUser = (await this.UserModel.findByIdAndUpdate(
         { _id },
-        { $set: userDetails },
+        { $set: rest },
         { upsert: true, new: true },
       ).lean()) as UserDocument;
       return updatedUser;
@@ -170,8 +171,11 @@ export class AuthService {
   }
 
   async login(user: UserDocument, response: Response): Promise<any> {
-    const { authTokens: { expires_in = 0, expiry_date = 0 } = {}, ...rest } =
-      user || {};
+    const {
+      authTokens: { expires_in = 0, expiry_date = 0 } = {},
+      deviceDetails,
+      ...rest
+    } = user || {};
     const accessToken = await this.jwtService.signAsync(rest, {
       secret: this.JWT_SECRET,
       expiresIn: `${expires_in || this.JWT_EXPIRATION_TIME}s`,

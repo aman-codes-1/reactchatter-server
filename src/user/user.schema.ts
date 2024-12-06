@@ -43,6 +43,8 @@ export class OnlineStatus {
   // connections: Connection[];
 }
 
+class DeviceDetails {}
+
 @Schema({ timestamps: true })
 export class User {
   @Prop()
@@ -71,6 +73,9 @@ export class User {
 
   @Prop()
   authTokens: AuthTokens;
+
+  @Prop({ required: false })
+  deviceDetails?: DeviceDetails;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

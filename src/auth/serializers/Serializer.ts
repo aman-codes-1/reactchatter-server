@@ -9,7 +9,7 @@ export class SessionSerializer extends PassportSerializer {
     super();
   }
 
-  serializeUser(user: any, done: any) {
+  serializeUser(user: UserDocument, done: any) {
     const { _id, deviceDetails } = user || {};
     return _id ? done(null, { _id, deviceDetails }) : done(null, null);
   }
