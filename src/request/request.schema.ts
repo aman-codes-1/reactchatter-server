@@ -2,19 +2,19 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, SchemaTimestampsConfig, Types } from 'mongoose';
 
 export class Member {
-  @Prop()
+  @Prop({ type: Types.ObjectId, required: true })
   _id: Types.ObjectId;
 
-  @Prop()
+  @Prop({ type: Boolean, required: true })
   hasSent: boolean;
 }
 
 @Schema({ timestamps: true })
 export class Request {
-  @Prop()
+  @Prop({ type: String, required: true })
   status: string;
 
-  @Prop()
+  @Prop({ type: [Member], required: true })
   members: Member[];
 }
 

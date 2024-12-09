@@ -1,35 +1,18 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { PassportModule } from '@nestjs/passport';
-import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import { FriendResolver } from './friend.resolver';
 import { FriendService } from './friend.service';
 import { Friend, FriendSchema } from './friend.schema';
-import { User, UserSchema } from '../user/user.schema';
-import { AuthService } from '../auth/auth.service';
-import { JwtStrategy } from '../auth/strategies/jwt.strategy';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
-    PassportModule.register({ session: true }),
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get('JWT_SECRET'),
-        signOptions: {
-          expiresIn: `${configService.get('JWT_EXPIRATION_TIME')}s`,
-        },
-      }),
-    }),
+    AuthModule,
     MongooseModule.forFeature([
       { name: Friend.name, schema: FriendSchema, collection: 'friends' },
     ]),
-    MongooseModule.forFeature([
-      { name: User.name, schema: UserSchema, collection: 'users' },
-    ]),
   ],
-  providers: [FriendResolver, FriendService, AuthService, JwtStrategy],
+  providers: [FriendResolver, FriendService],
+  exports: [FriendService],
 })
 export class FriendModule {}

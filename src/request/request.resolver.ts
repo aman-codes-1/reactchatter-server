@@ -9,6 +9,7 @@ import {
 } from './dto/request.input';
 import { Request, RequestData, RequestsData } from './models/request.model';
 import { RequestService } from './request.service';
+import { RequestDocument } from './request.schema';
 import { pubSub as friendPubSub } from '../friend/friend.resolver';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 
@@ -49,7 +50,7 @@ export class RequestResolver {
   @Mutation(() => Request)
   async createRequest(
     @Args('input') input: CreateRequestInput,
-  ): Promise<Request> {
+  ): Promise<RequestDocument> {
     const newRequest = await this.requestService.create(input);
     pubSub.publish('OnRequestAdded', {
       OnRequestAdded: {
@@ -63,7 +64,7 @@ export class RequestResolver {
   @Mutation(() => Request)
   async updateRequest(
     @Args('input') input: UpdateRequestInput,
-  ): Promise<Request> {
+  ): Promise<RequestDocument> {
     const { updatedRequest, newFriend, isError } =
       await this.requestService.findOneByIdAndUpdate(input);
     if (newFriend) {

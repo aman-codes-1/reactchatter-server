@@ -14,6 +14,7 @@ import {
   MessagesData,
 } from './models/message.model';
 import { MessageService } from './message.service';
+import { MessageDocument } from './message.schema';
 import { ChatService } from '../chat/chat.service';
 import { pubSub as chatPubSub } from '../chat/chat.resolver';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
@@ -31,7 +32,7 @@ export class MessageResolver {
 
   @UseGuards(GqlAuthGuard)
   @Query(() => Message)
-  async message(@Args('input') input: MessageInput): Promise<Message> {
+  async message(@Args('input') input: MessageInput): Promise<MessageDocument> {
     const { messageId } = input;
     const message = await this.messageService.findOneById(messageId);
     return message;
@@ -71,7 +72,7 @@ export class MessageResolver {
   @Mutation(() => Message)
   async createMessage(
     @Args('input') input: CreateMessageInput,
-  ): Promise<Message> {
+  ): Promise<MessageDocument> {
     const { chatId } = input;
     const newMessage = await this.messageService.create(input);
     pubSub.publish('OnMessageAdded', {
@@ -92,7 +93,7 @@ export class MessageResolver {
   @Mutation(() => Message)
   async updateMessage(
     @Args('input') input: CreateMessageInput,
-  ): Promise<Message> {
+  ): Promise<MessageDocument> {
     const updatedMessage = await this.messageService.create(input);
     pubSub.publish('OnMessageUpdated', {
       OnMessageUpdated: {

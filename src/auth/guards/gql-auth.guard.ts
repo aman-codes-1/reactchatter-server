@@ -16,7 +16,11 @@ export class GqlAuthGuard extends AuthGuard('jwt') {
 
   getRequest(context: ExecutionContext) {
     const ctx = GqlExecutionContext.create(context);
-    return ctx.getContext().req;
+    const request = ctx.getContext().req;
+    if (!request) {
+      throw new UnauthorizedException();
+    }
+    return request;
   }
 
   handleRequest(err: any, user: any, info: any, context: ExecutionContext) {
@@ -25,7 +29,7 @@ export class GqlAuthGuard extends AuthGuard('jwt') {
       const request = ctx.getContext().req as Request;
       const response = ctx.getContext().res as Response;
       this.authService.logout(request, response);
-      throw err || new UnauthorizedException();
+      throw new UnauthorizedException();
     }
     return user;
   }

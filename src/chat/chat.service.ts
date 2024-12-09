@@ -4,7 +4,6 @@ import { Model } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { ChatArgs } from './dto/chat.args';
 import { CreateChatInput } from './dto/chat.input';
-import { Chat } from './models/chat.model';
 import { Chat as ChatSchema, ChatDocument } from './chat.schema';
 
 @Injectable()
@@ -87,7 +86,7 @@ export class ChatService {
     ];
   }
 
-  async findOneById(chatId: string): Promise<Chat> {
+  async findOneById(chatId: string): Promise<ChatDocument> {
     const chatObjectId = new ObjectId(chatId);
     const membersPipeline = await this.membersPipeline();
     const groupPipeline = await this.groupPipeline();
@@ -103,7 +102,7 @@ export class ChatService {
     return chat?.[0];
   }
 
-  async create(data: CreateChatInput): Promise<Chat> {
+  async create(data: CreateChatInput): Promise<ChatDocument> {
     const { userId, queueId, type, friendUserIds } = data;
     if (queueId) {
       const duplicateChat = await this.ChatModel.findOne({ queueId }).lean();
@@ -126,7 +125,7 @@ export class ChatService {
     return chat;
   }
 
-  async findAll(userId: string, args: ChatArgs): Promise<Chat[]> {
+  async findAll(userId: string, args: ChatArgs): Promise<ChatDocument[]> {
     const userObjectId = new ObjectId(userId);
     const { limit, after } = args;
     const membersPipeline = await this.membersPipeline();

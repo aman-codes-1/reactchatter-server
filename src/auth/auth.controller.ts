@@ -37,8 +37,11 @@ export class AuthController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const { user } = request || {};
-    const { accessToken } = await this.authService.login(user, response);
+    const { user, sessionID } = request || {};
+    const { accessToken } = await this.authService.login(
+      { ...user, sessionID },
+      response,
+    );
     if (!accessToken) {
       throw new UnauthorizedException();
     }

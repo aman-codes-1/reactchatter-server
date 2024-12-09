@@ -2,11 +2,11 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
+import passport from 'passport';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
-import passport from 'passport';
 // import rateLimit from 'express-rate-limit';
 import { AppModule } from './app.module';
 
@@ -16,6 +16,7 @@ async function bootstrap() {
   const PORT = configService.get('PORT');
   const COOKIE_SECRET = configService.get('COOKIE_SECRET');
   const COOKIE_MAX_AGE = configService.get('COOKIE_MAX_AGE');
+  const JWT_EXPIRATION_TIME = configService.get('JWT_EXPIRATION_TIME');
   const SESSION_SECRET = configService.get('SESSION_SECRET');
   const HTTP_ONLY_COOKIE = configService.get('HTTP_ONLY_COOKIE');
   const MONGO_URI = configService.get('MONGO_URI');
@@ -75,13 +76,14 @@ async function bootstrap() {
         secure: false,
       },
       proxy: isProduction,
-      store: new MongoStore({
+      store: MongoStore.create({
         mongoUrl: MONGO_URI,
         collectionName: 'userSessions',
         dbName: 'ReactChatter',
         ttl: Number(COOKIE_MAX_AGE),
         autoRemove: 'native',
         stringify: false,
+        touchAfter: Number(JWT_EXPIRATION_TIME),
       }),
     }),
   );

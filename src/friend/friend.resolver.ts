@@ -5,6 +5,7 @@ import { FriendArgs } from './dto/friend.args';
 import { FriendInput, FriendsInput } from './dto/friend.input';
 import { Friend, FriendData } from './models/friend.model';
 import { FriendService } from './friend.service';
+import { FriendDocument } from './friend.schema';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 
 export const pubSub = new PubSub();
@@ -17,7 +18,7 @@ export class FriendResolver {
 
   @UseGuards(GqlAuthGuard)
   @Query(() => Friend)
-  async friend(@Args('input') input: FriendInput): Promise<Friend> {
+  async friend(@Args('input') input: FriendInput): Promise<FriendDocument> {
     const { friendId, userId } = input;
     const friend = await this.friendService.findOneById(friendId, userId);
     return friend;
@@ -28,7 +29,7 @@ export class FriendResolver {
   async friends(
     @Args('input') input: FriendsInput,
     @Args() args: FriendArgs,
-  ): Promise<Friend[]> {
+  ): Promise<FriendDocument[]> {
     const { userId } = input;
     const friends = await this.friendService.findAll(userId, args);
     return friends;
@@ -39,7 +40,7 @@ export class FriendResolver {
   async otherFriends(
     @Args('input') input: FriendsInput,
     @Args() args: FriendArgs,
-  ): Promise<Friend[]> {
+  ): Promise<FriendDocument[]> {
     const { userId } = input;
     const otherFriends = await this.friendService.findAllOtherFriends(
       userId,

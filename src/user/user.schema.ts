@@ -1,81 +1,28 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, SchemaTimestampsConfig } from 'mongoose';
 
-class AuthTokens {
-  @Prop()
-  access_token: string;
-
-  @Prop()
-  refresh_token: string;
-
-  @Prop()
-  id_token: string;
-
-  @Prop()
-  scope: string;
-
-  @Prop()
-  token_type: string;
-
-  @Prop()
-  expires_in: number;
-
-  @Prop()
-  expiry_date: number;
-}
-
-// class Connection {
-//   @Prop()
-//   clientId: string;
-
-//   @Prop()
-//   lastActive: number;
-// }
-
-export class OnlineStatus {
-  // @Prop({ default: false })
-  // isOnline: boolean;
-
-  @Prop()
-  timestamp: number;
-
-  // @Prop()
-  // connections: Connection[];
-}
-
-class DeviceDetails {}
-
 @Schema({ timestamps: true })
 export class User {
-  @Prop()
+  @Prop({ type: String, required: true })
   name: string;
 
-  @Prop()
+  @Prop({ type: String, required: true })
   picture: string;
 
-  @Prop()
+  @Prop({ type: String, required: true })
   email: string;
 
-  @Prop()
+  @Prop({ type: Boolean, required: true })
   email_verified: boolean;
 
-  @Prop()
+  @Prop({ type: String, required: true })
   given_name: string;
 
-  @Prop()
+  @Prop({ type: String, required: true })
   family_name: string;
 
-  @Prop({ default: 'default' })
+  @Prop({ type: String, required: true, default: 'default' })
   provider: string;
-
-  @Prop({ required: false })
-  onlineStatus?: OnlineStatus;
-
-  @Prop()
-  authTokens: AuthTokens;
-
-  @Prop({ required: false })
-  deviceDetails?: DeviceDetails;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

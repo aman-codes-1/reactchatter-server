@@ -1,25 +1,26 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Query, Resolver, Subscription } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
-import { UserInput } from './dto/auth.input';
-import { User, UserData } from './models/auth.model';
-import { AuthService } from './auth.service';
+import { UserInput } from './dto/user.input';
+import { User, UserData } from './models/user.model';
+import { UserService } from './user.service';
+import { UserDocument } from './user.schema';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 
 export const pubSub = new PubSub();
 
 @Resolver(() => User)
-export class AuthResolver {
-  constructor(private readonly authService: AuthService) {
+export class UserResolver {
+  constructor(private readonly userService: UserService) {
     //
   }
 
   @UseGuards(GqlAuthGuard)
   @Query(() => User)
-  async user(@Args('input') input: UserInput): Promise<User> {
+  async user(@Args('input') input: UserInput): Promise<UserDocument> {
     const { userId } = input;
-    const user = await this.authService.findOneById(userId);
-    return user as User;
+    const user = await this.userService.findOneById(userId);
+    return user;
   }
 
   @UseGuards(GqlAuthGuard)

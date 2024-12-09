@@ -5,12 +5,23 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import * as cookieSignature from 'cookie-signature';
 import * as cookie from 'cookie';
 import { Request } from 'express';
+import { SessionData } from 'express-session';
 import { AuthService } from '../auth.service';
+import { UserService } from '../../user/user.service';
+import { UserSessionService } from '../../userSession/userSession.service';
+
+declare module 'express-session' {
+  interface SessionData {
+    passport: any;
+  }
+}
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     private authService: AuthService,
+    private userService: UserService,
+    private userSessionService: UserSessionService,
     private readonly configService: ConfigService,
   ) {
     const JWT_SECRET = configService.get('JWT_SECRET');
@@ -62,7 +73,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(req: Request, payload: any) {
-    if (req?.res) {
+    if (req?.res && req?.user && req?.session && req?.sessionID) {
       const today = new Date();
       today.setMinutes(today.getMinutes() - 1);
       const currentTime = Math.floor(today.getTime() / 1000);
@@ -72,10 +83,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         payload?.exp < currentTime
       ) {
         const { newAccessToken, reAuthenticatedUser } =
-          await this.authService.googleRefreshToken(
-            req?.user || payload,
-            req?.res,
-          );
+          await this.authService.refreshToken(payload, req?.res);
         if (newAccessToken && reAuthenticatedUser) {
           const JWT_SECRET = this.configService.get('JWT_SECRET');
           const { payload: Payload } = await this.authService.verifyToken(
@@ -83,14 +91,23 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             JWT_SECRET,
           );
           if (Payload) {
-            return reAuthenticatedUser;
+            req.user = reAuthenticatedUser;
           }
-          return req?.user || payload;
         }
-        return req?.user || payload;
       }
-      return req?.user || payload;
+    } else {
+      const user = await this.userService.findOneById(String(payload?._id));
+      const session = await this.userSessionService.findOneById(
+        payload?.sessionID,
+      );
+      const User = {
+        ...user,
+        authTokens: session?.session?.passport?.user?.authTokens,
+        deviceDetails: session?.session?.passport?.user?.deviceDetails,
+      };
+      req.user = User;
+      req.sessionID = session?._id;
     }
-    return req?.user || payload;
+    return req?.user;
   }
 }

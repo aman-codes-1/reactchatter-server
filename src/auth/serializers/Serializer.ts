@@ -1,22 +1,35 @@
 import { Injectable } from '@nestjs/common';
 import { PassportSerializer } from '@nestjs/passport';
-import { AuthService } from '../auth.service';
-import { UserDocument } from '../../user/user.schema';
+import { UserService } from '../../user/user.service';
 
 @Injectable()
 export class SessionSerializer extends PassportSerializer {
-  constructor(private readonly authService: AuthService) {
+  constructor(private readonly userService: UserService) {
     super();
   }
 
-  serializeUser(user: UserDocument, done: any) {
-    const { _id, deviceDetails } = user || {};
-    return _id ? done(null, { _id, deviceDetails }) : done(null, null);
+  serializeUser(user: any, done: any) {
+    if (user?._id) {
+      const { _id, provider, authTokens, deviceDetails } = user || {};
+      const sessionData = { _id, provider, authTokens, deviceDetails };
+      return done(null, sessionData);
+    }
+    return done(null, null);
   }
 
-  async deserializeUser(user: UserDocument, done: any) {
-    const { _id } = user || {};
-    const User = await this.authService.findOneById(String(_id));
-    return User ? done(null, User) : done(null, null);
+  async deserializeUser(payload: any, done: any) {
+    if (payload) {
+      const { _id } = payload || {};
+      if (_id) {
+        const user = await this.userService.findOneById(String(_id));
+        const User = {
+          ...payload,
+          ...user,
+        };
+        return done(null, User);
+      }
+      return done(null, payload);
+    }
+    return done(null, null);
   }
 }

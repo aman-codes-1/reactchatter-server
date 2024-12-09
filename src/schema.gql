@@ -29,7 +29,7 @@ input ChatInput {
 type ChatMember {
   _id: String!
   email: String
-  email_verified: Boolean
+  email_verified: String
   family_name: String
   given_name: String
   hasAdded: Boolean!
@@ -37,6 +37,7 @@ type ChatMember {
   name: String
   onlineStatus: OnlineStatus
   picture: String
+  provider: String
 }
 
 """ChatsInput"""
@@ -120,13 +121,14 @@ type Group {
 type Member {
   _id: String!
   email: String
-  email_verified: Boolean
+  email_verified: String
   family_name: String
   given_name: String
   hasAdded: Boolean!
   name: String
   onlineStatus: OnlineStatus
   picture: String
+  provider: String
 }
 
 """MessageObject"""
@@ -200,12 +202,13 @@ type OtherMember {
   _id: String!
   deliveredStatus: DeliveredStatus
   email: String
-  email_verified: Boolean
+  email_verified: String
   family_name: String
   given_name: String
   name: String
   onlineStatus: OnlineStatus
   picture: String
+  provider: String
   readStatus: ReadStatus
 }
 
@@ -257,13 +260,14 @@ type RequestData {
 type RequestMember {
   _id: String!
   email: String
-  email_verified: Boolean
+  email_verified: String
   family_name: String
   given_name: String
   hasSent: Boolean!
   name: String
   onlineStatus: OnlineStatus
   picture: String
+  provider: String
 }
 
 """RequestsDataObject"""
@@ -287,12 +291,13 @@ type RetryStatus {
 type Sender {
   _id: String!
   email: String
-  email_verified: Boolean
+  email_verified: String
   family_name: String
   given_name: String
   name: String
   onlineStatus: OnlineStatus
   picture: String
+  provider: String
   queuedStatus: QueuedStatus!
   retryStatus: RetryStatus
   sentStatus: SentStatus!
@@ -326,12 +331,13 @@ input UpdateRequestInput {
 type User {
   _id: String!
   email: String
-  email_verified: Boolean
+  email_verified: String
   family_name: String
   given_name: String
   name: String
   onlineStatus: OnlineStatus
   picture: String
+  provider: String
 }
 
 """UserDataObject"""

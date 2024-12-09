@@ -18,7 +18,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       const request = context.switchToHttp().getRequest() as Request;
       const response = context.switchToHttp().getResponse() as Response;
       this.authService.logout(request, response);
-      throw err || new UnauthorizedException();
+      throw new UnauthorizedException();
     }
     return user;
   }

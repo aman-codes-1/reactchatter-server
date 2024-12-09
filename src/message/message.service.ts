@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { MessageArgs } from './dto/message.args';
 import { CreateMessageInput } from './dto/message.input';
-import { Message, MessagesData, PageInfo } from './models/message.model';
+import { MessagesData, PageInfo } from './models/message.model';
 import { Message as MessageSchema, MessageDocument } from './message.schema';
 import { ChatService } from '../chat/chat.service';
 
@@ -102,7 +102,7 @@ export class MessageService {
     ];
   }
 
-  async findOneById(messageId: string): Promise<Message> {
+  async findOneById(messageId: string): Promise<MessageDocument> {
     const messageObjectId = new ObjectId(messageId);
     const membersPipeline = await this.membersPipeline();
     const groupPipeline = await this.groupPipeline();
@@ -118,7 +118,7 @@ export class MessageService {
     return message?.[0];
   }
 
-  async create(data: CreateMessageInput): Promise<Message> {
+  async create(data: CreateMessageInput): Promise<MessageDocument> {
     const {
       userId,
       chatId,
@@ -197,8 +197,8 @@ export class MessageService {
       { $limit: limit },
     ]);
 
-    let edges: Message[] = [];
-    let lastMessage: Message;
+    let edges = [];
+    let lastMessage: MessageDocument;
     let pageInfo: PageInfo = {
       endCursor: '',
       hasNextPage: false,
@@ -206,7 +206,7 @@ export class MessageService {
 
     if (messages?.length) {
       edges = messages?.reverse();
-      lastMessage = messages[0];
+      lastMessage = messages?.[0];
       pageInfo = {
         endCursor: lastMessage?._id?.toString(),
         hasNextPage: messages?.length === limit,

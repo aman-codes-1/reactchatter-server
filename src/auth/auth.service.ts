@@ -1,16 +1,11 @@
-import {
-  BadRequestException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { InjectModel } from '@nestjs/mongoose';
 import { JwtService } from '@nestjs/jwt';
 import { OAuth2Client } from 'google-auth-library';
-import { Model } from 'mongoose';
-import { ObjectId } from 'mongodb';
 import { CookieOptions, Request, Response } from 'express';
-import { OnlineStatus, User, UserDocument } from '../user/user.schema';
+import { UserDocument } from '../user/user.schema';
+import { UserService } from '../user/user.service';
+import { UserSessionService } from '../userSession/userSession.service';
 
 @Injectable()
 export class AuthService {
@@ -33,9 +28,10 @@ export class AuthService {
   private oauth2Client: OAuth2Client;
 
   constructor(
-    @InjectModel(User.name) private UserModel: Model<UserDocument>,
     private jwtService: JwtService,
     private readonly configService: ConfigService,
+    private userService: UserService,
+    private userSessionService: UserSessionService,
   ) {
     this.JWT_SECRET = configService.get('JWT_SECRET');
     this.JWT_EXPIRATION_TIME = configService.get('JWT_EXPIRATION_TIME');
@@ -51,61 +47,6 @@ export class AuthService {
       clientSecret: this.GOOGLE_CLIENT_SECRET,
       redirectUri: this.CLIENT_URL,
     });
-  }
-
-  compareObjects(first: any, second: any) {
-    if (first === second) return true;
-    if (first === null || second === null) return false;
-    if (typeof first !== 'object' || typeof second !== 'object') return false;
-    const first_keys = Object.getOwnPropertyNames(first);
-    const second_keys = Object.getOwnPropertyNames(second);
-    if (first_keys.length !== second_keys.length) return false;
-    for (const key of first_keys) {
-      if (!Object.hasOwn(second, key)) return false;
-      if (this.compareObjects(first[key], second[key]) === false) return false;
-    }
-    return true;
-  }
-
-  async findOneById(userId: string): Promise<UserDocument> {
-    const userObjectId = new ObjectId(userId);
-    const user = (await this.UserModel.findById(
-      userObjectId,
-    ).lean()) as UserDocument;
-    if (!user) {
-      throw new BadRequestException('User not found.');
-    }
-    return user;
-  }
-
-  async validateUser(userDetails: UserDocument): Promise<UserDocument> {
-    const { deviceDetails, ...rest } = userDetails;
-    const { email } = rest;
-    const user = (await this.UserModel.findOne({
-      email,
-    }).lean()) as UserDocument;
-    if (!user) {
-      const newUser = new this.UserModel(rest);
-      const savedUser = (await newUser.save()).toObject();
-      return savedUser;
-    }
-    const { _id, createdAt, updatedAt, ...restUser } = user;
-    const {
-      _id: _id2,
-      createdAt: createdAt2,
-      updatedAt: updatedAt2,
-      ...restUserDetails
-    } = rest;
-    const areEqual = this.compareObjects(restUser, restUserDetails);
-    if (!areEqual) {
-      const updatedUser = (await this.UserModel.findByIdAndUpdate(
-        { _id },
-        { $set: rest },
-        { upsert: true, new: true },
-      ).lean()) as UserDocument;
-      return updatedUser;
-    }
-    return user;
   }
 
   getTextEncoding(text: string) {
@@ -170,17 +111,20 @@ export class AuthService {
     return res;
   }
 
-  async login(user: UserDocument, response: Response): Promise<any> {
+  async login(user: any, response: Response): Promise<any> {
     const {
       authTokens: { expires_in = 0, expiry_date = 0 } = {},
       deviceDetails,
-      ...rest
+      iat,
+      exp,
+      ...payload
     } = user || {};
-    const accessToken = await this.jwtService.signAsync(rest, {
+    const options = {
       secret: this.JWT_SECRET,
-      expiresIn: `${expires_in || this.JWT_EXPIRATION_TIME}s`,
-    });
-    if (accessToken) {
+      expiresIn: Number(expires_in || this.JWT_EXPIRATION_TIME),
+    };
+    const accessToken = await this.jwtService.signAsync(payload, options);
+    if (accessToken && expiry_date) {
       response?.cookie('token', accessToken, this.HTTP_ONLY_COOKIE);
       response?.cookie(
         'token-expires',
@@ -194,24 +138,42 @@ export class AuthService {
     throw new UnauthorizedException();
   }
 
-  async googleRefreshToken(user: UserDocument, response: Response) {
-    let refreshToken: string;
-    let newAccessToken: string;
-    let reAuthenticatedUser: UserDocument;
-
-    try {
-      const { _id, authTokens: { refresh_token = '' } = {} } = user || {};
-
-      refreshToken = refresh_token;
-
-      if (!refreshToken) {
-        const User = await this.findOneById(String(_id));
-        if (User) {
-          const { authTokens: { refresh_token: RefreshToken = '' } = {} } =
-            User || {};
-          refreshToken = RefreshToken;
+  async refreshToken(payload: any, response: Response): Promise<any> {
+    if (payload?.sessionID) {
+      const session = await this.userSessionService.findOneById(
+        payload?.sessionID,
+      );
+      const authTokens = session?.session?.passport?.user?.authTokens;
+      if (authTokens) {
+        if (payload?.provider === 'google') {
+          const res = await this.googleRefreshToken(
+            payload,
+            authTokens,
+            response,
+          );
+          return res;
         }
       }
+    }
+    return {
+      newAccessToken: '',
+      reAuthenticatedUser: null,
+    };
+  }
+
+  async googleRefreshToken(
+    payload: any,
+    authTokens: any,
+    response: Response,
+  ): Promise<any> {
+    let refreshToken: string;
+    let newAccessToken: string;
+    let reAuthenticatedUser: any;
+
+    try {
+      const { refresh_token = '' } = authTokens || {};
+
+      refreshToken = refresh_token;
 
       this.oauth2Client.setCredentials({
         refresh_token: refreshToken,
@@ -226,18 +188,28 @@ export class AuthService {
 
       this.oauth2Client.setCredentials(data);
 
+      const newAuthTokens = {
+        ...authTokens,
+        ...data,
+      };
+
+      const updatedSession = await this.userSessionService.updateAuthTokens(
+        payload?.sessionID,
+        newAuthTokens,
+      );
+
+      const user = await this.userService.findOneById(String(payload?._id));
+
       reAuthenticatedUser = {
         ...user,
-        authTokens: data,
-      } as UserDocument;
+        authTokens: updatedSession?.session?.passport?.user?.authTokens,
+        deviceDetails: updatedSession?.session?.passport?.user?.deviceDetails,
+      };
 
-      const validatedUser = await this.validateUser(reAuthenticatedUser);
-      if (validatedUser) {
-        reAuthenticatedUser = validatedUser;
-        const { accessToken } = await this.login(reAuthenticatedUser, response);
-        if (accessToken) {
-          newAccessToken = accessToken;
-        }
+      const { accessToken } = await this.login(reAuthenticatedUser, response);
+
+      if (accessToken) {
+        newAccessToken = accessToken;
       }
     } catch (err) {
       throw new UnauthorizedException('Refresh token is revoked or expired.');
@@ -249,7 +221,7 @@ export class AuthService {
     };
   }
 
-  async verifyToken(token: string, secret: string) {
+  async verifyToken(token: string, secret: string): Promise<any> {
     try {
       const payload = await this.jwtService.verifyAsync(token, {
         secret,
@@ -268,15 +240,5 @@ export class AuthService {
       response?.cookie('token', '', this.HTTP_ONLY_COOKIE);
       response?.cookie('token-expires', '', this.USERS_COOKIE);
     }
-  }
-
-  async updateOnlineStatus(userId: string, onlineStatus: OnlineStatus) {
-    const userObjectId = new ObjectId(userId);
-    const updatedUser = (await this.UserModel.findByIdAndUpdate(
-      { _id: userObjectId },
-      { $set: { onlineStatus } },
-      { upsert: true, new: true },
-    ).lean()) as UserDocument;
-    return updatedUser;
   }
 }

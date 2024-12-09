@@ -7,13 +7,12 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { User } from '../auth/models/auth.model';
-import { AuthService } from '../auth/auth.service';
-import { pubSub as authPubSub } from '../auth/auth.resolver';
+import { UserService } from '../user/user.service';
+// import { pubSub as authPubSub } from '../auth/auth.resolver';
 
 @WebSocketGateway({ transports: ['websocket'] })
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  constructor(private authService: AuthService) {
+  constructor(private userService: UserService) {
     //
   }
 
@@ -28,24 +27,24 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    const { timestamp } = onlineStatus || {};
-    const isOnline = true;
+    // const { timestamp } = onlineStatus || {};
+    // const isOnline = true;
 
-    const updatedUser = await this.authService.updateOnlineStatus(_id, {
-      timestamp,
-    });
+    // const updatedUser = await this.userService.updateOnlineStatus(_id, {
+    //   timestamp,
+    // });
 
-    authPubSub.publish('OnUserUpdated', {
-      OnUserUpdated: {
-        auth: {
-          ...updatedUser,
-          onlineStatus: {
-            ...updatedUser?.onlineStatus,
-            isOnline,
-          },
-        },
-      },
-    });
+    // authPubSub.publish('OnUserUpdated', {
+    //   OnUserUpdated: {
+    //     auth: {
+    //       ...updatedUser,
+    //       onlineStatus: {
+    //         ...updatedUser?.onlineStatus,
+    //         isOnline,
+    //       },
+    //     },
+    //   },
+    // });
   }
 
   async handleDisconnect(client: Socket) {
@@ -54,35 +53,35 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     if (!_id || !onlineStatus) return;
 
-    const { timestamp } = onlineStatus || {};
+    // const { timestamp } = onlineStatus || {};
 
-    await this.authService.updateOnlineStatus(_id, {
-      timestamp,
-    });
+    // await this.userService.updateOnlineStatus(_id, {
+    //   timestamp,
+    // });
   }
 
   @SubscribeMessage('updateUserOnlineStatus')
-  async handleStatusUpdate(@MessageBody() payload: User) {
+  async handleStatusUpdate(@MessageBody() payload: any) {
     const { _id, onlineStatus } = payload || {};
 
     if (!_id || !onlineStatus) return;
 
-    const { isOnline, timestamp } = onlineStatus || {};
+    // const { isOnline, timestamp } = onlineStatus || {};
 
-    const updatedUser = await this.authService.updateOnlineStatus(_id, {
-      timestamp,
-    });
+    // const updatedUser = await this.userService.updateOnlineStatus(_id, {
+    //   timestamp,
+    // });
 
-    authPubSub.publish('OnUserUpdated', {
-      OnUserUpdated: {
-        auth: {
-          ...updatedUser,
-          onlineStatus: {
-            ...updatedUser?.onlineStatus,
-            isOnline,
-          },
-        },
-      },
-    });
+    // authPubSub.publish('OnUserUpdated', {
+    //   OnUserUpdated: {
+    //     auth: {
+    //       ...updatedUser,
+    //       onlineStatus: {
+    //         ...updatedUser?.onlineStatus,
+    //         isOnline,
+    //       },
+    //     },
+    //   },
+    // });
   }
 }

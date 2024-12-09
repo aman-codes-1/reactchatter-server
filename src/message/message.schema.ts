@@ -2,48 +2,48 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, SchemaTimestampsConfig, Types } from 'mongoose';
 
 class CommonTimestamp {
-  @Prop()
+  @Prop({ type: Number, required: true, default: Date.now })
   timestamp: number;
 }
 
 class RetryStatus extends CommonTimestamp {
-  @Prop()
+  @Prop({ type: Boolean, required: true })
   isRetry: boolean;
 }
 
 class QueuedStatus extends CommonTimestamp {
-  @Prop()
+  @Prop({ type: Boolean, required: true })
   isQueued: boolean;
 }
 
 class SentStatus extends CommonTimestamp {
-  @Prop()
+  @Prop({ type: Boolean, required: true })
   isSent: boolean;
 }
 
 class DeliveredStatus extends CommonTimestamp {
-  @Prop()
+  @Prop({ type: Boolean, required: true })
   isDelivered: boolean;
 }
 
 class ReadStatus extends CommonTimestamp {
-  @Prop()
+  @Prop({ type: Boolean, required: true })
   isRead: boolean;
 }
 
 class CommonId {
-  @Prop()
-  _id: string;
+  @Prop({ type: Types.ObjectId, required: true })
+  _id: Types.ObjectId;
 }
 
 class Sender extends CommonId {
   @Prop({ type: RetryStatus, required: false })
   retryStatus?: RetryStatus;
 
-  @Prop({ type: QueuedStatus })
+  @Prop({ type: QueuedStatus, required: true })
   queuedStatus: QueuedStatus;
 
-  @Prop({ type: SentStatus })
+  @Prop({ type: SentStatus, required: true })
   sentStatus: SentStatus;
 }
 
@@ -57,22 +57,22 @@ class OtherMember extends CommonId {
 
 @Schema({ timestamps: true })
 export class Message extends CommonTimestamp {
-  @Prop()
+  @Prop({ type: Types.ObjectId, required: true })
   chatId: Types.ObjectId;
 
-  @Prop()
+  @Prop({ type: String, required: true })
   queueId: string;
 
-  @Prop({ default: true })
+  @Prop({ type: Boolean, required: true, default: true })
   isActive: boolean;
 
-  @Prop()
+  @Prop({ type: String, required: true })
   message: string;
 
-  @Prop({ type: Sender })
+  @Prop({ type: Sender, required: true })
   sender: Sender;
 
-  @Prop({ type: [OtherMember] })
+  @Prop({ type: [OtherMember], required: true })
   otherMembers: OtherMember[];
 }
 

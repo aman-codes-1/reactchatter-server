@@ -14,7 +14,11 @@ export class GoogleOAuthGuard extends AuthGuard('google') {
     const from = request.query.state;
     request.params.from = from;
     if (result) {
-      await super.logIn(request);
+      try {
+        await super.logIn(request);
+      } catch (err) {
+        throw new UnauthorizedException();
+      }
     }
     return result;
   }
@@ -23,7 +27,7 @@ export class GoogleOAuthGuard extends AuthGuard('google') {
     if (err || !user) {
       const response = context.switchToHttp().getResponse() as Response;
       response.redirect('/api/auth/google/cancel');
-      throw err || new UnauthorizedException();
+      throw new UnauthorizedException();
     }
     return user;
   }

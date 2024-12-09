@@ -12,6 +12,8 @@ import { FriendModule } from './friend/friend.module';
 import { MessageModule } from './message/message.module';
 import { RequestModule } from './request/request.module';
 import { SocketModule } from './socket/socket.module';
+import { UserModule } from './user/user.module';
+import { UserSessionModule } from './userSession/userSession.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -22,6 +24,8 @@ import configuration from './config/configuration';
     MessageModule,
     RequestModule,
     SocketModule,
+    UserModule,
+    UserSessionModule,
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],

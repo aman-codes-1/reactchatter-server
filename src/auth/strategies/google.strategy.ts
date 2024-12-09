@@ -10,12 +10,13 @@ import {
 } from 'passport-google-oauth20';
 import { UAParser } from 'ua-parser-js';
 import { AuthService } from '../auth.service';
+import { UserService } from '../../user/user.service';
 import { UserDocument } from '../../user/user.schema';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   constructor(
-    private authService: AuthService,
+    private userService: UserService,
     private readonly configService: ConfigService,
   ) {
     const GOOGLE_CLIENT_ID = configService.get('GOOGLE_CLIENT_ID');
@@ -50,12 +51,22 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         const user = {
           ...profile?._json,
           provider: profile?.provider,
+        };
+        const userDetails = this.userService.getUserDetails(user);
+        const otherDetails = {
           authTokens: tokens,
-        } as unknown as UserDocument;
-        const googleUser = await this.authService.validateUser(user);
-        return done(null, {
-          ...googleUser,
           deviceDetails: this.getDeviceDetails(req),
+        };
+        const validatedUser = await this.userService.validateUser(userDetails);
+        if (validatedUser) {
+          return done(null, {
+            ...validatedUser,
+            ...otherDetails,
+          });
+        }
+        return done(null, {
+          ...userDetails,
+          ...otherDetails,
         });
       },
     );

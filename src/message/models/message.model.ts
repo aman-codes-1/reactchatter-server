@@ -1,6 +1,6 @@
 import { Field, Float, Int, ObjectType } from '@nestjs/graphql';
 import { Types } from 'mongoose';
-import { User } from '../../auth/models/auth.model';
+import { User } from '../../user/models/user.model';
 
 @ObjectType({ description: 'CommonTimestampObject' })
 class CommonTimestamp {

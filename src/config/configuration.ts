@@ -19,7 +19,12 @@ const SAME_SITE = process.env.SAME_SITE || 'lax';
 const MONGO_URI = process.env.MONGO_URI || '';
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS || '';
 const COOKIE_SECRET = process.env.COOKIE_SECRET || '';
-const COOKIE_MAX_AGE = process.env.COOKIE_MAX_AGE || 86400;
+const COOKIE_MAX_UNITS = process.env.COOKIE_MAX_UNITS || '3,24,60,60';
+const COOKIE_MAX_AGE = COOKIE_MAX_UNITS.split(',').reduce(
+  (acc, unit) => acc * Number(unit),
+  1,
+);
+const COOKIE_MAX_AGE_MS = COOKIE_MAX_AGE * 1000;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
 const SESSION_SECRET = process.env.SESSION_SECRET || '';
@@ -40,14 +45,14 @@ const HTTP_ONLY_COOKIE = {
   signed: true,
   sameSite: SAME_SITE,
   secure: isProduction,
-  maxAge: Number(COOKIE_MAX_AGE) * 1000,
+  maxAge: COOKIE_MAX_AGE_MS,
 };
 
 const USERS_COOKIE = {
   httpOnly: true,
   sameSite: SAME_SITE,
   secure: isProduction,
-  maxAge: Number(COOKIE_MAX_AGE) * 1000,
+  maxAge: COOKIE_MAX_AGE_MS,
 };
 
 export default () => ({
@@ -60,7 +65,9 @@ export default () => ({
   MONGO_URI,
   ALLOWED_ORIGINS,
   COOKIE_SECRET,
+  COOKIE_MAX_UNITS,
   COOKIE_MAX_AGE,
+  COOKIE_MAX_AGE_MS,
   GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET,
   SESSION_SECRET,

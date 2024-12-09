@@ -1,11 +1,10 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { MongooseModule } from '@nestjs/mongoose';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
-import { User, UserSchema } from '../user/user.schema';
+import { UserModule } from '../user/user.module';
+import { UserSessionModule } from '../userSession/userSession.module';
 import { AuthController } from './auth.controller';
-import { AuthResolver } from './auth.resolver';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
@@ -13,6 +12,7 @@ import { SessionSerializer } from './serializers/Serializer';
 
 @Module({
   imports: [
+    forwardRef(() => UserModule),
     PassportModule.register({ session: true }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -20,21 +20,14 @@ import { SessionSerializer } from './serializers/Serializer';
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get('JWT_SECRET'),
         signOptions: {
-          expiresIn: `${configService.get('JWT_EXPIRATION_TIME')}s`,
+          expiresIn: Number(configService.get('JWT_EXPIRATION_TIME')),
         },
       }),
     }),
-    MongooseModule.forFeature([
-      { name: User.name, schema: UserSchema, collection: 'users' },
-    ]),
+    UserSessionModule,
   ],
   controllers: [AuthController],
-  providers: [
-    AuthResolver,
-    AuthService,
-    JwtStrategy,
-    GoogleStrategy,
-    SessionSerializer,
-  ],
+  providers: [AuthService, JwtStrategy, GoogleStrategy, SessionSerializer],
+  exports: [AuthService],
 })
 export class AuthModule {}

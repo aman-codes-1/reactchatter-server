@@ -1,5 +1,5 @@
 import { Field, ObjectType } from '@nestjs/graphql';
-import { User } from '../../auth/models/auth.model';
+import { User } from '../../user/models/user.model';
 
 @ObjectType({ description: 'RequestMemberObject' })
 class RequestMember extends User {

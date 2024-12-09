@@ -2,25 +2,20 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ObjectId } from 'mongodb';
-import { User, UserDocument } from '../user/user.schema';
-import { Request, RequestsData } from './models/request.model';
+import { RequestsData } from './models/request.model';
 import { Request as RequestSchema, RequestDocument } from './request.schema';
 import { CreateRequestInput, UpdateRequestInput } from './dto/request.input';
 import { RequestArgs } from './dto/request.args';
+import { UserService } from '../user/user.service';
 import { FriendService } from '../friend/friend.service';
-import { Friend } from '../friend/models/friend.model';
-import {
-  Friend as FriendSchema,
-  FriendDocument,
-} from '../friend/friend.schema';
+import { FriendDocument } from '../friend/friend.schema';
 
 @Injectable()
 export class RequestService {
   constructor(
     @InjectModel(RequestSchema.name)
     private RequestModel: Model<RequestDocument>,
-    @InjectModel(User.name) private UserModel: Model<UserDocument>,
-    @InjectModel(FriendSchema.name) private FriendModel: Model<FriendDocument>,
+    private userService: UserService,
     private friendService: FriendService,
   ) {
     //
@@ -75,7 +70,7 @@ export class RequestService {
     ];
   }
 
-  async findOneById(requestId: string): Promise<Request> {
+  async findOneById(requestId: string): Promise<RequestDocument> {
     const requestObjectId = new ObjectId(requestId);
     const membersPipeline = await this.membersPipeline();
     const groupPipeline = await this.groupPipeline();
@@ -93,23 +88,19 @@ export class RequestService {
     return request?.[0];
   }
 
-  async create(data: CreateRequestInput): Promise<Request> {
+  async create(data: CreateRequestInput): Promise<RequestDocument> {
     const { userId, sendToEmail } = data;
     const userObjectId = new ObjectId(userId);
-    const user = await this.UserModel.findOne({
+    const { _id } = await this.userService.findOneByQuery({
       email: sendToEmail,
-    }).lean();
-    if (!user) {
-      throw new BadRequestException('User not found.');
-    }
-    const { _id } = user;
+    });
     const _idObjectId = new ObjectId(String(_id));
     if (userObjectId.equals(_idObjectId)) {
       throw new BadRequestException(
         'Please send a friend request to a different user.',
       );
     }
-    const duplicateFriend = await this.FriendModel.findOne({
+    const duplicateFriend = await this.friendService.findOneByQuery({
       members: {
         $all: [
           { $elemMatch: { _id: _idObjectId } },
@@ -117,7 +108,7 @@ export class RequestService {
         ],
       },
       isActive: true,
-    }).lean();
+    });
     const duplicatePendingRequestSent = await this.RequestModel.findOne({
       $and: [
         { members: { $elemMatch: { _id, hasSent: false } } },
@@ -183,7 +174,7 @@ export class RequestService {
     const [id1, id2] = memberIds;
     const id1ObjectId = new ObjectId(id1);
     const id2ObjectId = new ObjectId(id2);
-    const duplicateFriend = await this.FriendModel.findOne({
+    const duplicateFriend = await this.friendService.findOneByQuery({
       members: {
         $all: [
           { $elemMatch: { _id: id1ObjectId } },
@@ -191,9 +182,9 @@ export class RequestService {
         ],
       },
       isActive: true,
-    }).lean();
-    let updatedRequest: Request;
-    let newFriend: Friend;
+    });
+    let updatedRequest: RequestDocument;
+    let newFriend: FriendDocument;
     let isError = false;
     if (duplicateFriend) {
       const { _id } = await this.RequestModel.findByIdAndUpdate(

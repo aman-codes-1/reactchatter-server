@@ -1,11 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { FilterQuery, Model } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { FriendArgs } from './dto/friend.args';
-import { Friend } from './models/friend.model';
 import { Friend as FriendSchema, FriendDocument } from './friend.schema';
-import { Request } from '../request/models/request.model';
+import { RequestDocument } from '../request/request.schema';
 
 @Injectable()
 export class FriendService {
@@ -117,7 +116,17 @@ export class FriendService {
     ];
   }
 
-  async findOneById(friendId: string, userId: string): Promise<Friend> {
+  async findOneByQuery(
+    findQuery: FilterQuery<FriendDocument>,
+  ): Promise<FriendDocument> {
+    const friend = await this.FriendModel.findOne(findQuery).lean();
+    if (!friend) {
+      throw new BadRequestException('Friend not found.');
+    }
+    return friend as FriendDocument;
+  }
+
+  async findOneById(friendId: string, userId: string): Promise<FriendDocument> {
     const friendObjectId = new ObjectId(friendId);
     const userObjectId = new ObjectId(userId);
     const hasChatsPipeline = await this.hasChatsPipeline(userObjectId);
@@ -136,7 +145,7 @@ export class FriendService {
     return friend?.[0];
   }
 
-  async create(data: Request, userId: string): Promise<Friend> {
+  async create(data: RequestDocument, userId: string): Promise<FriendDocument> {
     const { members } = data;
     const Members = members.map((member) => ({
       _id: new ObjectId(member?._id),
@@ -151,7 +160,7 @@ export class FriendService {
     return friend;
   }
 
-  async findAll(userId: string, args: FriendArgs): Promise<Friend[]> {
+  async findAll(userId: string, args: FriendArgs): Promise<FriendDocument[]> {
     const userObjectId = new ObjectId(userId);
     const { limit, after } = args;
     const hasChatsPipeline = await this.hasChatsPipeline(userObjectId);
@@ -177,7 +186,7 @@ export class FriendService {
   async findAllOtherFriends(
     userId: string,
     args: FriendArgs,
-  ): Promise<Friend[]> {
+  ): Promise<FriendDocument[]> {
     const userObjectId = new ObjectId(userId);
     const { limit, after } = args;
     const hasChatsPipeline = await this.hasChatsPipeline(userObjectId);

@@ -23,7 +23,7 @@ export class User {
   @Field(() => String, { nullable: true })
   email?: string;
 
-  @Field(() => Boolean, { nullable: true })
+  @Field(() => String, { nullable: true })
   email_verified?: boolean;
 
   @Field(() => String, { nullable: true })
@@ -31,6 +31,9 @@ export class User {
 
   @Field(() => String, { nullable: true })
   family_name?: string;
+
+  @Field(() => String, { nullable: true })
+  provider?: string;
 
   @Field(() => OnlineStatus, { nullable: true })
   onlineStatus?: OnlineStatus;

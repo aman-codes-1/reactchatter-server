@@ -2,28 +2,35 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, SchemaTimestampsConfig, Types } from 'mongoose';
 
 class Member {
-  @Prop()
+  @Prop({ type: Types.ObjectId, required: true })
   _id: Types.ObjectId;
 
-  @Prop()
+  @Prop({ type: Boolean, required: true })
   hasAdded: boolean;
 
-  @Prop({ required: false })
-  isAdmin: boolean;
+  @Prop({ type: Boolean, required: false })
+  isAdmin?: boolean;
 }
+
+type ChatType = 'private' | 'group';
 
 @Schema({ timestamps: true })
 export class Chat {
-  @Prop()
-  queueId: string;
+  @Prop({ type: String, required: false })
+  queueId?: string;
 
-  @Prop({ default: true })
+  @Prop({ type: Boolean, required: true, default: true })
   isActive: boolean;
 
-  @Prop()
-  type: string;
+  @Prop({
+    type: String,
+    required: true,
+    default: 'private',
+    enum: ['private', 'group'],
+  })
+  type: ChatType;
 
-  @Prop({ type: [Member] })
+  @Prop({ type: [Member], required: true })
   members: Member[];
 }
 
