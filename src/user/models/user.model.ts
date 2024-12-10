@@ -2,11 +2,11 @@ import { Field, Float, ObjectType } from '@nestjs/graphql';
 
 @ObjectType({ description: 'OnlineStatusObject' })
 class OnlineStatus {
-  @Field(() => Boolean, { nullable: true })
-  isOnline?: boolean;
+  @Field(() => Boolean)
+  isOnline: boolean;
 
   @Field(() => Float)
-  timestamp: number;
+  lastSeen: number;
 }
 
 @ObjectType({ description: 'UserObject' })

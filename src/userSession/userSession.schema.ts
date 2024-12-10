@@ -6,15 +6,12 @@ class LastActive {
   lastActive: number;
 }
 
-class ActiveConnection extends LastActive {
+export class ActiveConnection extends LastActive {
   @Prop({ type: String, required: true })
   clientId: string;
 
   @Prop({ type: Boolean, required: true })
-  isConnected: boolean;
-
-  @Prop({ type: Boolean, required: false })
-  isClientActive?: boolean;
+  isClientActive: boolean;
 }
 
 @Schema({ timestamps: true })
@@ -27,9 +24,6 @@ export class UserSession extends LastActive {
 
   @Prop({ type: Object, required: true })
   session: Record<string, any>;
-
-  @Prop({ type: String, required: true, default: 'testVal' })
-  testVal: string;
 
   @Prop({ type: [ActiveConnection], required: false })
   activeConnections?: ActiveConnection[];

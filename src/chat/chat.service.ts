@@ -51,7 +51,6 @@ export class ChatService {
                 email_verified: 1,
                 given_name: 1,
                 family_name: 1,
-                onlineStatus: 1,
               },
             },
           ],

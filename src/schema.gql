@@ -193,8 +193,8 @@ type Mutation {
 
 """OnlineStatusObject"""
 type OnlineStatus {
-  isOnline: Boolean
-  timestamp: Float!
+  isOnline: Boolean!
+  lastSeen: Float!
 }
 
 """OtherMemberObject"""

@@ -83,17 +83,4 @@ export class UserService {
     }
     return user as UserDocument;
   }
-
-  // async updateOnlineStatus(
-  //   userId: string,
-  //   onlineStatus: any,
-  // ): Promise<UserDocument> {
-  //   const userObjectId = new ObjectId(userId);
-  //   const updatedUser = await this.UserModel.findByIdAndUpdate(
-  //     { _id: userObjectId },
-  //     { $set: { onlineStatus } },
-  //     { upsert: true, new: true },
-  //   ).lean();
-  //   return updatedUser as UserDocument;
-  // }
 }

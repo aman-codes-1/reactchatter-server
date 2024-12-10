@@ -188,7 +188,7 @@ export class RequestService {
     let isError = false;
     if (duplicateFriend) {
       const { _id } = await this.RequestModel.findByIdAndUpdate(
-        { _id: requestId },
+        requestId,
         { $set: { status: status === 'accepted' ? 'rejected' : status } },
         { new: true },
       ).lean();
@@ -196,7 +196,7 @@ export class RequestService {
       isError = true;
     } else {
       const { _id } = await this.RequestModel.findByIdAndUpdate(
-        { _id: requestId },
+        requestId,
         { $set: { status } },
         { new: true },
       ).lean();

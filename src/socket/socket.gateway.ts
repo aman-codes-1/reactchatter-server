@@ -7,32 +7,42 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { UserService } from '../user/user.service';
+import { UserSessionService } from '../userSession/userSession.service';
 // import { pubSub as authPubSub } from '../auth/auth.resolver';
 
 @WebSocketGateway({ transports: ['websocket'] })
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  constructor(private userService: UserService) {
+  constructor(private userSessionService: UserSessionService) {
     //
   }
+
+  public clientId: any;
 
   @WebSocketServer() server: Server;
 
   async handleConnection(client: Socket) {
-    const { auth } = client.handshake;
-    const { _id, onlineStatus } = auth || {};
+    const { id: clientId, handshake } = client || {};
+    this.clientId = clientId;
+    const { auth } = handshake || {};
+    const { sessionID, onlineStatus } = auth || {};
 
-    if (!_id || !onlineStatus) {
+    if (!sessionID || !onlineStatus) {
       client.disconnect();
       return;
     }
 
-    // const { timestamp } = onlineStatus || {};
-    // const isOnline = true;
+    const { isOnline, lastSeen } = onlineStatus || {};
 
-    // const updatedUser = await this.userService.updateOnlineStatus(_id, {
-    //   timestamp,
-    // });
+    const activeConnection = {
+      clientId,
+      isClientActive: isOnline || false,
+      lastActive: lastSeen || Date.now(),
+    };
+
+    await this.userSessionService.addActiveConnection(
+      sessionID,
+      activeConnection,
+    );
 
     // authPubSub.publish('OnUserUpdated', {
     //   OnUserUpdated: {
@@ -48,29 +58,34 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   async handleDisconnect(client: Socket) {
-    const { auth } = client.handshake;
-    const { _id, onlineStatus } = auth || {};
+    const { id: clientId, handshake } = client || {};
+    this.clientId = clientId;
+    const { auth } = handshake || {};
+    const { sessionID } = auth || {};
 
-    if (!_id || !onlineStatus) return;
+    if (!sessionID) return;
 
-    // const { timestamp } = onlineStatus || {};
-
-    // await this.userService.updateOnlineStatus(_id, {
-    //   timestamp,
-    // });
+    await this.userSessionService.removeActiveConnection(sessionID, clientId);
   }
 
   @SubscribeMessage('updateUserOnlineStatus')
   async handleStatusUpdate(@MessageBody() payload: any) {
-    const { _id, onlineStatus } = payload || {};
+    const { sessionID, onlineStatus } = payload || {};
 
-    if (!_id || !onlineStatus) return;
+    if (!sessionID || !onlineStatus) return;
 
-    // const { isOnline, timestamp } = onlineStatus || {};
+    const { isOnline, lastSeen } = onlineStatus || {};
 
-    // const updatedUser = await this.userService.updateOnlineStatus(_id, {
-    //   timestamp,
-    // });
+    const activeConnection = {
+      clientId: this.clientId,
+      isClientActive: isOnline || false,
+      lastActive: lastSeen || Date.now(),
+    };
+
+    await this.userSessionService.updateActiveConnection(
+      sessionID,
+      activeConnection,
+    );
 
     // authPubSub.publish('OnUserUpdated', {
     //   OnUserUpdated: {

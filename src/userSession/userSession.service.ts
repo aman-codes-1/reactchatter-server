@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {
+  ActiveConnection,
   UserSession as UserSessionSchema,
   UserSessionDocument,
 } from './userSession.schema';
@@ -28,13 +29,66 @@ export class UserSessionService {
     newAuthTokens: any,
   ): Promise<UserSessionDocument> {
     const updatedSession = await this.UserSessionModel.findByIdAndUpdate(
-      { _id: sessionID },
+      sessionID,
       {
         $set: {
           'session.passport.user.authTokens': newAuthTokens,
         },
       },
-      { upsert: true, new: true },
+      { new: true },
+    ).lean();
+    return updatedSession as UserSessionDocument;
+  }
+
+  async addActiveConnection(
+    sessionID: string,
+    activeConnection: ActiveConnection,
+  ): Promise<UserSessionDocument> {
+    const updatedSession = await this.UserSessionModel.findByIdAndUpdate(
+      sessionID,
+      {
+        $set: { lastActive: activeConnection?.lastActive },
+        $addToSet: { activeConnections: activeConnection },
+      },
+      { new: true },
+    ).lean();
+    return updatedSession as UserSessionDocument;
+  }
+
+  async updateActiveConnection(
+    sessionID: string,
+    activeConnection: ActiveConnection,
+  ): Promise<UserSessionDocument> {
+    const { clientId } = activeConnection || {};
+    const updatedSession = await this.UserSessionModel.findByIdAndUpdate(
+      sessionID,
+      {
+        $set: {
+          lastActive: activeConnection?.lastActive,
+          'activeConnections.$[element]': {
+            ...activeConnection,
+            clientId,
+          },
+        },
+      },
+      {
+        new: true,
+        arrayFilters: [{ 'element.clientId': clientId }],
+      },
+    ).lean();
+    return updatedSession as UserSessionDocument;
+  }
+
+  async removeActiveConnection(
+    sessionID: string,
+    clientId: string,
+  ): Promise<UserSessionDocument> {
+    const updatedSession = await this.UserSessionModel.findByIdAndUpdate(
+      sessionID,
+      {
+        $pull: { activeConnections: { clientId } },
+      },
+      { new: true },
     ).lean();
     return updatedSession as UserSessionDocument;
   }
