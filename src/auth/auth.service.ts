@@ -166,7 +166,6 @@ export class AuthService {
     authTokens: any,
     response: Response,
   ): Promise<any> {
-    console.log('hereeeeee');
     let refreshToken: string;
     let newAccessToken: string;
     let reAuthenticatedUser: any;
