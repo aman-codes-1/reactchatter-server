@@ -166,6 +166,7 @@ export class AuthService {
     authTokens: any,
     response: Response,
   ): Promise<any> {
+    console.log('hereeeeee');
     let refreshToken: string;
     let newAccessToken: string;
     let reAuthenticatedUser: any;
@@ -201,6 +202,7 @@ export class AuthService {
       const user = await this.userService.findOneById(String(payload?._id));
 
       reAuthenticatedUser = {
+        ...payload,
         ...user,
         authTokens: updatedSession?.session?.passport?.user?.authTokens,
         deviceDetails: updatedSession?.session?.passport?.user?.deviceDetails,

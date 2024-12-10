@@ -101,6 +101,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         payload?.sessionID,
       );
       const User = {
+        ...payload,
         ...user,
         authTokens: session?.session?.passport?.user?.authTokens,
         deviceDetails: session?.session?.passport?.user?.deviceDetails,
