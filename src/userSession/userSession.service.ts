@@ -1,11 +1,13 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { ObjectId } from 'mongodb';
 import {
   ActiveConnection,
   UserSession as UserSessionSchema,
   UserSessionDocument,
 } from './userSession.schema';
+import { pubSub as userPubSub } from '../user/user.resolver';
 
 @Injectable()
 export class UserSessionService {
@@ -22,6 +24,59 @@ export class UserSessionService {
       throw new BadRequestException('Session not found.');
     }
     return session;
+  }
+
+  async findUserOnlineStatus(userId: string, lastActive: number): Promise<any> {
+    const userObjectId = new ObjectId(userId);
+
+    const users = await this.UserSessionModel.aggregate([
+      {
+        $match: {
+          'session.passport.user._id': userObjectId,
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          userId: '$session.passport.user._id',
+          onlineStatus: {
+            isOnline: {
+              $gt: [
+                {
+                  $size: {
+                    $filter: {
+                      input: { $ifNull: ['$activeConnections', []] },
+                      as: 'connection',
+                      cond: { $eq: ['$$connection.isClientActive', true] },
+                    },
+                  },
+                },
+                0,
+              ],
+            },
+            lastSeen: '$lastActive',
+          },
+        },
+      },
+      {
+        $sort: { 'onlineStatus.lastSeen': -1 },
+      },
+      {
+        $limit: 1,
+      },
+    ]);
+
+    if (!users?.length) {
+      return {
+        userId,
+        onlineStatus: {
+          isOnline: false,
+          lastSeen: lastActive || Date.now(),
+        },
+      };
+    }
+
+    return users?.[0];
   }
 
   async updateAuthTokens(
@@ -42,6 +97,7 @@ export class UserSessionService {
 
   async addActiveConnection(
     sessionID: string,
+    _id: string,
     activeConnection: ActiveConnection,
   ): Promise<UserSessionDocument> {
     const updatedSession = await this.UserSessionModel.findByIdAndUpdate(
@@ -52,11 +108,22 @@ export class UserSessionService {
       },
       { new: true },
     ).lean();
+
+    const userOnlineStatus = await this.findUserOnlineStatus(
+      _id,
+      updatedSession?.lastActive,
+    );
+
+    userPubSub.publish('OnUserOnlineStatusUpdated', {
+      OnUserOnlineStatusUpdated: userOnlineStatus,
+    });
+
     return updatedSession as UserSessionDocument;
   }
 
   async updateActiveConnection(
     sessionID: string,
+    _id: string,
     activeConnection: ActiveConnection,
   ): Promise<UserSessionDocument> {
     const { clientId } = activeConnection || {};
@@ -76,11 +143,22 @@ export class UserSessionService {
         arrayFilters: [{ 'element.clientId': clientId }],
       },
     ).lean();
+
+    const userOnlineStatus = await this.findUserOnlineStatus(
+      _id,
+      updatedSession?.lastActive,
+    );
+
+    userPubSub.publish('OnUserOnlineStatusUpdated', {
+      OnUserOnlineStatusUpdated: userOnlineStatus,
+    });
+
     return updatedSession as UserSessionDocument;
   }
 
   async removeActiveConnection(
     sessionID: string,
+    _id: string,
     clientId: string,
   ): Promise<UserSessionDocument> {
     const updatedSession = await this.UserSessionModel.findByIdAndUpdate(
@@ -90,6 +168,16 @@ export class UserSessionService {
       },
       { new: true },
     ).lean();
+
+    const userOnlineStatus = await this.findUserOnlineStatus(
+      _id,
+      updatedSession?.lastActive,
+    );
+
+    userPubSub.publish('OnUserOnlineStatusUpdated', {
+      OnUserOnlineStatusUpdated: userOnlineStatus,
+    });
+
     return updatedSession as UserSessionDocument;
   }
 }

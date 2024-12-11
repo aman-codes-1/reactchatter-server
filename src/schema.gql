@@ -2,6 +2,13 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+"""ActiveConnectionObject"""
+type ActiveConnection {
+  clientId: String!
+  isClientActive: Boolean!
+  lastActive: Float!
+}
+
 """ChatObject"""
 type Chat {
   _id: String!
@@ -35,7 +42,6 @@ type ChatMember {
   hasAdded: Boolean!
   isAdmin: Boolean
   name: String
-  onlineStatus: OnlineStatus
   picture: String
   provider: String
 }
@@ -126,7 +132,6 @@ type Member {
   given_name: String
   hasAdded: Boolean!
   name: String
-  onlineStatus: OnlineStatus
   picture: String
   provider: String
 }
@@ -206,7 +211,6 @@ type OtherMember {
   family_name: String
   given_name: String
   name: String
-  onlineStatus: OnlineStatus
   picture: String
   provider: String
   readStatus: ReadStatus
@@ -265,7 +269,6 @@ type RequestMember {
   given_name: String
   hasSent: Boolean!
   name: String
-  onlineStatus: OnlineStatus
   picture: String
   provider: String
 }
@@ -295,7 +298,6 @@ type Sender {
   family_name: String
   given_name: String
   name: String
-  onlineStatus: OnlineStatus
   picture: String
   provider: String
   queuedStatus: QueuedStatus!
@@ -317,7 +319,7 @@ type Subscription {
   OnMessageUpdated: MessageData!
   OnRequestAdded: RequestData!
   OnRequestUpdated: RequestData!
-  OnUserUpdated(input: UserInput!): UserData!
+  OnUserOnlineStatusUpdated(input: UserInput!): UserOnlineStatusData!
 }
 
 """UpdateRequestInput"""
@@ -335,17 +337,18 @@ type User {
   family_name: String
   given_name: String
   name: String
-  onlineStatus: OnlineStatus
   picture: String
   provider: String
 }
 
-"""UserDataObject"""
-type UserData {
-  user: User!
-}
-
 """UserInput"""
 input UserInput {
+  userId: String!
+}
+
+"""UserOnlineStatusDataObject"""
+type UserOnlineStatusData {
+  activeConnections: [ActiveConnection!]!
+  onlineStatus: OnlineStatus!
   userId: String!
 }

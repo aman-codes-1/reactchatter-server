@@ -2,7 +2,7 @@ import { UseGuards } from '@nestjs/common';
 import { Args, Query, Resolver, Subscription } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
 import { UserInput } from './dto/user.input';
-import { User, UserData } from './models/user.model';
+import { User, UserOnlineStatusData } from './models/user.model';
 import { UserService } from './user.service';
 import { UserDocument } from './user.schema';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
@@ -24,14 +24,14 @@ export class UserResolver {
   }
 
   @UseGuards(GqlAuthGuard)
-  @Subscription(() => UserData, {
+  @Subscription(() => UserOnlineStatusData, {
     filter: (payload, variables) => {
-      const updatedUserId = payload?.OnUserUpdated.user?._id;
+      const updatedUserId = payload?.OnUserOnlineStatusUpdated.userId;
       const subscribedUserId = variables?.input?.userId;
       return String(updatedUserId) === subscribedUserId;
     },
   })
-  OnUserUpdated(@Args('input') input: UserInput) {
-    return pubSub.asyncIterator('OnUserUpdated');
+  OnUserOnlineStatusUpdated(@Args('input') input: UserInput) {
+    return pubSub.asyncIterator('OnUserOnlineStatusUpdated');
   }
 }

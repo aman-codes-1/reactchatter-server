@@ -74,7 +74,7 @@ export class RequestService {
     const requestObjectId = new ObjectId(requestId);
     const membersPipeline = await this.membersPipeline();
     const groupPipeline = await this.groupPipeline();
-    const request = await this.RequestModel.aggregate([
+    const requests = await this.RequestModel.aggregate([
       {
         $match: { _id: requestObjectId },
       },
@@ -82,10 +82,10 @@ export class RequestService {
       ...groupPipeline,
       { $limit: 1 },
     ]);
-    if (!request?.length) {
+    if (!requests?.length) {
       throw new BadRequestException('Friend Request not found.');
     }
-    return request?.[0];
+    return requests?.[0];
   }
 
   async create(data: CreateRequestInput): Promise<RequestDocument> {

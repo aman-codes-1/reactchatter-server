@@ -8,7 +8,6 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { UserSessionService } from '../userSession/userSession.service';
-// import { pubSub as authPubSub } from '../auth/auth.resolver';
 
 @WebSocketGateway({ transports: ['websocket'] })
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -24,55 +23,46 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const { id: clientId, handshake } = client || {};
     this.clientId = clientId;
     const { auth } = handshake || {};
-    const { sessionID, onlineStatus } = auth || {};
+    const { _id, sessionID } = auth || {};
 
-    if (!sessionID || !onlineStatus) {
+    if (!_id || !sessionID) {
       client.disconnect();
       return;
     }
 
-    const { isOnline, lastSeen } = onlineStatus || {};
-
     const activeConnection = {
       clientId,
-      isClientActive: isOnline || false,
-      lastActive: lastSeen || Date.now(),
+      isClientActive: true,
+      lastActive: Date.now(),
     };
 
     await this.userSessionService.addActiveConnection(
       sessionID,
+      _id,
       activeConnection,
     );
-
-    // authPubSub.publish('OnUserUpdated', {
-    //   OnUserUpdated: {
-    //     auth: {
-    //       ...updatedUser,
-    //       onlineStatus: {
-    //         ...updatedUser?.onlineStatus,
-    //         isOnline,
-    //       },
-    //     },
-    //   },
-    // });
   }
 
   async handleDisconnect(client: Socket) {
     const { id: clientId, handshake } = client || {};
     this.clientId = clientId;
     const { auth } = handshake || {};
-    const { sessionID } = auth || {};
+    const { _id, sessionID } = auth || {};
 
-    if (!sessionID) return;
+    if (!_id || !sessionID) return;
 
-    await this.userSessionService.removeActiveConnection(sessionID, clientId);
+    await this.userSessionService.removeActiveConnection(
+      sessionID,
+      _id,
+      clientId,
+    );
   }
 
   @SubscribeMessage('updateUserOnlineStatus')
   async handleStatusUpdate(@MessageBody() payload: any) {
-    const { sessionID, onlineStatus } = payload || {};
+    const { _id, sessionID, onlineStatus } = payload || {};
 
-    if (!sessionID || !onlineStatus) return;
+    if (!_id || !sessionID || !onlineStatus) return;
 
     const { isOnline, lastSeen } = onlineStatus || {};
 
@@ -84,19 +74,8 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     await this.userSessionService.updateActiveConnection(
       sessionID,
+      _id,
       activeConnection,
     );
-
-    // authPubSub.publish('OnUserUpdated', {
-    //   OnUserUpdated: {
-    //     auth: {
-    //       ...updatedUser,
-    //       onlineStatus: {
-    //         ...updatedUser?.onlineStatus,
-    //         isOnline,
-    //       },
-    //     },
-    //   },
-    // });
   }
 }
