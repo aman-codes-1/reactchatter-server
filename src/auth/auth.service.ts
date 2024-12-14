@@ -3,9 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { OAuth2Client } from 'google-auth-library';
 import { CookieOptions, Request, Response } from 'express';
-import { UserDocument } from '../user/user.schema';
 import { UserService } from '../user/user.service';
 import { UserSessionService } from '../userSession/userSession.service';
+import { AuthTokens } from '../userSession/models/userSession.model';
 
 @Injectable()
 export class AuthService {
@@ -163,7 +163,7 @@ export class AuthService {
 
   async googleRefreshToken(
     payload: any,
-    authTokens: any,
+    authTokens: AuthTokens,
     response: Response,
   ): Promise<any> {
     let refreshToken: string;

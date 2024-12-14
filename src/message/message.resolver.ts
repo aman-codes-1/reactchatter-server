@@ -1,6 +1,5 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
-import { PubSub } from 'graphql-subscriptions';
 import { MessageArgs } from './dto/message.args';
 import {
   CreateMessageInput,
@@ -16,16 +15,15 @@ import {
 import { MessageService } from './message.service';
 import { MessageDocument } from './message.schema';
 import { ChatService } from '../chat/chat.service';
-import { pubSub as chatPubSub } from '../chat/chat.resolver';
+import { PubSubService } from '../shared/pubSub.service';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
-
-const pubSub = new PubSub();
 
 @Resolver(() => Message)
 export class MessageResolver {
   constructor(
     private readonly messageService: MessageService,
     private readonly chatService: ChatService,
+    private readonly pubSubService: PubSubService,
   ) {
     //
   }
@@ -75,13 +73,13 @@ export class MessageResolver {
   ): Promise<MessageDocument> {
     const { chatId } = input;
     const newMessage = await this.messageService.create(input);
-    pubSub.publish('OnMessageAdded', {
+    await this.pubSubService.pubSubInstance.publish('OnMessageAdded', {
       OnMessageAdded: {
         message: newMessage,
       },
     });
     const updatedChat = await this.chatService.findOneById(String(chatId));
-    chatPubSub.publish('OnChatUpdated', {
+    await this.pubSubService.pubSubInstance.publish('OnChatUpdated', {
       OnChatUpdated: {
         chat: updatedChat,
       },
@@ -95,7 +93,7 @@ export class MessageResolver {
     @Args('input') input: CreateMessageInput,
   ): Promise<MessageDocument> {
     const updatedMessage = await this.messageService.create(input);
-    pubSub.publish('OnMessageUpdated', {
+    await this.pubSubService.pubSubInstance.publish('OnMessageUpdated', {
       OnMessageUpdated: {
         message: updatedMessage,
       },
@@ -112,12 +110,12 @@ export class MessageResolver {
   @UseGuards(GqlAuthGuard)
   @Subscription(() => MessageData)
   OnMessageAdded() {
-    return pubSub.asyncIterator('OnMessageAdded');
+    return this.pubSubService.pubSubInstance.asyncIterator('OnMessageAdded');
   }
 
   @UseGuards(GqlAuthGuard)
   @Subscription(() => MessageData)
   OnMessageUpdated() {
-    return pubSub.asyncIterator('OnMessageUpdated');
+    return this.pubSubService.pubSubInstance.asyncIterator('OnMessageUpdated');
   }
 }

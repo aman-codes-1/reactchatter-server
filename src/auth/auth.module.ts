@@ -12,7 +12,6 @@ import { SessionSerializer } from './serializers/Serializer';
 
 @Module({
   imports: [
-    forwardRef(() => UserModule),
     PassportModule.register({ session: true }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -24,6 +23,7 @@ import { SessionSerializer } from './serializers/Serializer';
         },
       }),
     }),
+    UserModule,
     UserSessionModule,
   ],
   controllers: [AuthController],

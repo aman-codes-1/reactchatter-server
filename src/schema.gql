@@ -6,8 +6,11 @@
 type ActiveConnection {
   clientId: String!
   isClientActive: Boolean!
-  lastActive: Float!
+  lastActive: Date!
 }
+
+"""Any scalar type"""
+scalar Any
 
 """ChatObject"""
 type Chat {
@@ -234,6 +237,7 @@ type Query {
   pendingRequests(after: ID, input: RequestsInput!, limit: Int = 25): RequestsData!
   sentRequests(after: ID, input: RequestsInput!, limit: Int = 25): RequestsData!
   user(input: UserInput!): User!
+  userSession(input: UserSessionInput!): UserSession!
 }
 
 """QueuedStatusObject"""
@@ -311,6 +315,12 @@ type SentStatus {
   timestamp: Float!
 }
 
+"""SessionActiveConnectionsDataObject"""
+type SessionActiveConnectionsData {
+  _id: String!
+  activeConnections: [ActiveConnection!]!
+}
+
 type Subscription {
   OnChatAdded: ChatData!
   OnChatUpdated: ChatData!
@@ -319,7 +329,8 @@ type Subscription {
   OnMessageUpdated: MessageData!
   OnRequestAdded: RequestData!
   OnRequestUpdated: RequestData!
-  OnUserOnlineStatusUpdated(input: UserInput!): UserOnlineStatusData!
+  OnSessionActiveConnections(input: UserSessionInput!): SessionActiveConnectionsData!
+  OnUserActiveConnections(input: UserInput!): UserActiveConnectionsData!
 }
 
 """UpdateRequestInput"""
@@ -341,14 +352,27 @@ type User {
   provider: String
 }
 
+"""UserActiveConnectionsDataObject"""
+type UserActiveConnectionsData {
+  activeConnections: [ActiveConnection!]!
+  onlineStatus: OnlineStatus!
+  userId: String!
+}
+
 """UserInput"""
 input UserInput {
   userId: String!
 }
 
-"""UserOnlineStatusDataObject"""
-type UserOnlineStatusData {
+"""UserSessionObject"""
+type UserSession {
+  _id: String!
   activeConnections: [ActiveConnection!]!
-  onlineStatus: OnlineStatus!
-  userId: String!
+  expires: Date!
+  session: Any!
+}
+
+"""UserSessionInput"""
+input UserSessionInput {
+  sessionID: String!
 }

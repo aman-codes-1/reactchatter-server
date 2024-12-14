@@ -1,6 +1,7 @@
 import { Field, ObjectType } from '@nestjs/graphql';
 import { User } from '../../user/models/user.model';
 import { Message } from '../../message/models/message.model';
+import { DateScalar } from '../../common/scalars/date.scalar';
 
 @ObjectType({ description: 'FriendMemberObject' })
 class Member extends User {
@@ -31,10 +32,10 @@ export class Friend {
   @Field(() => Boolean, { nullable: true })
   hasChats?: boolean;
 
-  @Field(() => Date)
+  @Field(() => DateScalar)
   createdAt: Date;
 
-  @Field(() => Date)
+  @Field(() => DateScalar)
   updatedAt: Date;
 }
 

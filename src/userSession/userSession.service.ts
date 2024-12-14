@@ -3,17 +3,18 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import {
-  ActiveConnection,
   UserSession as UserSessionSchema,
   UserSessionDocument,
 } from './userSession.schema';
-import { pubSub as userPubSub } from '../user/user.resolver';
+import { ActiveConnection, AuthTokens } from './models/userSession.model';
+import { PubSubService } from '../shared/pubSub.service';
 
 @Injectable()
 export class UserSessionService {
   constructor(
     @InjectModel(UserSessionSchema.name)
     private UserSessionModel: Model<UserSessionDocument>,
+    private readonly pubSubService: PubSubService,
   ) {
     //
   }
@@ -26,9 +27,38 @@ export class UserSessionService {
     return session;
   }
 
-  async findUserOnlineStatus(userId: string, lastActive: number): Promise<any> {
-    const userObjectId = new ObjectId(userId);
+  async findSessionActiveConnections(
+    sessionID: string,
+  ): Promise<UserSessionDocument> {
+    const activeConnections = await this.UserSessionModel.aggregate([
+      {
+        $match: {
+          _id: sessionID,
+        },
+      },
+      {
+        $unwind: '$activeConnections',
+      },
+      {
+        $match: {
+          'activeConnections.isClientActive': true,
+        },
+      },
+      {
+        $group: {
+          _id: '$_id',
+          activeConnections: { $push: '$activeConnections' },
+        },
+      },
+    ]);
+    return activeConnections?.[0];
+  }
 
+  async findUserActiveConnections(
+    userId: string,
+    lastActive: Date,
+  ): Promise<any> {
+    const userObjectId = new ObjectId(userId);
     const users = await this.UserSessionModel.aggregate([
       {
         $match: {
@@ -58,12 +88,6 @@ export class UserSessionService {
           },
         },
       },
-      {
-        $sort: { 'onlineStatus.lastSeen': -1 },
-      },
-      {
-        $limit: 1,
-      },
     ]);
 
     if (!users?.length) {
@@ -71,7 +95,7 @@ export class UserSessionService {
         userId,
         onlineStatus: {
           isOnline: false,
-          lastSeen: lastActive || Date.now(),
+          lastSeen: lastActive || new Date(),
         },
       };
     }
@@ -79,9 +103,34 @@ export class UserSessionService {
     return users?.[0];
   }
 
+  async sendActiveConnections(
+    updatedSession: UserSessionDocument,
+    userId: string,
+  ): Promise<any> {
+    const sessionActiveConnections = await this.findSessionActiveConnections(
+      updatedSession?._id,
+    );
+
+    await this.pubSubService.pubSubInstance.publish(
+      'OnSessionActiveConnections',
+      {
+        OnSessionActiveConnections: sessionActiveConnections,
+      },
+    );
+
+    const userActiveConnections = await this.findUserActiveConnections(
+      userId,
+      updatedSession?.lastActive,
+    );
+
+    await this.pubSubService.pubSubInstance.publish('OnUserActiveConnections', {
+      OnUserActiveConnections: userActiveConnections,
+    });
+  }
+
   async updateAuthTokens(
     sessionID: string,
-    newAuthTokens: any,
+    newAuthTokens: AuthTokens,
   ): Promise<UserSessionDocument> {
     const updatedSession = await this.UserSessionModel.findByIdAndUpdate(
       sessionID,
@@ -97,37 +146,30 @@ export class UserSessionService {
 
   async addActiveConnection(
     sessionID: string,
-    _id: string,
+    userId: string,
     activeConnection: ActiveConnection,
   ): Promise<UserSessionDocument> {
-    const updatedSession = await this.UserSessionModel.findByIdAndUpdate(
+    const updatedSession = (await this.UserSessionModel.findByIdAndUpdate(
       sessionID,
       {
         $set: { lastActive: activeConnection?.lastActive },
         $addToSet: { activeConnections: activeConnection },
       },
       { new: true },
-    ).lean();
+    ).lean()) as UserSessionDocument;
 
-    const userOnlineStatus = await this.findUserOnlineStatus(
-      _id,
-      updatedSession?.lastActive,
-    );
+    await this.sendActiveConnections(updatedSession, userId);
 
-    userPubSub.publish('OnUserOnlineStatusUpdated', {
-      OnUserOnlineStatusUpdated: userOnlineStatus,
-    });
-
-    return updatedSession as UserSessionDocument;
+    return updatedSession;
   }
 
   async updateActiveConnection(
     sessionID: string,
-    _id: string,
+    userId: string,
     activeConnection: ActiveConnection,
   ): Promise<UserSessionDocument> {
     const { clientId } = activeConnection || {};
-    const updatedSession = await this.UserSessionModel.findByIdAndUpdate(
+    const updatedSession = (await this.UserSessionModel.findByIdAndUpdate(
       sessionID,
       {
         $set: {
@@ -142,42 +184,28 @@ export class UserSessionService {
         new: true,
         arrayFilters: [{ 'element.clientId': clientId }],
       },
-    ).lean();
+    ).lean()) as UserSessionDocument;
 
-    const userOnlineStatus = await this.findUserOnlineStatus(
-      _id,
-      updatedSession?.lastActive,
-    );
+    await this.sendActiveConnections(updatedSession, userId);
 
-    userPubSub.publish('OnUserOnlineStatusUpdated', {
-      OnUserOnlineStatusUpdated: userOnlineStatus,
-    });
-
-    return updatedSession as UserSessionDocument;
+    return updatedSession;
   }
 
   async removeActiveConnection(
     sessionID: string,
-    _id: string,
+    userId: string,
     clientId: string,
   ): Promise<UserSessionDocument> {
-    const updatedSession = await this.UserSessionModel.findByIdAndUpdate(
+    const updatedSession = (await this.UserSessionModel.findByIdAndUpdate(
       sessionID,
       {
         $pull: { activeConnections: { clientId } },
       },
       { new: true },
-    ).lean();
+    ).lean()) as UserSessionDocument;
 
-    const userOnlineStatus = await this.findUserOnlineStatus(
-      _id,
-      updatedSession?.lastActive,
-    );
+    await this.sendActiveConnections(updatedSession, userId);
 
-    userPubSub.publish('OnUserOnlineStatusUpdated', {
-      OnUserOnlineStatusUpdated: userOnlineStatus,
-    });
-
-    return updatedSession as UserSessionDocument;
+    return updatedSession;
   }
 }

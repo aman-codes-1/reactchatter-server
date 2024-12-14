@@ -9,9 +9,7 @@ import {
   VerifyCallback,
 } from 'passport-google-oauth20';
 import { UAParser } from 'ua-parser-js';
-import { AuthService } from '../auth.service';
 import { UserService } from '../../user/user.service';
-import { UserDocument } from '../../user/user.schema';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
@@ -102,7 +100,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     return this.browserNameMapping[browserName] || browserName;
   }
 
-  private getDeviceDetails(req: any) {
+  private getDeviceDetails(req: Request) {
     const userAgentString = req?.headers?.['user-agent'] || '';
     const parserResults = new UAParser(userAgentString).getResult();
     const res = {

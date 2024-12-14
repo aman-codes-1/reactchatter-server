@@ -1,4 +1,5 @@
 import * as dotenv from 'dotenv';
+import { CookieOptions } from 'express';
 
 dotenv.config();
 
@@ -15,7 +16,7 @@ const DOMAIN = process.env.DOMAIN || 'localhost';
 const CLIENT_PORT = process.env.CLIENT_PORT || 3001;
 const CLIENT_URI = process.env.CLIENT_URI || '';
 const SERVER_URI = process.env.SERVER_URI || '';
-const SAME_SITE = process.env.SAME_SITE || 'lax';
+const SAME_SITE = (process.env.SAME_SITE || 'lax') as CookieOptions['sameSite'];
 const MONGO_URI = process.env.MONGO_URI || '';
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS || '';
 const COOKIE_SECRET = process.env.COOKIE_SECRET || '';
@@ -40,19 +41,22 @@ const CLIENT_URL = isProduction
 
 const SERVER_URL = isProduction ? SERVER_URI : `http://${DOMAIN}:${PORT}`;
 
-const HTTP_ONLY_COOKIE = {
+const HTTP_ONLY_COOKIE: CookieOptions = {
   httpOnly: true,
   signed: true,
   sameSite: SAME_SITE,
   secure: isProduction,
   maxAge: COOKIE_MAX_AGE_MS,
+  domain: DOMAIN,
 };
 
-const USERS_COOKIE = {
+const USERS_COOKIE: CookieOptions = {
   httpOnly: true,
   sameSite: SAME_SITE,
   secure: isProduction,
   maxAge: COOKIE_MAX_AGE_MS,
+  domain: DOMAIN,
+  // path: '/',
 };
 
 export default () => ({

@@ -4,17 +4,20 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Enhancer, GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { join } from 'path';
+import configuration from './config/configuration';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { DateScalar } from './common/scalars/date.scalar';
+import { AnyScalar } from './common/scalars/any.scalar';
 import { AuthModule } from './auth/auth.module';
 import { ChatModule } from './chat/chat.module';
 import { FriendModule } from './friend/friend.module';
 import { MessageModule } from './message/message.module';
 import { RequestModule } from './request/request.module';
+import { SharedModule } from './shared/shared.module';
 import { SocketModule } from './socket/socket.module';
 import { UserModule } from './user/user.module';
 import { UserSessionModule } from './userSession/userSession.module';
-import configuration from './config/configuration';
 
 @Module({
   imports: [
@@ -23,6 +26,7 @@ import configuration from './config/configuration';
     FriendModule,
     MessageModule,
     RequestModule,
+    SharedModule,
     SocketModule,
     UserModule,
     UserSessionModule,
@@ -66,6 +70,6 @@ import configuration from './config/configuration';
     }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, DateScalar, AnyScalar],
 })
 export class AppModule {}

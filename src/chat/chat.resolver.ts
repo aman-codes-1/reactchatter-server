@@ -1,18 +1,19 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
-import { PubSub } from 'graphql-subscriptions';
 import { ChatArgs } from './dto/chat.args';
 import { ChatInput, ChatsInput, CreateChatInput } from './dto/chat.input';
 import { Chat, ChatData } from './models/chat.model';
 import { ChatService } from './chat.service';
 import { ChatDocument } from './chat.schema';
+import { PubSubService } from '../shared/pubSub.service';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
-
-export const pubSub = new PubSub();
 
 @Resolver(() => Chat)
 export class ChatResolver {
-  constructor(private readonly chatService: ChatService) {
+  constructor(
+    private readonly chatService: ChatService,
+    private readonly pubSubService: PubSubService,
+  ) {
     //
   }
 
@@ -42,7 +43,7 @@ export class ChatResolver {
   ): Promise<ChatDocument> {
     const { friendIds } = input;
     const newChat = await this.chatService.create(input);
-    pubSub.publish('OnChatAdded', {
+    await this.pubSubService.pubSubInstance.publish('OnChatAdded', {
       OnChatAdded: {
         friendIds,
         chat: newChat,
@@ -57,7 +58,7 @@ export class ChatResolver {
     @Args('input') input: CreateChatInput,
   ): Promise<ChatDocument> {
     const updatedChat = await this.chatService.create(input);
-    pubSub.publish('OnChatUpdated', {
+    await this.pubSubService.pubSubInstance.publish('OnChatUpdated', {
       OnChatUpdated: {
         chat: updatedChat,
       },
@@ -74,12 +75,12 @@ export class ChatResolver {
   @UseGuards(GqlAuthGuard)
   @Subscription(() => ChatData)
   OnChatAdded() {
-    return pubSub.asyncIterator('OnChatAdded');
+    return this.pubSubService.pubSubInstance.asyncIterator('OnChatAdded');
   }
 
   @UseGuards(GqlAuthGuard)
   @Subscription(() => ChatData)
   OnChatUpdated() {
-    return pubSub.asyncIterator('OnChatUpdated');
+    return this.pubSubService.pubSubInstance.asyncIterator('OnChatUpdated');
   }
 }

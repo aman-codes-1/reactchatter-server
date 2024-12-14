@@ -1,5 +1,14 @@
 import { Field, Float, ObjectType } from '@nestjs/graphql';
 
+@ObjectType({ description: 'OnlineStatusObject' })
+export class OnlineStatus {
+  @Field(() => Boolean)
+  isOnline: boolean;
+
+  @Field(() => Float)
+  lastSeen: number;
+}
+
 @ObjectType({ description: 'UserObject' })
 export class User {
   @Field(() => String)
@@ -25,37 +34,4 @@ export class User {
 
   @Field(() => String, { nullable: true })
   provider?: string;
-}
-
-@ObjectType({ description: 'OnlineStatusObject' })
-export class OnlineStatus {
-  @Field(() => Boolean)
-  isOnline: boolean;
-
-  @Field(() => Float)
-  lastSeen: number;
-}
-
-@ObjectType({ description: 'ActiveConnectionObject' })
-export class ActiveConnection {
-  @Field(() => String)
-  clientId: string;
-
-  @Field(() => Boolean)
-  isClientActive: boolean;
-
-  @Field(() => Float)
-  lastActive: number;
-}
-
-@ObjectType({ description: 'UserOnlineStatusDataObject' })
-export class UserOnlineStatusData {
-  @Field(() => String)
-  userId: string;
-
-  @Field(() => OnlineStatus)
-  onlineStatus: OnlineStatus;
-
-  @Field(() => [ActiveConnection])
-  activeConnections: ActiveConnection[];
 }

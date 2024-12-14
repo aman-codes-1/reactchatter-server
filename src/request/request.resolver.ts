@@ -1,6 +1,5 @@
 import { BadRequestException, UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
-import { PubSub } from 'graphql-subscriptions';
 import { RequestArgs } from './dto/request.args';
 import {
   CreateRequestInput,
@@ -10,14 +9,15 @@ import {
 import { Request, RequestData, RequestsData } from './models/request.model';
 import { RequestService } from './request.service';
 import { RequestDocument } from './request.schema';
-import { pubSub as friendPubSub } from '../friend/friend.resolver';
+import { PubSubService } from '../shared/pubSub.service';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
-
-const pubSub = new PubSub();
 
 @Resolver(() => Request)
 export class RequestResolver {
-  constructor(private readonly requestService: RequestService) {
+  constructor(
+    private readonly requestService: RequestService,
+    private readonly pubSubService: PubSubService,
+  ) {
     //
   }
 
@@ -52,7 +52,7 @@ export class RequestResolver {
     @Args('input') input: CreateRequestInput,
   ): Promise<RequestDocument> {
     const newRequest = await this.requestService.create(input);
-    pubSub.publish('OnRequestAdded', {
+    await this.pubSubService.pubSubInstance.publish('OnRequestAdded', {
       OnRequestAdded: {
         request: newRequest,
       },
@@ -68,13 +68,13 @@ export class RequestResolver {
     const { updatedRequest, newFriend, isError } =
       await this.requestService.findOneByIdAndUpdate(input);
     if (newFriend) {
-      friendPubSub.publish('OnFriendAdded', {
+      await this.pubSubService.pubSubInstance.publish('OnFriendAdded', {
         OnFriendAdded: {
           friend: newFriend,
         },
       });
     }
-    pubSub.publish('OnRequestUpdated', {
+    await this.pubSubService.pubSubInstance.publish('OnRequestUpdated', {
       OnRequestUpdated: {
         request: updatedRequest,
       },
@@ -99,12 +99,12 @@ export class RequestResolver {
   @UseGuards(GqlAuthGuard)
   @Subscription(() => RequestData)
   OnRequestAdded() {
-    return pubSub.asyncIterator('OnRequestAdded');
+    return this.pubSubService.pubSubInstance.asyncIterator('OnRequestAdded');
   }
 
   @UseGuards(GqlAuthGuard)
   @Subscription(() => RequestData)
   OnRequestUpdated() {
-    return pubSub.asyncIterator('OnRequestUpdated');
+    return this.pubSubService.pubSubInstance.asyncIterator('OnRequestUpdated');
   }
 }

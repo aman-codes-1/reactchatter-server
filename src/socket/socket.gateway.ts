@@ -15,7 +15,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     //
   }
 
-  public clientId: any;
+  public clientId: string;
 
   @WebSocketServer() server: Server;
 
@@ -33,7 +33,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const activeConnection = {
       clientId,
       isClientActive: true,
-      lastActive: Date.now(),
+      lastActive: new Date(),
     };
 
     await this.userSessionService.addActiveConnection(
@@ -68,8 +68,8 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const activeConnection = {
       clientId: this.clientId,
-      isClientActive: isOnline || false,
-      lastActive: lastSeen || Date.now(),
+      isClientActive: isOnline ?? false,
+      lastActive: new Date(lastSeen || Date.now()),
     };
 
     await this.userSessionService.updateActiveConnection(

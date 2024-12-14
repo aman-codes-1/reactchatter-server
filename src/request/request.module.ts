@@ -4,12 +4,14 @@ import { Request, RequestSchema } from './request.schema';
 import { RequestResolver } from './request.resolver';
 import { RequestService } from './request.service';
 import { AuthModule } from '../auth/auth.module';
+import { SharedModule } from '../shared/shared.module';
 import { UserModule } from '../user/user.module';
 import { FriendModule } from '../friend/friend.module';
 
 @Module({
   imports: [
     AuthModule,
+    SharedModule,
     UserModule,
     FriendModule,
     MongooseModule.forFeature([

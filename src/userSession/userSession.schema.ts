@@ -1,9 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, SchemaTimestampsConfig } from 'mongoose';
+import { DateScalar } from '../common/scalars/date.scalar';
 
 class LastActive {
-  @Prop({ type: Number, required: true, default: Date.now })
-  lastActive: number;
+  @Prop({ type: DateScalar, required: true, default: () => new Date() })
+  lastActive: Date;
 }
 
 export class ActiveConnection extends LastActive {

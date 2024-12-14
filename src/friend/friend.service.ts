@@ -119,9 +119,6 @@ export class FriendService {
     findQuery: FilterQuery<FriendDocument>,
   ): Promise<FriendDocument> {
     const friend = await this.FriendModel.findOne(findQuery).lean();
-    if (!friend) {
-      throw new BadRequestException('Friend not found.');
-    }
     return friend as FriendDocument;
   }
 

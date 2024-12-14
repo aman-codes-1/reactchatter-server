@@ -5,16 +5,9 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import * as cookieSignature from 'cookie-signature';
 import * as cookie from 'cookie';
 import { Request } from 'express';
-import { SessionData } from 'express-session';
 import { AuthService } from '../auth.service';
 import { UserService } from '../../user/user.service';
 import { UserSessionService } from '../../userSession/userSession.service';
-
-declare module 'express-session' {
-  interface SessionData {
-    passport: any;
-  }
-}
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
