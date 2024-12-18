@@ -1,22 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, SchemaTimestampsConfig } from 'mongoose';
-import { DateScalar } from '../common/scalars/date.scalar';
-
-class LastActive {
-  @Prop({ type: DateScalar, required: true, default: () => new Date() })
-  lastActive: Date;
-}
-
-export class ActiveConnection extends LastActive {
-  @Prop({ type: String, required: true })
-  clientId: string;
-
-  @Prop({ type: Boolean, required: true })
-  isClientActive: boolean;
-}
 
 @Schema({ timestamps: true })
-export class UserSession extends LastActive {
+export class UserSession {
   @Prop({ type: String, required: true })
   _id: string;
 
@@ -26,8 +12,8 @@ export class UserSession extends LastActive {
   @Prop({ type: Object, required: true })
   session: Record<string, any>;
 
-  @Prop({ type: [ActiveConnection], required: false })
-  activeConnections?: ActiveConnection[];
+  @Prop({ type: Date, required: false, default: () => new Date() })
+  lastModified: Date;
 }
 
 export const UserSessionSchema = SchemaFactory.createForClass(UserSession);

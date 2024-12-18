@@ -2,13 +2,6 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-"""ActiveConnectionObject"""
-type ActiveConnection {
-  clientId: String!
-  isClientActive: Boolean!
-  lastActive: Date!
-}
-
 """Any scalar type"""
 scalar Any
 
@@ -52,6 +45,13 @@ type ChatMember {
 """ChatsInput"""
 input ChatsInput {
   userId: String!
+}
+
+"""ClientObject"""
+type Client {
+  clientId: String!
+  isClientActive: Boolean!
+  lastActive: Date!
 }
 
 """CreateChatInput"""
@@ -202,7 +202,7 @@ type Mutation {
 """OnlineStatusObject"""
 type OnlineStatus {
   isOnline: Boolean!
-  lastSeen: Float!
+  lastSeen: Date!
 }
 
 """OtherMemberObject"""
@@ -237,7 +237,7 @@ type Query {
   pendingRequests(after: ID, input: RequestsInput!, limit: Int = 25): RequestsData!
   sentRequests(after: ID, input: RequestsInput!, limit: Int = 25): RequestsData!
   user(input: UserInput!): User!
-  userSession(input: UserSessionInput!): UserSession!
+  userActiveClients(input: UserInput!): UserClientsData!
 }
 
 """QueuedStatusObject"""
@@ -315,10 +315,11 @@ type SentStatus {
   timestamp: Float!
 }
 
-"""SessionActiveConnectionsDataObject"""
-type SessionActiveConnectionsData {
-  _id: String!
-  activeConnections: [ActiveConnection!]!
+"""SessionClientsDataObject"""
+type SessionClientsData {
+  clients: [Client!]
+  sessionID: String!
+  userId: String!
 }
 
 type Subscription {
@@ -329,8 +330,8 @@ type Subscription {
   OnMessageUpdated: MessageData!
   OnRequestAdded: RequestData!
   OnRequestUpdated: RequestData!
-  OnSessionActiveConnections(input: UserSessionInput!): SessionActiveConnectionsData!
-  OnUserActiveConnections(input: UserInput!): UserActiveConnectionsData!
+  OnSessionActiveClients(input: UserSessionInput!): SessionClientsData!
+  OnUserActiveClients: UserClientsData!
 }
 
 """UpdateRequestInput"""
@@ -352,9 +353,9 @@ type User {
   provider: String
 }
 
-"""UserActiveConnectionsDataObject"""
-type UserActiveConnectionsData {
-  activeConnections: [ActiveConnection!]!
+"""UserClientsDataObject"""
+type UserClientsData {
+  clients: [Client!]
   onlineStatus: OnlineStatus!
   userId: String!
 }
@@ -362,14 +363,6 @@ type UserActiveConnectionsData {
 """UserInput"""
 input UserInput {
   userId: String!
-}
-
-"""UserSessionObject"""
-type UserSession {
-  _id: String!
-  activeConnections: [ActiveConnection!]!
-  expires: Date!
-  session: Any!
 }
 
 """UserSessionInput"""

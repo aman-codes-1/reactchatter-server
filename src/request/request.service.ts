@@ -74,18 +74,20 @@ export class RequestService {
     const requestObjectId = new ObjectId(requestId);
     const membersPipeline = await this.membersPipeline();
     const groupPipeline = await this.groupPipeline();
-    const requests = await this.RequestModel.aggregate([
+    const request = await this.RequestModel.aggregate([
       {
         $match: { _id: requestObjectId },
       },
       ...membersPipeline,
       ...groupPipeline,
       { $limit: 1 },
-    ]);
-    if (!requests?.length) {
+    ])
+      .cursor()
+      .next();
+    if (!request) {
       throw new BadRequestException('Friend Request not found.');
     }
-    return requests?.[0];
+    return request;
   }
 
   async create(data: CreateRequestInput): Promise<RequestDocument> {
@@ -212,7 +214,7 @@ export class RequestService {
     const { limit, after } = args;
     const membersPipeline = await this.membersPipeline();
     const groupPipeline = await this.groupPipeline();
-    const pendingRequests = await this.RequestModel.aggregate([
+    const pendingRequest = await this.RequestModel.aggregate([
       {
         $match: {
           members: { $elemMatch: { _id: userObjectId, hasSent: false } },
@@ -228,8 +230,10 @@ export class RequestService {
           totalCount: [{ $count: 'count' }],
         },
       },
-    ]);
-    const res = pendingRequests?.[0];
+    ])
+      .cursor()
+      .next();
+    const res = pendingRequest;
     return {
       data: res?.data,
       totalCount: res?.totalCount?.some((count: any) =>
@@ -245,7 +249,7 @@ export class RequestService {
     const { limit, after } = args;
     const membersPipeline = await this.membersPipeline();
     const groupPipeline = await this.groupPipeline();
-    const sentRequests = await this.RequestModel.aggregate([
+    const sentRequest = await this.RequestModel.aggregate([
       {
         $match: {
           members: { $elemMatch: { _id: userObjectId, hasSent: true } },
@@ -261,8 +265,10 @@ export class RequestService {
           totalCount: [{ $count: 'count' }],
         },
       },
-    ]);
-    const res = sentRequests?.[0];
+    ])
+      .cursor()
+      .next();
+    const res = sentRequest;
     return {
       data: res?.data,
       totalCount: res?.totalCount?.some((count: any) =>

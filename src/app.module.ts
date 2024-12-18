@@ -17,6 +17,7 @@ import { RequestModule } from './request/request.module';
 import { SharedModule } from './shared/shared.module';
 import { SocketModule } from './socket/socket.module';
 import { UserModule } from './user/user.module';
+import { UserClientModule } from './userClient/userClient.module';
 import { UserSessionModule } from './userSession/userSession.module';
 
 @Module({
@@ -29,6 +30,7 @@ import { UserSessionModule } from './userSession/userSession.module';
     SharedModule,
     SocketModule,
     UserModule,
+    UserClientModule,
     UserSessionModule,
     ConfigModule.forRoot({
       isGlobal: true,

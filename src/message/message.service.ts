@@ -106,16 +106,18 @@ export class MessageService {
     const messageObjectId = new ObjectId(messageId);
     const membersPipeline = await this.membersPipeline();
     const groupPipeline = await this.groupPipeline();
-    const messages = await this.MessageModel.aggregate([
+    const message = await this.MessageModel.aggregate([
       { $match: { _id: messageObjectId, isActive: true } },
       ...membersPipeline,
       ...groupPipeline,
       { $limit: 1 },
-    ]);
-    if (!messages?.length) {
+    ])
+      .cursor()
+      .next();
+    if (!message) {
       throw new BadRequestException('Message not found.');
     }
-    return messages?.[0];
+    return message;
   }
 
   async create(data: CreateMessageInput): Promise<MessageDocument> {

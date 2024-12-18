@@ -128,17 +128,19 @@ export class FriendService {
     const hasChatsPipeline = await this.hasChatsPipeline(userObjectId);
     const membersPipeline = await this.membersPipeline();
     const groupPipeline = await this.groupPipeline();
-    const friends = await this.FriendModel.aggregate([
+    const friend = await this.FriendModel.aggregate([
       { $match: { _id: friendObjectId, isActive: true } },
       ...hasChatsPipeline,
       ...membersPipeline,
       ...groupPipeline,
       { $limit: 1 },
-    ]);
-    if (!friends?.length) {
+    ])
+      .cursor()
+      .next();
+    if (!friend) {
       throw new BadRequestException('Friend not found.');
     }
-    return friends?.[0];
+    return friend;
   }
 
   async create(data: RequestDocument, userId: string): Promise<FriendDocument> {

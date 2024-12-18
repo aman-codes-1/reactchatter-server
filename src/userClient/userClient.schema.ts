@@ -1,0 +1,30 @@
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document, SchemaTimestampsConfig, Types } from 'mongoose';
+
+class LastActive {
+  @Prop({ type: Date, required: true, default: () => new Date() })
+  lastActive: Date;
+}
+
+export class Client extends LastActive {
+  @Prop({ type: String, required: true })
+  clientId: string;
+
+  @Prop({ type: String, required: true })
+  sessionID: string;
+
+  @Prop({ type: Boolean, required: true })
+  isClientActive: boolean;
+}
+
+@Schema({ timestamps: true })
+export class UserClient extends LastActive {
+  @Prop({ type: Types.ObjectId, required: true })
+  userId: Types.ObjectId;
+
+  @Prop({ type: [Client], required: false })
+  clients?: Client[];
+}
+
+export const UserClientSchema = SchemaFactory.createForClass(UserClient);
+export type UserClientDocument = UserClient & Document & SchemaTimestampsConfig;

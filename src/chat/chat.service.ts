@@ -89,16 +89,18 @@ export class ChatService {
     const chatObjectId = new ObjectId(chatId);
     const membersPipeline = await this.membersPipeline();
     const groupPipeline = await this.groupPipeline();
-    const chats = await this.ChatModel.aggregate([
+    const chat = await this.ChatModel.aggregate([
       { $match: { _id: chatObjectId, isActive: true } },
       ...membersPipeline,
       ...groupPipeline,
       { $limit: 1 },
-    ]);
-    if (!chats?.length) {
+    ])
+      .cursor()
+      .next();
+    if (!chat) {
       throw new BadRequestException('Chat not found.');
     }
-    return chats?.[0];
+    return chat;
   }
 
   async create(data: CreateChatInput): Promise<ChatDocument> {

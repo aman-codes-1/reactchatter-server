@@ -1,13 +1,4 @@
-import { Field, Float, ObjectType } from '@nestjs/graphql';
-
-@ObjectType({ description: 'OnlineStatusObject' })
-export class OnlineStatus {
-  @Field(() => Boolean)
-  isOnline: boolean;
-
-  @Field(() => Float)
-  lastSeen: number;
-}
+import { Field, ObjectType } from '@nestjs/graphql';
 
 @ObjectType({ description: 'UserObject' })
 export class User {

@@ -7,11 +7,11 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { UserSessionService } from '../userSession/userSession.service';
+import { UserClientService } from '../userClient/userClient.service';
 
 @WebSocketGateway({ transports: ['websocket'] })
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  constructor(private userSessionService: UserSessionService) {
+  constructor(private userClientService: UserClientService) {
     //
   }
 
@@ -30,17 +30,14 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    const activeConnection = {
+    const Client = {
       clientId,
+      sessionID,
       isClientActive: true,
       lastActive: new Date(),
     };
 
-    await this.userSessionService.addActiveConnection(
-      sessionID,
-      _id,
-      activeConnection,
-    );
+    await this.userClientService.addClient(sessionID, _id, Client);
   }
 
   async handleDisconnect(client: Socket) {
@@ -51,11 +48,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     if (!_id || !sessionID) return;
 
-    await this.userSessionService.removeActiveConnection(
-      sessionID,
-      _id,
-      clientId,
-    );
+    await this.userClientService.removeClient(sessionID, _id, clientId);
   }
 
   @SubscribeMessage('updateUserOnlineStatus')
@@ -66,16 +59,13 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const { isOnline, lastSeen } = onlineStatus || {};
 
-    const activeConnection = {
+    const Client = {
       clientId: this.clientId,
+      sessionID,
       isClientActive: isOnline ?? false,
       lastActive: new Date(lastSeen || Date.now()),
     };
 
-    await this.userSessionService.updateActiveConnection(
-      sessionID,
-      _id,
-      activeConnection,
-    );
+    await this.userClientService.updateClient(sessionID, _id, Client);
   }
 }
