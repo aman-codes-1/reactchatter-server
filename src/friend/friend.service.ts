@@ -211,8 +211,4 @@ export class FriendService {
     ]);
     return otherFriends;
   }
-
-  async remove(friendId: string): Promise<boolean> {
-    return true;
-  }
 }

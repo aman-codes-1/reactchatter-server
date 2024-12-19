@@ -91,12 +91,6 @@ export class RequestResolver {
   }
 
   @UseGuards(GqlAuthGuard)
-  @Mutation(() => Boolean)
-  async removeRequest(@Args('id') id: string) {
-    return this.requestService.remove(id);
-  }
-
-  @UseGuards(GqlAuthGuard)
   @Subscription(() => RequestData)
   OnRequestAdded() {
     return this.pubSubService.pubSubInstance.asyncIterator('OnRequestAdded');

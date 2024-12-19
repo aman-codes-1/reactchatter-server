@@ -162,8 +162,4 @@ export class ChatService {
     ]);
     return chats;
   }
-
-  async remove(chatId: string): Promise<boolean> {
-    return true;
-  }
 }

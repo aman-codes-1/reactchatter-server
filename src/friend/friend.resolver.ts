@@ -1,5 +1,5 @@
 import { UseGuards } from '@nestjs/common';
-import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
+import { Args, Query, Resolver, Subscription } from '@nestjs/graphql';
 import { FriendArgs } from './dto/friend.args';
 import { FriendInput, FriendsInput } from './dto/friend.input';
 import { Friend, FriendData } from './models/friend.model';
@@ -48,12 +48,6 @@ export class FriendResolver {
       args,
     );
     return otherFriends;
-  }
-
-  @UseGuards(GqlAuthGuard)
-  @Mutation(() => Boolean)
-  async removeFriend(@Args('id') id: string) {
-    return this.friendService.remove(id);
   }
 
   @UseGuards(GqlAuthGuard)

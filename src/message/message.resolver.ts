@@ -88,26 +88,6 @@ export class MessageResolver {
   }
 
   @UseGuards(GqlAuthGuard)
-  @Mutation(() => Message)
-  async updateMessage(
-    @Args('input') input: CreateMessageInput,
-  ): Promise<MessageDocument> {
-    const updatedMessage = await this.messageService.create(input);
-    await this.pubSubService.pubSubInstance.publish('OnMessageUpdated', {
-      OnMessageUpdated: {
-        message: updatedMessage,
-      },
-    });
-    return updatedMessage;
-  }
-
-  @UseGuards(GqlAuthGuard)
-  @Mutation(() => Boolean)
-  async removeMessage(@Args('id') id: string) {
-    return this.messageService.remove(id);
-  }
-
-  @UseGuards(GqlAuthGuard)
   @Subscription(() => MessageData)
   OnMessageAdded() {
     return this.pubSubService.pubSubInstance.asyncIterator('OnMessageAdded');

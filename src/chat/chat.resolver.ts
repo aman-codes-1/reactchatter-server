@@ -53,26 +53,6 @@ export class ChatResolver {
   }
 
   @UseGuards(GqlAuthGuard)
-  @Mutation(() => Chat)
-  async updateChat(
-    @Args('input') input: CreateChatInput,
-  ): Promise<ChatDocument> {
-    const updatedChat = await this.chatService.create(input);
-    await this.pubSubService.pubSubInstance.publish('OnChatUpdated', {
-      OnChatUpdated: {
-        chat: updatedChat,
-      },
-    });
-    return updatedChat;
-  }
-
-  @UseGuards(GqlAuthGuard)
-  @Mutation(() => Boolean)
-  async removeChat(@Args('id') id: string) {
-    return this.chatService.remove(id);
-  }
-
-  @UseGuards(GqlAuthGuard)
   @Subscription(() => ChatData)
   OnChatAdded() {
     return this.pubSubService.pubSubInstance.asyncIterator('OnChatAdded');

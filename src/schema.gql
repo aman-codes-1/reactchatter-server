@@ -190,12 +190,6 @@ type Mutation {
   createChat(input: CreateChatInput!): Chat!
   createMessage(input: CreateMessageInput!): Message!
   createRequest(input: CreateRequestInput!): Request!
-  removeChat(id: String!): Boolean!
-  removeFriend(id: String!): Boolean!
-  removeMessage(id: String!): Boolean!
-  removeRequest(id: String!): Boolean!
-  updateChat(input: CreateChatInput!): Chat!
-  updateMessage(input: CreateMessageInput!): Message!
   updateRequest(input: UpdateRequestInput!): Request!
 }
 

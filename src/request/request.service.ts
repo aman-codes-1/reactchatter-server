@@ -278,8 +278,4 @@ export class RequestService {
         : 0,
     };
   }
-
-  async remove(requestId: string): Promise<boolean> {
-    return true;
-  }
 }

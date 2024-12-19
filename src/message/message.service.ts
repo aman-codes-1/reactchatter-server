@@ -220,8 +220,4 @@ export class MessageService {
       pageInfo,
     };
   }
-
-  async remove(messageId: string): Promise<boolean> {
-    return true;
-  }
 }
