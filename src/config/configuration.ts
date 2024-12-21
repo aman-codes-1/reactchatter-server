@@ -56,7 +56,6 @@ const USERS_COOKIE: CookieOptions = {
   secure: isProduction,
   maxAge: COOKIE_MAX_AGE_MS,
   domain: DOMAIN,
-  // path: '/',
 };
 
 export default () => ({

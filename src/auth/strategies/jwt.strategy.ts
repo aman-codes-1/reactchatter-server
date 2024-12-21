@@ -35,8 +35,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     authService: AuthService,
     configService: ConfigService,
   ): string | null {
-    // req?.headers?.upgrade === 'websocket'
-    // const token = req?.signedCookies?.token;
     if (req && authService && configService) {
       const headerCookies = req?.headers?.cookie;
       if (headerCookies) {
