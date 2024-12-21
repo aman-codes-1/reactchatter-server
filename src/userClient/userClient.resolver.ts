@@ -4,7 +4,7 @@ import { UserInput } from '../user/dto/user.input';
 import { UserSessionInput } from './dto/userClient.input';
 import {
   SessionClientsData,
-  UserClientsData,
+  ClientsData,
   UserClient,
 } from './models/userClient.model';
 import { UserClientService } from './userClient.service';
@@ -21,14 +21,12 @@ export class UserClientResolver {
   }
 
   @UseGuards(GqlAuthGuard)
-  @Query(() => UserClientsData)
-  async userActiveClients(
-    @Args('input') input: UserInput,
-  ): Promise<UserClientsData> {
+  @Query(() => ClientsData)
+  async activeClients(@Args('input') input: UserInput): Promise<ClientsData> {
     const { userId } = input;
-    const userActiveClients =
+    const activeClients =
       await this.userClientService.findAllActiveClients(userId);
-    return userActiveClients;
+    return activeClients;
   }
 
   @UseGuards(GqlAuthGuard)
@@ -46,10 +44,8 @@ export class UserClientResolver {
   }
 
   @UseGuards(GqlAuthGuard)
-  @Subscription(() => UserClientsData)
-  OnUserActiveClients() {
-    return this.pubSubService.pubSubInstance.asyncIterator(
-      'OnUserActiveClients',
-    );
+  @Subscription(() => ClientsData)
+  OnActiveClients() {
+    return this.pubSubService.pubSubInstance.asyncIterator('OnActiveClients');
   }
 }

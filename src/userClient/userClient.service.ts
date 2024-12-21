@@ -43,7 +43,7 @@ export class UserClientService {
 
   async findAllActiveClients(userId: string): Promise<any> {
     const userObjectId = new ObjectId(userId);
-    const userActiveClients = await this.UserClientModel.aggregate([
+    const activeClients = await this.UserClientModel.aggregate([
       {
         $match: {
           userId: userObjectId,
@@ -91,7 +91,7 @@ export class UserClientService {
       .cursor()
       .next();
 
-    return userActiveClients;
+    return activeClients;
   }
 
   async findAllSessionActiveClients(
@@ -146,8 +146,8 @@ export class UserClientService {
 
     const activeClients = await this.findAllActiveClients(userId);
 
-    await this.pubSubService.pubSubInstance.publish('OnUserActiveClients', {
-      OnUserActiveClients: activeClients,
+    await this.pubSubService.pubSubInstance.publish('OnActiveClients', {
+      OnActiveClients: activeClients,
     });
   }
 
@@ -183,10 +183,7 @@ export class UserClientService {
       {
         $set: {
           lastActive: client?.lastActive,
-          'clients.$[element]': {
-            ...client,
-            clientId,
-          },
+          'clients.$[element]': client,
         },
       },
       {
