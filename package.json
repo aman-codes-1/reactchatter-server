@@ -23,7 +23,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
-    "@apollo/server": "^4.11.2",
+    "@apollo/server": "^4.11.3",
     "@nestjs/apollo": "^12.2.2",
     "@nestjs/bullmq": "^10.2.3",
     "@nestjs/cli": "^10.4.9",
@@ -55,6 +55,7 @@
     "graphql-ws": "^5.16.0",
     "helmet": "^8.0.0",
     "i": "^0.3.7",
+    "ioredis": "^5.4.2",
     "mongodb": "^6.12.0",
     "mongoose": "^8.9.2",
     "passport": "^0.7.0",
@@ -78,7 +79,7 @@
     "@types/express": "^5.0.0",
     "@types/express-session": "^1.18.1",
     "@types/jest": "^29.5.14",
-    "@types/node": "^22.10.3",
+    "@types/node": "^22.10.5",
     "@types/passport": "^1.0.17",
     "@types/passport-google-oauth20": "^2.0.16",
     "@types/passport-jwt": "^4.0.1",
