@@ -88,17 +88,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       }
     } else {
       const user = await this.userService.findOneById(String(payload?._id));
-      const session = await this.userSessionService.findOneById(
-        payload?.sessionID,
-      );
+      const { _id, authTokens, deviceDetails } =
+        await this.userSessionService.findOneById(payload?.sessionID);
       const User = {
         ...payload,
         ...user,
-        authTokens: session?.session?.passport?.user?.authTokens,
-        deviceDetails: session?.session?.passport?.user?.deviceDetails,
+        authTokens,
+        deviceDetails,
       };
       req.user = User;
-      req.sessionID = session?._id;
+      req.sessionID = _id;
     }
     return req?.user;
   }

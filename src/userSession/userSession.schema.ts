@@ -1,8 +1,13 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, SchemaTimestampsConfig } from 'mongoose';
 
+class LastActive {
+  @Prop({ type: Date, required: false, default: () => new Date() })
+  lastActive?: Date;
+}
+
 @Schema({ timestamps: true })
-export class UserSession {
+export class UserSession extends LastActive {
   @Prop({ type: String, required: true })
   _id: string;
 
@@ -13,7 +18,7 @@ export class UserSession {
   session: Record<string, any>;
 
   @Prop({ type: Date, required: false, default: () => new Date() })
-  lastModified: Date;
+  lastModified?: Date;
 }
 
 export const UserSessionSchema = SchemaFactory.createForClass(UserSession);

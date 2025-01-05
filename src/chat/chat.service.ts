@@ -103,29 +103,6 @@ export class ChatService {
     return chat;
   }
 
-  async create(data: CreateChatInput): Promise<ChatDocument> {
-    const { userId, queueId, type, friendUserIds } = data;
-    if (queueId) {
-      const duplicateChat = await this.ChatModel.findOne({ queueId }).lean();
-      if (duplicateChat) {
-        throw new BadRequestException('Duplicate Chat found.');
-      }
-    }
-    const members = [userId, ...friendUserIds].map((id, idx) => ({
-      _id: new ObjectId(id),
-      hasAdded: idx === 0,
-    }));
-    const newChat = new this.ChatModel({
-      queueId,
-      type,
-      members,
-    });
-    const savedChat = (await newChat.save()).toObject();
-    const { _id: chatId } = savedChat;
-    const chat = await this.findOneById(String(chatId));
-    return chat;
-  }
-
   async findAll(userId: string, args: ChatArgs): Promise<ChatDocument[]> {
     const userObjectId = new ObjectId(userId);
     const { limit, after } = args;
@@ -161,5 +138,28 @@ export class ChatService {
       { $limit: limit },
     ]);
     return chats;
+  }
+
+  async create(data: CreateChatInput): Promise<ChatDocument> {
+    const { userId, queueId, type, friendUserIds } = data;
+    if (queueId) {
+      const duplicateChat = await this.ChatModel.findOne({ queueId }).lean();
+      if (duplicateChat) {
+        throw new BadRequestException('Duplicate Chat found.');
+      }
+    }
+    const members = [userId, ...friendUserIds].map((id, idx) => ({
+      _id: new ObjectId(id),
+      hasAdded: idx === 0,
+    }));
+    const newChat = new this.ChatModel({
+      queueId,
+      type,
+      members,
+    });
+    const savedChat = (await newChat.save()).toObject();
+    const { _id: chatId } = savedChat;
+    const chat = await this.findOneById(String(chatId));
+    return chat;
   }
 }

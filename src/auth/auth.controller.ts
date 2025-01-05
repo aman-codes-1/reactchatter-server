@@ -69,11 +69,11 @@ export class AuthController {
 
   @Get('logout')
   @UseGuards(JwtAuthGuard)
-  googleLogout(
+  async googleLogout(
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    this.authService.logout(request, response);
+    await this.authService.logout(request, response);
     return {
       message: 'success',
     };

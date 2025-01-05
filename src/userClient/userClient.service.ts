@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ObjectId } from 'mongodb';
@@ -7,6 +7,7 @@ import {
   UserClientDocument,
 } from './userClient.schema';
 import { Client } from './models/userClient.model';
+import { UserSessionService } from '../userSession/userSession.service';
 import { PubSubService } from '../shared/pubSub.service';
 
 @Injectable()
@@ -14,6 +15,7 @@ export class UserClientService {
   constructor(
     @InjectModel(UserClientSchema.name)
     private UserClientModel: Model<UserClientDocument>,
+    private userSessionService: UserSessionService,
     private readonly pubSubService: PubSubService,
   ) {
     //
@@ -41,7 +43,10 @@ export class UserClientService {
     return clients;
   }
 
-  async findAllActiveClients(userId: string): Promise<any> {
+  async findAllActiveInactive(
+    userId: string,
+    isActiveClients: boolean,
+  ): Promise<any> {
     const userObjectId = new ObjectId(userId);
     const activeClients = await this.UserClientModel.aggregate([
       {
@@ -50,28 +55,14 @@ export class UserClientService {
         },
       },
       {
-        $unwind: {
-          path: '$clients',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $group: {
-          _id: '$_id',
-          userId: { $first: '$userId' },
-          allClients: { $push: '$clients' },
-          lastActive: { $max: '$lastActive' },
-        },
-      },
-      {
         $project: {
           _id: 0,
-          userId: '$userId',
+          userId: 1,
           filteredClients: {
             $filter: {
-              input: '$allClients',
-              as: 'conn',
-              cond: { $eq: ['$$conn.isClientActive', true] },
+              input: { $ifNull: ['$clients', []] },
+              as: 'client',
+              cond: { $eq: ['$$client.isClientActive', isActiveClients] },
             },
           },
           lastActive: 1,
@@ -94,77 +85,38 @@ export class UserClientService {
     return activeClients;
   }
 
-  async findAllSessionActiveClients(
-    userId: string,
-    sessionID: string,
-  ): Promise<any> {
-    const userObjectId = new ObjectId(userId);
-    const sessionClients = await this.UserClientModel.aggregate([
-      {
-        $match: {
-          userId: userObjectId,
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          userId: 1,
-          sessionID,
-          clients: {
-            $filter: {
-              input: '$clients',
-              as: 'client',
-              cond: {
-                $and: [
-                  { $eq: ['$$client.isClientActive', true] },
-                  { $eq: ['$$client.sessionID', sessionID] },
-                ],
-              },
-            },
-          },
-        },
-      },
-    ])
-      .cursor()
-      .next();
-
-    return sessionClients;
-  }
-
   async sendClients(sessionID: string, userId: string): Promise<any> {
-    const sessionActiveClients = await this.findAllSessionActiveClients(
-      userId,
+    const userSession = await this.userSessionService.findOneById(
       sessionID,
+      true,
     );
 
-    await this.pubSubService.pubSubInstance.publish('OnSessionActiveClients', {
-      OnSessionActiveClients: sessionActiveClients,
+    await this.pubSubService.pubSubInstance.publish('OnSessionUpdated', {
+      OnSessionUpdated: {
+        session: userSession,
+      },
     });
 
-    // to do: deliver messages to all users
-    // const userClients = await this.findAll(userId);
+    const activeClients = await this.findAllActiveInactive(userId, true);
 
-    const activeClients = await this.findAllActiveClients(userId);
-
-    await this.pubSubService.pubSubInstance.publish('OnActiveClients', {
-      OnActiveClients: activeClients,
+    await this.pubSubService.pubSubInstance.publish('OnClientsUpdated', {
+      OnClientsUpdated: activeClients,
     });
   }
 
-  async addClient(
-    sessionID: string,
-    userId: string,
-    client: Client,
-  ): Promise<UserClientDocument> {
+  async addClient(userId: string, client: Client): Promise<UserClientDocument> {
     const userObjectId = new ObjectId(userId);
+    const { sessionID, lastActive } = client || {};
     const updatedClient = (await this.UserClientModel.findOneAndUpdate(
       { userId: userObjectId },
       {
-        $set: { lastActive: client?.lastActive },
+        $set: { lastActive },
         $addToSet: { clients: client },
       },
       { upsert: true, new: true },
     ).lean()) as UserClientDocument;
+
+    await this.userSessionService.updateLastActive(sessionID, lastActive);
 
     await this.sendClients(sessionID, userId);
 
@@ -172,25 +124,47 @@ export class UserClientService {
   }
 
   async updateClient(
-    sessionID: string,
     userId: string,
     client: Client,
   ): Promise<UserClientDocument> {
     const userObjectId = new ObjectId(userId);
-    const { clientId } = client || {};
-    const updatedClient = (await this.UserClientModel.findOneAndUpdate(
+    const { _id, sessionID, lastActive } = client || {};
+    await this.UserClientModel.updateOne(
       { userId: userObjectId },
       {
         $set: {
-          lastActive: client?.lastActive,
+          lastActive,
           'clients.$[element]': client,
         },
       },
       {
+        arrayFilters: [{ 'element._id': _id }],
+      },
+    );
+
+    const updatedClient = (await this.UserClientModel.findOneAndUpdate(
+      { userId: userObjectId },
+      {
+        $unset: {
+          'clients.$[element].isServer': '',
+        },
+      },
+      {
         new: true,
-        arrayFilters: [{ 'element.clientId': clientId }],
+        arrayFilters: [{ 'element._id': _id }],
       },
     ).lean()) as UserClientDocument;
+
+    await this.UserClientModel.updateOne(
+      { userId: userObjectId },
+      {
+        $pull: {
+          clients: { isServer: { $exists: true } },
+        },
+      },
+    );
+
+    await this.userSessionService.updateLastActive(sessionID, lastActive);
 
     await this.sendClients(sessionID, userId);
 
@@ -198,15 +172,15 @@ export class UserClientService {
   }
 
   async removeClient(
-    sessionID: string,
     userId: string,
-    clientId: string,
+    client: Client,
   ): Promise<UserClientDocument> {
     const userObjectId = new ObjectId(userId);
+    const { _id, sessionID } = client || {};
     const updatedClient = (await this.UserClientModel.findOneAndUpdate(
       { userId: userObjectId },
       {
-        $pull: { clients: { clientId } },
+        $pull: { clients: { _id } },
       },
       { new: true },
     ).lean()) as UserClientDocument;

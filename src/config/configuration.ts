@@ -12,13 +12,15 @@ if (isProduction) {
 }
 
 const PORT = process.env.PORT || 4000;
-const DOMAIN = process.env.DOMAIN || 'localhost';
 const CLIENT_PORT = process.env.CLIENT_PORT || 3001;
 const CLIENT_URI = process.env.CLIENT_URI || '';
 const SERVER_URI = process.env.SERVER_URI || '';
+const DOMAIN = process.env.DOMAIN || 'localhost';
 const SAME_SITE = (process.env.SAME_SITE || 'lax') as CookieOptions['sameSite'];
-const MONGO_URI = process.env.MONGO_URI || '';
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS || '';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/';
+const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
+const REDIS_PORT = process.env.REDIS_PORT || 6379;
 const COOKIE_SECRET = process.env.COOKIE_SECRET || '';
 const COOKIE_MAX_UNITS = process.env.COOKIE_MAX_UNITS || '3,24,60,60';
 const COOKIE_MAX_AGE = COOKIE_MAX_UNITS.split(',').reduce(
@@ -61,12 +63,15 @@ const USERS_COOKIE: CookieOptions = {
 export default () => ({
   NODE_ENV,
   PORT,
-  DOMAIN,
   CLIENT_PORT,
   CLIENT_URI,
   SERVER_URI,
-  MONGO_URI,
+  DOMAIN,
+  SAME_SITE,
   ALLOWED_ORIGINS,
+  MONGO_URI,
+  REDIS_HOST,
+  REDIS_PORT,
   COOKIE_SECRET,
   COOKIE_MAX_UNITS,
   COOKIE_MAX_AGE,

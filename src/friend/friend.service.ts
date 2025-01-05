@@ -143,21 +143,6 @@ export class FriendService {
     return friend;
   }
 
-  async create(data: RequestDocument, userId: string): Promise<FriendDocument> {
-    const { members } = data;
-    const Members = members.map((member) => ({
-      _id: new ObjectId(member?._id),
-      hasAdded: String(member?._id) === userId,
-    }));
-    const newFriend = new this.FriendModel({
-      members: Members,
-    });
-    const savedFriend = (await newFriend.save()).toObject();
-    const { _id: friendId } = savedFriend;
-    const friend = await this.findOneById(String(friendId), userId);
-    return friend;
-  }
-
   async findAll(userId: string, args: FriendArgs): Promise<FriendDocument[]> {
     const userObjectId = new ObjectId(userId);
     const { limit, after } = args;
@@ -210,5 +195,20 @@ export class FriendService {
       { $limit: limit },
     ]);
     return otherFriends;
+  }
+
+  async create(data: RequestDocument, userId: string): Promise<FriendDocument> {
+    const { members } = data;
+    const Members = members.map((member) => ({
+      _id: new ObjectId(member?._id),
+      hasAdded: String(member?._id) === userId,
+    }));
+    const newFriend = new this.FriendModel({
+      members: Members,
+    });
+    const savedFriend = (await newFriend.save()).toObject();
+    const { _id: friendId } = savedFriend;
+    const friend = await this.findOneById(String(friendId), userId);
+    return friend;
   }
 }

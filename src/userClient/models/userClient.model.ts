@@ -4,16 +4,16 @@ import { DateScalar } from '../../common/scalars/date.scalar';
 @ObjectType({ description: 'ClientObject' })
 export class Client {
   @Field(() => String)
-  clientId: string;
+  _id: string;
 
   @Field(() => String)
   sessionID: string;
 
-  @Field(() => Boolean)
-  isClientActive: boolean;
+  @Field(() => Boolean, { nullable: true })
+  isClientActive?: boolean;
 
-  @Field(() => DateScalar)
-  lastActive: Date;
+  @Field(() => DateScalar, { nullable: true })
+  lastActive?: Date;
 }
 
 @ObjectType({ description: 'ClientsObject' })
@@ -31,15 +31,6 @@ export class UserClient extends Clients {
   userId: string;
 }
 
-@ObjectType({ description: 'SessionClientsDataObject' })
-export class SessionClientsData extends Clients {
-  @Field(() => String)
-  userId: string;
-
-  @Field(() => String)
-  sessionID: string;
-}
-
 @ObjectType({ description: 'OnlineStatusObject' })
 export class OnlineStatus {
   @Field(() => Boolean)
@@ -50,7 +41,7 @@ export class OnlineStatus {
 }
 
 @ObjectType({ description: 'ClientsDataObject' })
-export class ClientsData extends Clients {
+export class ClientData extends Clients {
   @Field(() => String)
   userId: string;
 

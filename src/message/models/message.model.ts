@@ -1,6 +1,7 @@
 import { Field, Float, Int, ObjectType } from '@nestjs/graphql';
 import { Types } from 'mongoose';
 import { User } from '../../user/models/user.model';
+// import { Client } from '../../userClient/models/userClient.model';
 
 @ObjectType({ description: 'CommonTimestampObject' })
 class CommonTimestamp {
@@ -27,7 +28,7 @@ class SentStatus extends CommonTimestamp {
 }
 
 @ObjectType({ description: 'DeliveredStatusObject' })
-class DeliveredStatus extends CommonTimestamp {
+export class DeliveredStatus extends CommonTimestamp {
   @Field(() => Boolean)
   isDelivered: boolean;
 }
@@ -107,12 +108,6 @@ export class MessagesData {
   pageInfo: PageInfo;
 }
 
-@ObjectType({ description: 'MessageDataObject' })
-export class MessageData {
-  @Field(() => Message)
-  message: Message;
-}
-
 @ObjectType({ description: 'GroupObject' })
 export class Group {
   @Field(() => String)
@@ -148,3 +143,15 @@ export class MessageGroupsData {
   @Field(() => Int)
   scrollPosition: number;
 }
+
+@ObjectType({ description: 'MessageDataObject' })
+export class MessageData {
+  @Field(() => Message)
+  message: Message;
+}
+
+// @ObjectType({ description: 'MessageUpdatedDataObject' })
+// export class MessageUpdatedData extends MessageData {
+//   @Field(() => [Client])
+//   clients: Client[];
+// }

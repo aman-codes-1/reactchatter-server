@@ -8,10 +8,14 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { UserClientService } from '../userClient/userClient.service';
+import { MessageService } from '../message/message.service';
 
 @WebSocketGateway({ transports: ['websocket'] })
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  constructor(private userClientService: UserClientService) {
+  constructor(
+    private userClientService: UserClientService,
+    private messageService: MessageService,
+  ) {
     //
   }
 
@@ -20,8 +24,8 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
 
   async handleConnection(client: Socket) {
-    const { id: clientId, handshake } = client || {};
-    this.clientId = clientId;
+    const { id, handshake } = client || {};
+    this.clientId = id;
     const { auth } = handshake || {};
     const { _id, sessionID } = auth || {};
 
@@ -31,24 +35,40 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     const Client = {
-      clientId,
+      _id: this.clientId,
       sessionID,
-      isClientActive: true,
-      lastActive: new Date(),
+      isServer: true,
     };
 
-    await this.userClientService.addClient(sessionID, _id, Client);
+    await this.userClientService.addClient(_id, Client);
+
+    // const sessionQueueName = `session_${sessionID}_queue`;
+    // const userQueueName = `user_${_id}_queue`;
+
+    // await this.messageService.startWorker(sessionQueueName);
+    // await this.messageService.startWorker(userQueueName);
   }
 
   async handleDisconnect(client: Socket) {
-    const { id: clientId, handshake } = client || {};
-    this.clientId = clientId;
+    const { id, handshake } = client || {};
+    this.clientId = id;
     const { auth } = handshake || {};
     const { _id, sessionID } = auth || {};
 
     if (!_id || !sessionID) return;
 
-    await this.userClientService.removeClient(sessionID, _id, clientId);
+    const Client = {
+      _id: this.clientId,
+      sessionID,
+    };
+
+    await this.userClientService.removeClient(_id, Client);
+
+    const sessionQueueName = `session_${sessionID}_queue`;
+    const userQueueName = `user_${_id}_queue`;
+
+    await this.messageService.stopWorker(sessionQueueName);
+    await this.messageService.stopWorker(userQueueName);
   }
 
   @SubscribeMessage('updateUserOnlineStatus')
@@ -60,12 +80,23 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const { isOnline, lastSeen } = onlineStatus || {};
 
     const Client = {
-      clientId: this.clientId,
+      _id: this.clientId,
       sessionID,
       isClientActive: isOnline ?? false,
       lastActive: new Date(lastSeen || Date.now()),
     };
 
-    await this.userClientService.updateClient(sessionID, _id, Client);
+    await this.userClientService.updateClient(_id, Client);
+
+    const sessionQueueName = `session_${sessionID}_queue`;
+    const userQueueName = `user_${_id}_queue`;
+
+    if (isOnline) {
+      await this.messageService.startWorker(sessionQueueName);
+      await this.messageService.startWorker(userQueueName);
+    } else {
+      await this.messageService.stopWorker(sessionQueueName);
+      await this.messageService.stopWorker(userQueueName);
+    }
   }
 }

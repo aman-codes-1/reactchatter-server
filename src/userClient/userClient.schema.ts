@@ -8,13 +8,16 @@ class LastActive {
 
 export class Client extends LastActive {
   @Prop({ type: String, required: true })
-  clientId: string;
+  _id: string;
 
   @Prop({ type: String, required: true })
   sessionID: string;
 
-  @Prop({ type: Boolean, required: true })
-  isClientActive: boolean;
+  @Prop({ type: Boolean, required: false, default: false })
+  isClientActive?: boolean;
+
+  @Prop({ type: Boolean, required: false, default: false })
+  isServer?: boolean;
 }
 
 @Schema({ timestamps: true })

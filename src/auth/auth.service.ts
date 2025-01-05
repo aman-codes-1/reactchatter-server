@@ -6,32 +6,26 @@ import { CookieOptions, Request, Response } from 'express';
 import { UserService } from '../user/user.service';
 import { UserSessionService } from '../userSession/userSession.service';
 import { AuthTokens } from '../userSession/models/userSession.model';
+import { MessageService } from '../message/message.service';
 
 @Injectable()
 export class AuthService {
   private JWT_SECRET: string;
-
   private JWT_EXPIRATION_TIME: string;
-
   private HTTP_ONLY_COOKIE: CookieOptions;
-
   private USERS_COOKIE: CookieOptions;
-
   private CLIENT_URL: string;
-
   private GOOGLE_CLIENT_ID: string;
-
   private GOOGLE_CLIENT_SECRET: string;
-
   private ENCRYPTION_SECRET: string;
-
   private oauth2Client: OAuth2Client;
 
   constructor(
     private jwtService: JwtService,
-    private readonly configService: ConfigService,
     private userService: UserService,
     private userSessionService: UserSessionService,
+    private messageService: MessageService,
+    private readonly configService: ConfigService,
   ) {
     this.JWT_SECRET = configService.get('JWT_SECRET');
     this.JWT_EXPIRATION_TIME = configService.get('JWT_EXPIRATION_TIME');
@@ -140,10 +134,9 @@ export class AuthService {
 
   async refreshToken(payload: any, response: Response): Promise<any> {
     if (payload?.sessionID) {
-      const session = await this.userSessionService.findOneById(
+      const { authTokens } = await this.userSessionService.findOneById(
         payload?.sessionID,
       );
-      const authTokens = session?.session?.passport?.user?.authTokens;
       if (authTokens) {
         if (payload?.provider === 'google') {
           const res = await this.googleRefreshToken(
@@ -203,8 +196,8 @@ export class AuthService {
       reAuthenticatedUser = {
         ...payload,
         ...user,
-        authTokens: updatedSession?.session?.passport?.user?.authTokens,
-        deviceDetails: updatedSession?.session?.passport?.user?.deviceDetails,
+        authTokens: updatedSession?.authTokens,
+        deviceDetails: updatedSession?.deviceDetails,
       };
 
       const { accessToken } = await this.login(reAuthenticatedUser, response);
@@ -233,7 +226,7 @@ export class AuthService {
     }
   }
 
-  logout(request: Request, response?: Response): any {
+  async logout(request: Request, response?: Response): Promise<void> {
     if (request) {
       request?.logOut((err: any) => err);
     }
@@ -241,5 +234,8 @@ export class AuthService {
       response?.cookie('token', '', this.HTTP_ONLY_COOKIE);
       response?.cookie('token-expires', '', this.USERS_COOKIE);
     }
+    await this.messageService.removeQueue(
+      `session_${request?.sessionID}_queue`,
+    );
   }
 }

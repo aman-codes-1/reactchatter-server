@@ -14,7 +14,6 @@ import {
 } from './models/message.model';
 import { MessageService } from './message.service';
 import { MessageDocument } from './message.schema';
-import { ChatService } from '../chat/chat.service';
 import { PubSubService } from '../shared/pubSub.service';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 
@@ -22,7 +21,6 @@ import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 export class MessageResolver {
   constructor(
     private readonly messageService: MessageService,
-    private readonly chatService: ChatService,
     private readonly pubSubService: PubSubService,
   ) {
     //
@@ -78,12 +76,7 @@ export class MessageResolver {
         message: newMessage,
       },
     });
-    const updatedChat = await this.chatService.findOneById(String(chatId));
-    await this.pubSubService.pubSubInstance.publish('OnChatUpdated', {
-      OnChatUpdated: {
-        chat: updatedChat,
-      },
-    });
+    await this.messageService.deliverMessage(newMessage, String(chatId));
     return newMessage;
   }
 
