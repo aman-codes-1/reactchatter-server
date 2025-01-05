@@ -1,7 +1,6 @@
 import { Field, Float, Int, ObjectType } from '@nestjs/graphql';
 import { Types } from 'mongoose';
 import { User } from '../../user/models/user.model';
-// import { Client } from '../../userClient/models/userClient.model';
 
 @ObjectType({ description: 'CommonTimestampObject' })
 class CommonTimestamp {
@@ -149,9 +148,3 @@ export class MessageData {
   @Field(() => Message)
   message: Message;
 }
-
-// @ObjectType({ description: 'MessageUpdatedDataObject' })
-// export class MessageUpdatedData extends MessageData {
-//   @Field(() => [Client])
-//   clients: Client[];
-// }

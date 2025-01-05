@@ -41,12 +41,6 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     };
 
     await this.userClientService.addClient(_id, Client);
-
-    // const sessionQueueName = `session_${sessionID}_queue`;
-    // const userQueueName = `user_${_id}_queue`;
-
-    // await this.messageService.startWorker(sessionQueueName);
-    // await this.messageService.startWorker(userQueueName);
   }
 
   async handleDisconnect(client: Socket) {
