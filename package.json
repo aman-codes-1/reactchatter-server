@@ -57,7 +57,7 @@
     "i": "^0.3.7",
     "ioredis": "^5.4.2",
     "mongodb": "^6.12.0",
-    "mongoose": "^8.9.2",
+    "mongoose": "^8.9.4",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
