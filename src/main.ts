@@ -7,7 +7,6 @@ import helmet from 'helmet';
 import passport from 'passport';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
-// import rateLimit from 'express-rate-limit';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -20,8 +19,6 @@ async function bootstrap() {
   const SESSION_SECRET = configService.get('SESSION_SECRET');
   const HTTP_ONLY_COOKIE = configService.get('HTTP_ONLY_COOKIE');
   const MONGO_URI = configService.get('MONGO_URI');
-  // const RATE_LIMIT_MS = configService.get('RATE_LIMIT_MS');
-  // const RATE_LIMIT_MAX = configService.get('RATE_LIMIT_MAX');
   const CLIENT_URL = configService.get('CLIENT_URL');
   const ALLOWED_ORIGINS = configService.get('ALLOWED_ORIGINS');
   const ALLOWED_ORIGIN = ALLOWED_ORIGINS
@@ -49,7 +46,10 @@ async function bootstrap() {
   };
   const helmetOptions = isProduction
     ? {}
-    : { contentSecurityPolicy: developmentContentSecurityPolicy };
+    : {
+        crossOriginEmbedderPolicy: false,
+        contentSecurityPolicy: developmentContentSecurityPolicy,
+      };
   app.use(helmet(helmetOptions));
   app.enableCors({
     origin: [...new Set(ORIGINS)],
@@ -89,12 +89,6 @@ async function bootstrap() {
   );
   app.use(passport.initialize());
   app.use(passport.session());
-  // app.use(
-  //   rateLimit({
-  //     windowMs: Number(RATE_LIMIT_MS),
-  //     max: Number(RATE_LIMIT_MAX),
-  //   }),
-  // );
   await app.listen(PORT, async () => {
     const logger = new Logger();
     const appUri = await app.getUrl();
