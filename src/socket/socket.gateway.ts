@@ -86,6 +86,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const userQueueName = `user_${_id}_queue`;
 
     if (isOnline) {
+      // to do: check if user queue exists with same jobId
       await this.messageService.startWorker(sessionQueueName);
       await this.messageService.startWorker(userQueueName);
     } else {

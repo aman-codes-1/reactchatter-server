@@ -22,7 +22,7 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/';
 const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
 const REDIS_PORT = process.env.REDIS_PORT || 6379;
 const COOKIE_SECRET = process.env.COOKIE_SECRET || '';
-const COOKIE_MAX_UNITS = process.env.COOKIE_MAX_UNITS || '3,24,60,60';
+const COOKIE_MAX_UNITS = process.env.COOKIE_MAX_UNITS || '7,24,60,60';
 const COOKIE_MAX_AGE = COOKIE_MAX_UNITS.split(',').reduce(
   (acc, unit) => acc * Number(unit),
   1,
