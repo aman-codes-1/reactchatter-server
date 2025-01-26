@@ -6,12 +6,7 @@ import {
   MessageInput,
   MessagesInput,
 } from './dto/message.input';
-import {
-  Message,
-  MessageData,
-  MessageGroupsData,
-  MessagesData,
-} from './models/message.model';
+import { Message, MessageData, MessagesData } from './models/message.model';
 import { MessageService } from './message.service';
 import { MessageDocument } from './message.schema';
 import { PubSubService } from '../shared/pubSub.service';
@@ -43,25 +38,6 @@ export class MessageResolver {
     const { chatId } = input;
     const messages = await this.messageService.findAll(chatId, args);
     return messages;
-  }
-
-  @UseGuards(GqlAuthGuard)
-  @Query(() => MessageGroupsData)
-  async messageGroups(
-    @Args('input') input: MessagesInput,
-  ): Promise<MessageGroupsData> {
-    return {
-      edges: [],
-      pageInfo: {
-        endCursor: '',
-        hasNextPage: false,
-      },
-      queuedPageInfo: {
-        endCursor: '',
-        hasNextPage: false,
-      },
-      scrollPosition: -1,
-    };
   }
 
   @UseGuards(GqlAuthGuard)

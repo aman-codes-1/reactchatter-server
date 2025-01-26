@@ -9,6 +9,7 @@ import { MessageArgs } from './dto/message.args';
 import { CreateMessageInput } from './dto/message.input';
 import {
   DeliveredStatus,
+  Message,
   MessagesData,
   PageInfo,
 } from './models/message.model';
@@ -171,25 +172,34 @@ export class MessageService {
       { $limit: limit },
     ]);
 
-    let edges = [];
-    let lastMessage: MessageDocument;
+    let edges: Message[] = [];
     let pageInfo: PageInfo = {
       endCursor: '',
+      hasPreviousPage: false,
       hasNextPage: false,
     };
 
     if (messages?.length) {
-      edges = messages?.reverse();
-      lastMessage = messages?.[0];
+      const oldestMessageIndex = messages?.length - 1;
+      const oldestMessage = messages?.[oldestMessageIndex];
+      const newestMessage = messages?.[0];
+      const hasPreviousPage = await this.MessageModel.exists({
+        chatId: chatObjectId,
+        _id: { $gt: newestMessage?._id },
+        isActive: true,
+      }).then(Boolean);
       pageInfo = {
-        endCursor: lastMessage?._id?.toString(),
+        endCursor: oldestMessage?._id?.toString(),
+        hasPreviousPage,
         hasNextPage: messages?.length === limit,
       };
+      edges = messages?.reverse();
     }
 
     return {
       edges,
       pageInfo,
+      scrollPosition: 0,
     };
   }
 

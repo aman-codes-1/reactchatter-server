@@ -138,13 +138,6 @@ input FriendsInput {
   userId: String!
 }
 
-"""GroupObject"""
-type Group {
-  data: [Message!]!
-  groupDetails: User!
-  side: String!
-}
-
 """FriendMemberObject"""
 type Member {
   _id: String!
@@ -175,20 +168,6 @@ type MessageData {
   message: Message!
 }
 
-"""MessageGroupObject"""
-type MessageGroup {
-  dateLabel: String!
-  groups: [Group!]!
-}
-
-"""MessageGroupsDataObject"""
-type MessageGroupsData {
-  edges: [MessageGroup!]!
-  pageInfo: PageInfo!
-  queuedPageInfo: PageInfo!
-  scrollPosition: Int!
-}
-
 """MessageInput"""
 input MessageInput {
   messageId: String!
@@ -198,6 +177,7 @@ input MessageInput {
 type MessagesData {
   edges: [Message!]!
   pageInfo: PageInfo!
+  scrollPosition: Int!
 }
 
 """MessagesInput"""
@@ -236,6 +216,7 @@ type OtherMember {
 type PageInfo {
   endCursor: String!
   hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
 }
 
 type Query {
@@ -245,7 +226,6 @@ type Query {
   friend(input: FriendInput!): Friend!
   friends(after: ID, input: FriendsInput!, limit: Int = 25): [Friend!]!
   message(input: MessageInput!): Message!
-  messageGroups(input: MessagesInput!): MessageGroupsData!
   messages(after: ID, input: MessagesInput!, limit: Int = 25): MessagesData!
   otherFriends(after: ID, input: FriendsInput!, limit: Int = 25): [Friend!]!
   pendingRequests(after: ID, input: RequestsInput!, limit: Int = 25): RequestsData!

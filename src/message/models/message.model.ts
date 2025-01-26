@@ -95,6 +95,9 @@ export class PageInfo {
   endCursor: string;
 
   @Field(() => Boolean)
+  hasPreviousPage: boolean;
+
+  @Field(() => Boolean)
   hasNextPage: boolean;
 }
 
@@ -105,39 +108,6 @@ export class MessagesData {
 
   @Field(() => PageInfo)
   pageInfo: PageInfo;
-}
-
-@ObjectType({ description: 'GroupObject' })
-export class Group {
-  @Field(() => String)
-  side: string;
-
-  @Field(() => [Message])
-  data: Message[];
-
-  @Field(() => User)
-  groupDetails: User;
-}
-
-@ObjectType({ description: 'MessageGroupObject' })
-export class MessageGroup {
-  @Field(() => String)
-  dateLabel: string;
-
-  @Field(() => [Group])
-  groups: Group[];
-}
-
-@ObjectType({ description: 'MessageGroupsDataObject' })
-export class MessageGroupsData {
-  @Field(() => [MessageGroup])
-  edges: MessageGroup[];
-
-  @Field(() => PageInfo)
-  pageInfo: PageInfo;
-
-  @Field(() => PageInfo)
-  queuedPageInfo: PageInfo;
 
   @Field(() => Int)
   scrollPosition: number;
