@@ -41,6 +41,22 @@ export class MessageResolver {
   }
 
   @UseGuards(GqlAuthGuard)
+  @Query(() => MessagesData)
+  async cachedMessages(
+    @Args('input') input: MessagesInput,
+  ): Promise<MessagesData> {
+    return {
+      edges: [],
+      pageInfo: {
+        endCursor: '',
+        hasPreviousPage: false,
+        hasNextPage: false,
+      },
+      scrollPosition: 0,
+    };
+  }
+
+  @UseGuards(GqlAuthGuard)
   @Mutation(() => Message)
   async createMessage(
     @Args('input') input: CreateMessageInput,

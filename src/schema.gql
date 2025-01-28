@@ -221,6 +221,7 @@ type PageInfo {
 
 type Query {
   activeClients(input: UserInput!): ClientData!
+  cachedMessages(input: MessagesInput!): MessagesData!
   chat(input: ChatInput!): Chat!
   chats(after: ID, input: ChatsInput!, limit: Int = 25): [Chat!]!
   friend(input: FriendInput!): Friend!
