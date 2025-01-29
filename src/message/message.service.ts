@@ -40,7 +40,10 @@ export class MessageService {
     this.redisConfig = {
       host: this.REDIS_HOST,
       port: this.REDIS_PORT,
-      // retryStrategy: null,
+      retryStrategy: (times) => {
+        const delay = Math.min(times * 50, 2000);
+        return delay;
+      },
     };
     this.redisClient = new Redis(this.redisConfig);
     this.redisSubscriber = new Redis(this.redisConfig);
@@ -452,7 +455,7 @@ export class MessageService {
     const handleStopMessage = async (channel: string, message: string) => {
       if (channel === stopChannel && message === 'stop') {
         try {
-          await worker.close();
+          // await worker.close();
           await this.cleanupQueue(queueName);
         } catch (error) {
           console.error(`Error stopping worker for queue ${queueName}:`, error);
