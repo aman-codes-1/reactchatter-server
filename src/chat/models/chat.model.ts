@@ -17,8 +17,8 @@ export class Chat {
   @Field(() => String)
   _id: string;
 
-  @Field(() => String)
-  queueId: string;
+  @Field(() => String, { nullable: true })
+  queueId?: string;
 
   @Field(() => Boolean)
   isActive: boolean;
@@ -43,6 +43,9 @@ export class Chat {
 export class ChatData {
   @Field(() => [String], { nullable: true })
   friendIds?: string[];
+
+  @Field(() => [String], { nullable: true })
+  friendUserIds?: string[];
 
   @Field(() => Chat)
   chat: Chat;

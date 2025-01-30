@@ -37,19 +37,21 @@ export class ChatResolver {
   }
 
   @UseGuards(GqlAuthGuard)
-  @Mutation(() => Chat)
-  async createChat(
-    @Args('input') input: CreateChatInput,
-  ): Promise<ChatDocument> {
-    const { friendIds } = input;
-    const newChat = await this.chatService.create(input);
+  @Mutation(() => ChatData)
+  async createChat(@Args('input') input: CreateChatInput): Promise<ChatData> {
+    const { friendIds, friendUserIds } = input;
+    const newChat = (await this.chatService.create(input)) as unknown as Chat;
     await this.pubSubService.pubSubInstance.publish('OnChatAdded', {
       OnChatAdded: {
         friendIds,
         chat: newChat,
       },
     });
-    return newChat;
+    return {
+      chat: newChat,
+      friendIds,
+      friendUserIds,
+    };
   }
 
   @UseGuards(GqlAuthGuard)

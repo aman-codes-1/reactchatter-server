@@ -20,7 +20,6 @@ export class ChatService {
       {
         $group: {
           _id: '$_id',
-          queueId: { $first: '$queueId' },
           isActive: { $first: '$isActive' },
           type: { $first: '$type' },
           members: { $push: '$members' },

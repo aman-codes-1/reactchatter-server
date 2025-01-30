@@ -14,9 +14,6 @@ export class Friend {
   @Field(() => String)
   _id: string;
 
-  @Field(() => String, { nullable: true })
-  queueId?: string;
-
   @Field(() => Boolean)
   isActive: boolean;
 

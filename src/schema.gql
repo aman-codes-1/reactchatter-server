@@ -23,7 +23,7 @@ type Chat {
   isActive: Boolean!
   lastMessage: Message
   members: [ChatMember!]!
-  queueId: String!
+  queueId: String
   type: String!
   updatedAt: Date!
 }
@@ -32,6 +32,7 @@ type Chat {
 type ChatData {
   chat: Chat!
   friendIds: [String!]
+  friendUserIds: [String!]
 }
 
 """ChatInput"""
@@ -117,7 +118,6 @@ type Friend {
   isActive: Boolean!
   lastMessage: Message
   members: [Member!]!
-  queueId: String
   type: String
   updatedAt: Date!
 }
@@ -186,7 +186,7 @@ input MessagesInput {
 }
 
 type Mutation {
-  createChat(input: CreateChatInput!): Chat!
+  createChat(input: CreateChatInput!): ChatData!
   createMessage(input: CreateMessageInput!): Message!
   createRequest(input: CreateRequestInput!): Request!
   updateRequest(input: UpdateRequestInput!): Request!
