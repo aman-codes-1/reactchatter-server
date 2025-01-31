@@ -20,10 +20,10 @@ type AuthTokens {
 type Chat {
   _id: String!
   createdAt: Date!
+  friends: [ChatFriendMember!]!
   isActive: Boolean!
   lastMessage: Message
   members: [ChatMember!]!
-  queueId: String
   type: String!
   updatedAt: Date!
 }
@@ -32,7 +32,11 @@ type Chat {
 type ChatData {
   chat: Chat!
   friendIds: [String!]
-  friendUserIds: [String!]
+}
+
+"""ChatFriendMemberObject"""
+type ChatFriendMember {
+  _id: String!
 }
 
 """ChatInput"""
@@ -74,11 +78,16 @@ type ClientData {
   userId: String!
 }
 
+"""CreateChatDataObject"""
+type CreateChatData {
+  chat: Chat!
+  isAlreadyCreated: Boolean!
+}
+
 """CreateChatInput"""
 input CreateChatInput {
   friendIds: [String!]!
   friendUserIds: [String!]!
-  queueId: String!
   type: String!
   userId: String!
 }
@@ -117,7 +126,7 @@ type Friend {
   hasChats: Boolean
   isActive: Boolean!
   lastMessage: Message
-  members: [Member!]!
+  members: [FriendMember!]!
   type: String
   updatedAt: Date!
 }
@@ -133,13 +142,8 @@ input FriendInput {
   userId: String!
 }
 
-"""FriendsInput"""
-input FriendsInput {
-  userId: String!
-}
-
 """FriendMemberObject"""
-type Member {
+type FriendMember {
   _id: String!
   email: String
   email_verified: String
@@ -149,6 +153,11 @@ type Member {
   name: String
   picture: String
   provider: String
+}
+
+"""FriendsInput"""
+input FriendsInput {
+  userId: String!
 }
 
 """MessageObject"""
@@ -176,6 +185,7 @@ input MessageInput {
 """MessagesDataObject"""
 type MessagesData {
   edges: [Message!]!
+  isFetched: Boolean
   pageInfo: PageInfo!
   scrollPosition: Int!
 }
@@ -186,7 +196,7 @@ input MessagesInput {
 }
 
 type Mutation {
-  createChat(input: CreateChatInput!): ChatData!
+  createChat(input: CreateChatInput!): CreateChatData!
   createMessage(input: CreateMessageInput!): Message!
   createRequest(input: CreateRequestInput!): Request!
   updateRequest(input: UpdateRequestInput!): Request!

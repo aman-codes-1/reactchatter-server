@@ -5,6 +5,7 @@ import { ObjectId } from 'mongodb';
 import { ChatArgs } from './dto/chat.args';
 import { CreateChatInput } from './dto/chat.input';
 import { Chat as ChatSchema, ChatDocument } from './chat.schema';
+import { Chat, CreateChatData } from './models/chat.model';
 
 @Injectable()
 export class ChatService {
@@ -23,6 +24,7 @@ export class ChatService {
           isActive: { $first: '$isActive' },
           type: { $first: '$type' },
           members: { $push: '$members' },
+          friends: { $first: '$friends' },
           lastMessage: { $first: '$lastMessage' },
           createdAt: { $first: '$createdAt' },
           updatedAt: { $first: '$updatedAt' },
@@ -139,26 +141,47 @@ export class ChatService {
     return chats;
   }
 
-  async create(data: CreateChatInput): Promise<ChatDocument> {
-    const { userId, queueId, type, friendUserIds } = data;
-    if (queueId) {
-      const duplicateChat = await this.ChatModel.findOne({ queueId }).lean();
-      if (duplicateChat) {
-        throw new BadRequestException('Duplicate Chat found.');
+  async create(data: CreateChatInput): Promise<CreateChatData> {
+    const { userId, type, friendIds, friendUserIds } = data || {};
+    let isAlreadyCreated = false;
+    let chat: ChatDocument;
+    if (type === 'private' && friendIds?.length === 1) {
+      const Chat = await this.ChatModel.findOne({
+        type: 'private',
+        friends: {
+          $size: 1,
+          $elemMatch: { _id: new ObjectId(friendIds?.[0]) },
+        },
+      });
+      if (Chat) {
+        isAlreadyCreated = true;
+        chat = Chat;
       }
     }
-    const members = [userId, ...friendUserIds].map((id, idx) => ({
-      _id: new ObjectId(id),
-      hasAdded: idx === 0,
-    }));
-    const newChat = new this.ChatModel({
-      queueId,
-      type,
-      members,
-    });
-    const savedChat = (await newChat.save()).toObject();
-    const { _id: chatId } = savedChat;
-    const chat = await this.findOneById(String(chatId));
-    return chat;
+    if (!isAlreadyCreated) {
+      const members = [userId, ...friendUserIds]?.map(
+        (id: string, idx: number) => ({
+          _id: new ObjectId(id),
+          hasAdded: idx === 0,
+        }),
+      );
+      const friends = friendIds?.map((id: string) => ({
+        _id: new ObjectId(id),
+      }));
+      const newChat = new this.ChatModel({
+        type,
+        members,
+        friends,
+      });
+      chat = (await newChat.save()).toObject();
+    }
+
+    const fullChat = (await this.findOneById(
+      String(chat?._id),
+    )) as unknown as Chat;
+    return {
+      isAlreadyCreated,
+      chat: fullChat,
+    };
   }
 }

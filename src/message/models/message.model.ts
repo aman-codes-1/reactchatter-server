@@ -68,7 +68,7 @@ export class OtherMember extends User {
 @ObjectType({ description: 'MessageObject' })
 export class Message extends CommonId {
   @Field(() => String)
-  chatId: Types.ObjectId;
+  chatId: string;
 
   @Field(() => String)
   queueId: string;
@@ -111,6 +111,9 @@ export class MessagesData {
 
   @Field(() => Int)
   scrollPosition: number;
+
+  @Field(() => Boolean, { nullable: true })
+  isFetched?: boolean;
 }
 
 @ObjectType({ description: 'MessageDataObject' })

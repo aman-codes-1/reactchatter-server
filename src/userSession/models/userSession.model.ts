@@ -34,7 +34,7 @@ export class UserSession extends Clients {
   _id: string;
 
   @Field(() => String)
-  userId: Types.ObjectId;
+  userId: string;
 
   @Field(() => String, { nullable: true })
   provider?: string;

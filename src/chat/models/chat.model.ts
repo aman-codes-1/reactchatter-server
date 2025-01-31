@@ -12,13 +12,16 @@ class ChatMember extends User {
   isAdmin?: boolean;
 }
 
+@ObjectType({ description: 'ChatFriendMemberObject' })
+class ChatFriendMember {
+  @Field(() => String)
+  _id: string;
+}
+
 @ObjectType({ description: 'ChatObject' })
 export class Chat {
   @Field(() => String)
   _id: string;
-
-  @Field(() => String, { nullable: true })
-  queueId?: string;
 
   @Field(() => Boolean)
   isActive: boolean;
@@ -28,6 +31,9 @@ export class Chat {
 
   @Field(() => [ChatMember])
   members: ChatMember[];
+
+  @Field(() => [ChatFriendMember])
+  friends: ChatFriendMember[];
 
   @Field(() => Message, { nullable: true })
   lastMessage?: Message;
@@ -39,13 +45,19 @@ export class Chat {
   updatedAt: Date;
 }
 
+@ObjectType({ description: 'CreateChatDataObject' })
+export class CreateChatData {
+  @Field(() => Boolean)
+  isAlreadyCreated: boolean;
+
+  @Field(() => Chat)
+  chat: Chat;
+}
+
 @ObjectType({ description: 'ChatDataObject' })
 export class ChatData {
   @Field(() => [String], { nullable: true })
   friendIds?: string[];
-
-  @Field(() => [String], { nullable: true })
-  friendUserIds?: string[];
 
   @Field(() => Chat)
   chat: Chat;

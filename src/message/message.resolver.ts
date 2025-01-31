@@ -55,6 +55,7 @@ export class MessageResolver {
         hasNextPage: false,
       },
       scrollPosition: 0,
+      isFetched: false,
     };
   }
 

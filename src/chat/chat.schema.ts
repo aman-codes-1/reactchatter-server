@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, SchemaTimestampsConfig, Types } from 'mongoose';
 
-class Member {
+class ChatMember {
   @Prop({ type: Types.ObjectId, required: true })
   _id: Types.ObjectId;
 
@@ -12,13 +12,15 @@ class Member {
   isAdmin?: boolean;
 }
 
+class FriendMember {
+  @Prop({ type: Types.ObjectId, required: true })
+  _id: Types.ObjectId;
+}
+
 type ChatType = 'private' | 'group';
 
 @Schema({ timestamps: true })
 export class Chat {
-  @Prop({ type: String, required: false })
-  queueId?: string;
-
   @Prop({ type: Boolean, required: true, default: true })
   isActive: boolean;
 
@@ -30,8 +32,11 @@ export class Chat {
   })
   type: ChatType;
 
-  @Prop({ type: [Member], required: true })
-  members: Member[];
+  @Prop({ type: [ChatMember], required: true })
+  members: ChatMember[];
+
+  @Prop({ type: [FriendMember], required: true })
+  friends: FriendMember[];
 }
 
 export const ChatSchema = SchemaFactory.createForClass(Chat);

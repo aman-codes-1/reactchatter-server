@@ -4,7 +4,7 @@ import { Message } from '../../message/models/message.model';
 import { DateScalar } from '../../common/scalars/date.scalar';
 
 @ObjectType({ description: 'FriendMemberObject' })
-class Member extends User {
+class FriendMember extends User {
   @Field(() => Boolean)
   hasAdded: boolean;
 }
@@ -20,8 +20,8 @@ export class Friend {
   @Field(() => String, { nullable: true })
   type?: string;
 
-  @Field(() => [Member])
-  members: Member[];
+  @Field(() => [FriendMember])
+  members: FriendMember[];
 
   @Field(() => Message, { nullable: true })
   lastMessage?: Message;

@@ -15,9 +15,6 @@ export class ChatsInput {
 @InputType({ description: 'CreateChatInput' })
 export class CreateChatInput extends ChatsInput {
   @Field(() => String)
-  queueId: string;
-
-  @Field(() => String)
   type: string;
 
   @Field(() => [String])

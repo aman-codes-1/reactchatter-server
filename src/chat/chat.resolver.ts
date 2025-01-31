@@ -2,7 +2,7 @@ import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
 import { ChatArgs } from './dto/chat.args';
 import { ChatInput, ChatsInput, CreateChatInput } from './dto/chat.input';
-import { Chat, ChatData } from './models/chat.model';
+import { Chat, ChatData, CreateChatData } from './models/chat.model';
 import { ChatService } from './chat.service';
 import { ChatDocument } from './chat.schema';
 import { PubSubService } from '../shared/pubSub.service';
@@ -37,21 +37,19 @@ export class ChatResolver {
   }
 
   @UseGuards(GqlAuthGuard)
-  @Mutation(() => ChatData)
-  async createChat(@Args('input') input: CreateChatInput): Promise<ChatData> {
-    const { friendIds, friendUserIds } = input;
-    const newChat = (await this.chatService.create(input)) as unknown as Chat;
+  @Mutation(() => CreateChatData)
+  async createChat(
+    @Args('input') input: CreateChatInput,
+  ): Promise<CreateChatData> {
+    const { friendIds } = input;
+    const newChat = await this.chatService.create(input);
     await this.pubSubService.pubSubInstance.publish('OnChatAdded', {
       OnChatAdded: {
         friendIds,
-        chat: newChat,
+        chat: newChat?.chat,
       },
     });
-    return {
-      chat: newChat,
-      friendIds,
-      friendUserIds,
-    };
+    return newChat;
   }
 
   @UseGuards(GqlAuthGuard)

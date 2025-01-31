@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, SchemaTimestampsConfig, Types } from 'mongoose';
 
-export class Member {
+export class RequestMember {
   @Prop({ type: Types.ObjectId, required: true })
   _id: Types.ObjectId;
 
@@ -14,8 +14,8 @@ export class Request {
   @Prop({ type: String, required: true })
   status: string;
 
-  @Prop({ type: [Member], required: true })
-  members: Member[];
+  @Prop({ type: [RequestMember], required: true })
+  members: RequestMember[];
 }
 
 export const RequestSchema = SchemaFactory.createForClass(Request);
