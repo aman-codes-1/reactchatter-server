@@ -12,7 +12,7 @@ class ChatMember {
   isAdmin?: boolean;
 }
 
-class FriendMember {
+class ChatFriendMember {
   @Prop({ type: Types.ObjectId, required: true })
   _id: Types.ObjectId;
 }
@@ -35,8 +35,8 @@ export class Chat {
   @Prop({ type: [ChatMember], required: true })
   members: ChatMember[];
 
-  @Prop({ type: [FriendMember], required: true })
-  friends: FriendMember[];
+  @Prop({ type: [ChatFriendMember], required: true })
+  friends: ChatFriendMember[];
 }
 
 export const ChatSchema = SchemaFactory.createForClass(Chat);
