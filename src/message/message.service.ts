@@ -203,6 +203,7 @@ export class MessageService {
       edges,
       pageInfo,
       scrollPosition: 0,
+      isFetched: true,
     };
   }
 
