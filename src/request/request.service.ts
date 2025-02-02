@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, PipelineStage } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { RequestsData } from './models/request.model';
 import { Request as RequestSchema, RequestDocument } from './request.schema';
@@ -21,7 +21,7 @@ export class RequestService {
     //
   }
 
-  async groupPipeline(): Promise<any> {
+  groupPipeline(): PipelineStage[] {
     return [
       {
         $group: {
@@ -35,7 +35,7 @@ export class RequestService {
     ];
   }
 
-  async membersPipeline(): Promise<any> {
+  membersPipeline(): PipelineStage[] {
     return [
       {
         $unwind: '$members',
@@ -72,14 +72,12 @@ export class RequestService {
 
   async findOneById(requestId: string): Promise<RequestDocument> {
     const requestObjectId = new ObjectId(requestId);
-    const membersPipeline = await this.membersPipeline();
-    const groupPipeline = await this.groupPipeline();
     const request = await this.RequestModel.aggregate([
       {
         $match: { _id: requestObjectId },
       },
-      ...membersPipeline,
-      ...groupPipeline,
+      ...this.membersPipeline(),
+      ...this.groupPipeline(),
       { $limit: 1 },
     ])
       .cursor()
@@ -138,8 +136,6 @@ export class RequestService {
   ): Promise<RequestsData> {
     const userObjectId = new ObjectId(userId);
     const { limit, after } = args;
-    const membersPipeline = await this.membersPipeline();
-    const groupPipeline = await this.groupPipeline();
     const pendingRequest = await this.RequestModel.aggregate([
       {
         $match: {
@@ -148,8 +144,8 @@ export class RequestService {
           status: 'pending',
         },
       },
-      ...membersPipeline,
-      ...groupPipeline,
+      ...this.membersPipeline(),
+      ...this.groupPipeline(),
       {
         $facet: {
           data: [{ $sort: { _id: -1 } }, { $limit: limit }],
@@ -173,8 +169,6 @@ export class RequestService {
   async findAllSent(userId: string, args: RequestArgs): Promise<RequestsData> {
     const userObjectId = new ObjectId(userId);
     const { limit, after } = args;
-    const membersPipeline = await this.membersPipeline();
-    const groupPipeline = await this.groupPipeline();
     const sentRequest = await this.RequestModel.aggregate([
       {
         $match: {
@@ -183,8 +177,8 @@ export class RequestService {
           status: 'pending',
         },
       },
-      ...membersPipeline,
-      ...groupPipeline,
+      ...this.membersPipeline(),
+      ...this.groupPipeline(),
       {
         $facet: {
           data: [{ $sort: { _id: -1 } }, { $limit: limit }],

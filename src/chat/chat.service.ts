@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, PipelineStage } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { ChatArgs } from './dto/chat.args';
 import { CreateChatInput } from './dto/chat.input';
@@ -16,7 +16,7 @@ export class ChatService {
     //
   }
 
-  async groupPipeline(): Promise<any> {
+  groupPipeline(): PipelineStage[] {
     return [
       {
         $group: {
@@ -33,7 +33,7 @@ export class ChatService {
     ];
   }
 
-  async membersPipeline(): Promise<any> {
+  membersPipeline(): PipelineStage[] {
     return [
       {
         $unwind: '$members',
@@ -88,12 +88,10 @@ export class ChatService {
 
   async findOneById(chatId: string): Promise<ChatDocument> {
     const chatObjectId = new ObjectId(chatId);
-    const membersPipeline = await this.membersPipeline();
-    const groupPipeline = await this.groupPipeline();
     const chat = await this.ChatModel.aggregate([
       { $match: { _id: chatObjectId, isActive: true } },
-      ...membersPipeline,
-      ...groupPipeline,
+      ...this.membersPipeline(),
+      ...this.groupPipeline(),
       { $limit: 1 },
     ])
       .cursor()
@@ -107,8 +105,6 @@ export class ChatService {
   async findAll(userId: string, args: ChatArgs): Promise<ChatDocument[]> {
     const userObjectId = new ObjectId(userId);
     const { limit, after } = args;
-    const membersPipeline = await this.membersPipeline();
-    const groupPipeline = await this.groupPipeline();
     const chats = await this.ChatModel.aggregate([
       {
         $match: {
@@ -117,8 +113,8 @@ export class ChatService {
           isActive: true,
         },
       },
-      ...membersPipeline,
-      ...groupPipeline,
+      ...this.membersPipeline(),
+      ...this.groupPipeline(),
       {
         $addFields: {
           sortField: {

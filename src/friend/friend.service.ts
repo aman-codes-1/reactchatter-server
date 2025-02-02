@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { FilterQuery, Model } from 'mongoose';
+import { FilterQuery, Model, PipelineStage } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { FriendArgs } from './dto/friend.args';
 import { Friend as FriendSchema, FriendDocument } from './friend.schema';
@@ -14,7 +14,7 @@ export class FriendService {
     //
   }
 
-  async groupPipeline(): Promise<any> {
+  groupPipeline(): PipelineStage[] {
     return [
       {
         $group: {
@@ -35,7 +35,7 @@ export class FriendService {
     ];
   }
 
-  async hasChatsPipeline(userObjectId: ObjectId): Promise<any> {
+  hasChatsPipeline(userObjectId: ObjectId): PipelineStage[] {
     return [
       {
         $set: {
@@ -80,7 +80,7 @@ export class FriendService {
     ];
   }
 
-  async membersPipeline(): Promise<any> {
+  membersPipeline(): PipelineStage[] {
     return [
       {
         $unwind: '$members',
@@ -125,14 +125,11 @@ export class FriendService {
   async findOneById(friendId: string, userId: string): Promise<FriendDocument> {
     const friendObjectId = new ObjectId(friendId);
     const userObjectId = new ObjectId(userId);
-    const hasChatsPipeline = await this.hasChatsPipeline(userObjectId);
-    const membersPipeline = await this.membersPipeline();
-    const groupPipeline = await this.groupPipeline();
     const friend = await this.FriendModel.aggregate([
       { $match: { _id: friendObjectId, isActive: true } },
-      ...hasChatsPipeline,
-      ...membersPipeline,
-      ...groupPipeline,
+      ...this.hasChatsPipeline(userObjectId),
+      ...this.membersPipeline(),
+      ...this.groupPipeline(),
       { $limit: 1 },
     ])
       .cursor()
@@ -146,9 +143,6 @@ export class FriendService {
   async findAll(userId: string, args: FriendArgs): Promise<FriendDocument[]> {
     const userObjectId = new ObjectId(userId);
     const { limit, after } = args;
-    const hasChatsPipeline = await this.hasChatsPipeline(userObjectId);
-    const membersPipeline = await this.membersPipeline();
-    const groupPipeline = await this.groupPipeline();
     const friends = await this.FriendModel.aggregate([
       {
         $match: {
@@ -157,9 +151,9 @@ export class FriendService {
           isActive: true,
         },
       },
-      ...hasChatsPipeline,
-      ...membersPipeline,
-      ...groupPipeline,
+      ...this.hasChatsPipeline(userObjectId),
+      ...this.membersPipeline(),
+      ...this.groupPipeline(),
       { $sort: { _id: -1 } },
       { $limit: limit },
     ]);
@@ -172,9 +166,6 @@ export class FriendService {
   ): Promise<FriendDocument[]> {
     const userObjectId = new ObjectId(userId);
     const { limit, after } = args;
-    const hasChatsPipeline = await this.hasChatsPipeline(userObjectId);
-    const membersPipeline = await this.membersPipeline();
-    const groupPipeline = await this.groupPipeline();
     const otherFriends = await this.FriendModel.aggregate([
       {
         $match: {
@@ -183,14 +174,14 @@ export class FriendService {
           isActive: true,
         },
       },
-      ...hasChatsPipeline,
-      ...membersPipeline,
+      ...this.hasChatsPipeline(userObjectId),
+      ...this.membersPipeline(),
       {
         $match: {
           chatsWithFriend: { $size: 0 },
         },
       },
-      ...groupPipeline,
+      ...this.groupPipeline(),
       { $sort: { _id: -1 } },
       { $limit: limit },
     ]);
