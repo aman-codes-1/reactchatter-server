@@ -40,10 +40,11 @@ export class MessageService {
     this.redisConfig = {
       host: this.REDIS_HOST,
       port: this.REDIS_PORT,
-      retryStrategy: (times) => {
-        const delay = Math.min(times * 50, 2000);
-        return delay;
-      },
+      // retryStrategy: (times) => {
+      //   const delay = Math.min(times * 50, 2000);
+      //   return delay;
+      // },
+      maxRetriesPerRequest: null,
     };
     this.redisClient = new Redis(this.redisConfig);
     this.redisSubscriber = new Redis(this.redisConfig);
@@ -348,11 +349,11 @@ export class MessageService {
                 messageId,
                 isDelivered,
               });
-              await this.addQueueAndJob(`user_${userId}_queue`, {
-                messageId,
-                isDelivered,
-              });
             }
+            await this.addQueueAndJob(`user_${userId}_queue`, {
+              messageId,
+              isDelivered,
+            });
           }
 
           if (!activeClients?.length && !inactiveClients?.length) {
@@ -387,10 +388,7 @@ export class MessageService {
 
   async addQueueAndJob(queueName: string, jobData: any): Promise<void> {
     const queue = new Queue(queueName, {
-      connection: {
-        host: this.REDIS_HOST,
-        port: this.REDIS_PORT,
-      },
+      connection: this.redisConfig,
     });
 
     try {
@@ -442,13 +440,15 @@ export class MessageService {
     const worker = new Worker(
       queueName,
       async (job: Job) => {
-        await this.deliverQueuedMessage(job);
+        try {
+          await this.deliverQueuedMessage(job);
+        } catch (error) {
+          console.error(`Error processing job ${job?.id}:`, error);
+          throw error;
+        }
       },
       {
-        connection: {
-          host: this.REDIS_HOST,
-          port: this.REDIS_PORT,
-        },
+        connection: new Redis(this.redisConfig),
       },
     );
 
@@ -456,7 +456,7 @@ export class MessageService {
     const handleStopMessage = async (channel: string, message: string) => {
       if (channel === stopChannel && message === 'stop') {
         try {
-          // await worker.close();
+          await worker.close();
           await this.cleanupQueue(queueName);
         } catch (error) {
           console.error(`Error stopping worker for queue ${queueName}:`, error);

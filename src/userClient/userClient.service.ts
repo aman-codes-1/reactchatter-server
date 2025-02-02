@@ -85,17 +85,17 @@ export class UserClientService {
     return activeClients;
   }
 
-  async sendClients(sessionID: string, userId: string): Promise<any> {
-    const userSession = await this.userSessionService.findOneById(
-      sessionID,
-      true,
-    );
+  async sendClients(userId: string): Promise<any> {
+    // const userSession = await this.userSessionService.findOneById(
+    //   sessionID,
+    //   true,
+    // );
 
-    await this.pubSubService.pubSubInstance.publish('OnSessionUpdated', {
-      OnSessionUpdated: {
-        session: userSession,
-      },
-    });
+    // await this.pubSubService.pubSubInstance.publish('OnSessionUpdated', {
+    //   OnSessionUpdated: {
+    //     session: userSession,
+    //   },
+    // });
 
     const activeClients = await this.findAllActiveInactive(userId, true);
 
@@ -118,7 +118,7 @@ export class UserClientService {
 
     await this.userSessionService.updateLastActive(sessionID, lastActive);
 
-    await this.sendClients(sessionID, userId);
+    await this.sendClients(userId);
 
     return updatedClient;
   }
@@ -166,7 +166,7 @@ export class UserClientService {
 
     await this.userSessionService.updateLastActive(sessionID, lastActive);
 
-    await this.sendClients(sessionID, userId);
+    await this.sendClients(userId);
 
     return updatedClient;
   }
@@ -176,16 +176,15 @@ export class UserClientService {
     client: Client,
   ): Promise<UserClientDocument> {
     const userObjectId = new ObjectId(userId);
-    const { _id, sessionID } = client || {};
     const updatedClient = (await this.UserClientModel.findOneAndUpdate(
       { userId: userObjectId },
       {
-        $pull: { clients: { _id } },
+        $pull: { clients: { _id: client?._id } },
       },
       { new: true },
     ).lean()) as UserClientDocument;
 
-    await this.sendClients(sessionID, userId);
+    await this.sendClients(userId);
 
     return updatedClient;
   }
