@@ -66,16 +66,8 @@ input ChatsInput {
 """ClientObject"""
 type Client {
   _id: String!
-  isClientActive: Boolean
   lastActive: Date
   sessionID: String!
-}
-
-"""ClientsDataObject"""
-type ClientData {
-  clients: [Client!]
-  onlineStatus: OnlineStatus!
-  userId: String!
 }
 
 """CreateChatDataObject"""
@@ -230,7 +222,6 @@ type PageInfo {
 }
 
 type Query {
-  activeClients(input: UserInput!): ClientData!
   cachedMessages(input: MessagesInput!): MessagesData!
   chat(input: ChatInput!): Chat!
   chats(after: ID, input: ChatsInput!, limit: Int = 25): [Chat!]!
@@ -242,8 +233,11 @@ type Query {
   pendingRequests(after: ID, input: RequestsInput!, limit: Int = 25): RequestsData!
   sentRequests(after: ID, input: RequestsInput!, limit: Int = 25): RequestsData!
   user(input: UserInput!): User!
+  userClient(input: UserInput!): UserClient!
+  userOnlineStatus(input: UserInput!): UserOnlineStatus!
   userSession(input: UserSessionInput!): UserSession!
   userSessions(input: UserSessionsInput!): [UserSession!]!
+  userSessionsInactive(input: UserSessionsInput!): [UserSession!]!
 }
 
 """QueuedStatusObject"""
@@ -324,13 +318,13 @@ type SentStatus {
 type Subscription {
   OnChatAdded: ChatData!
   OnChatUpdated: ChatData!
-  OnClientsUpdated: ClientData!
   OnFriendAdded: FriendData!
   OnMessageAdded: MessageData!
   OnMessageUpdated: MessageData!
   OnRequestAdded: RequestData!
   OnRequestUpdated: RequestData!
   OnSessionUpdated(input: UserSessionInput!): UserSessionData!
+  OnUserOnlineStatus: UserOnlineStatus!
 }
 
 """UpdateRequestInput"""
@@ -352,8 +346,21 @@ type User {
   provider: String
 }
 
+"""UserClientObject"""
+type UserClient {
+  _id: String!
+  clients: [Client!]
+  userId: String!
+}
+
 """UserInput"""
 input UserInput {
+  userId: String!
+}
+
+"""UserOnlineStatusObject"""
+type UserOnlineStatus {
+  onlineStatus: OnlineStatus!
   userId: String!
 }
 

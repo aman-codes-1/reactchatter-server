@@ -8,24 +8,23 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { UserClientService } from '../userClient/userClient.service';
+import { UserSessionService } from '../userSession/userSession.service';
 import { MessageService } from '../message/message.service';
 
 @WebSocketGateway({ transports: ['websocket'] })
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private userClientService: UserClientService,
+    private userSessionService: UserSessionService,
     private messageService: MessageService,
   ) {
     //
   }
 
-  public clientId: string;
-
   @WebSocketServer() server: Server;
 
   async handleConnection(client: Socket) {
     const { id, handshake } = client || {};
-    this.clientId = id;
     const { auth } = handshake || {};
     const { _id, sessionID } = auth || {};
 
@@ -35,62 +34,41 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     const Client = {
-      _id: this.clientId,
+      _id: id,
       sessionID,
-      isServer: true,
+      lastActive: new Date(Date.now()),
     };
 
     await this.userClientService.addClient(_id, Client);
+
+    const userSession = await this.userSessionService.findOneById(sessionID);
+
+    if (userSession) {
+      const sessionQueueName = `session_${sessionID}_queue`;
+      await this.messageService.startWorker(sessionQueueName);
+      // to do: check if user queue exists with same jobId and remove it
+    } else {
+      const userQueueName = `user_${_id}_queue`;
+      await this.messageService.startWorker(userQueueName);
+    }
   }
 
   async handleDisconnect(client: Socket) {
     const { id, handshake } = client || {};
-    this.clientId = id;
     const { auth } = handshake || {};
     const { _id, sessionID } = auth || {};
 
     if (!_id || !sessionID) return;
 
-    const Client = {
-      _id: this.clientId,
-      sessionID,
-    };
+    await this.userClientService.removeClient(_id, id);
 
-    await this.userClientService.removeClient(_id, Client);
+    const userSession = await this.userSessionService.findOneById(sessionID);
 
-    const sessionQueueName = `session_${sessionID}_queue`;
-    const userQueueName = `user_${_id}_queue`;
-
-    await this.messageService.stopWorker(sessionQueueName);
-    await this.messageService.stopWorker(userQueueName);
-  }
-
-  @SubscribeMessage('updateUserOnlineStatus')
-  async handleStatusUpdate(@MessageBody() payload: any) {
-    const { _id, sessionID, onlineStatus } = payload || {};
-
-    if (!_id || !sessionID || !onlineStatus) return;
-
-    const { isOnline, lastSeen } = onlineStatus || {};
-
-    const Client = {
-      _id: this.clientId,
-      sessionID,
-      isClientActive: isOnline ?? false,
-      lastActive: new Date(lastSeen || Date.now()),
-    };
-
-    await this.userClientService.updateClient(_id, Client);
-
-    const sessionQueueName = `session_${sessionID}_queue`;
-    const userQueueName = `user_${_id}_queue`;
-
-    if (isOnline) {
-      // to do: check if user queue exists with same jobId
-      await this.messageService.startWorker(sessionQueueName);
-      await this.messageService.startWorker(userQueueName);
-    } else {
+    if (userSession) {
+      const sessionQueueName = `session_${sessionID}_queue`;
       await this.messageService.stopWorker(sessionQueueName);
+    } else {
+      const userQueueName = `user_${_id}_queue`;
       await this.messageService.stopWorker(userQueueName);
     }
   }

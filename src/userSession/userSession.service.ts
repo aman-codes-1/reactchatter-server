@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, PipelineStage } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import {
   UserSession as UserSessionSchema,
@@ -17,7 +17,7 @@ export class UserSessionService {
     //
   }
 
-  async projectPipeline(): Promise<any> {
+  projectPipeline(): PipelineStage[] {
     return [
       {
         $project: {
@@ -34,83 +34,76 @@ export class UserSessionService {
     ];
   }
 
-  async userClientsPipeline(isActiveClients?: boolean): Promise<any> {
+  userClientsPipeline(): PipelineStage[] {
     return [
       {
         $lookup: {
           from: 'userClients',
-          localField: 'userId',
+          localField: 'session.passport.user._id',
           foreignField: 'userId',
           as: 'userClients',
         },
       },
       {
-        $addFields: {
-          clients: {
-            $filter: {
-              input: {
-                $ifNull: [{ $arrayElemAt: ['$userClients.clients', 0] }, []],
-              },
-              as: 'client',
-              cond: {
-                $and: [
-                  { $eq: ['$$client.sessionID', '$_id'] },
-                  ...(isActiveClients !== undefined
-                    ? [{ $eq: ['$$client.isClientActive', isActiveClients] }]
-                    : []),
-                ],
-              },
-            },
+        $unwind: {
+          path: '$userClients',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $set: {
+          activeSessionIds: {
+            $ifNull: ['$userClients.clients.sessionID', []],
           },
         },
       },
       {
-        $project: {
-          userClients: 0,
+        $match: {
+          $expr: { $not: { $in: ['$_id', '$activeSessionIds'] } },
         },
       },
     ];
   }
 
-  async findOneById(
-    sessionID: string,
-    isActiveClients?: boolean,
-  ): Promise<UserSession> {
-    const projectPipeline = await this.projectPipeline();
-    const userClientsPipeline =
-      await this.userClientsPipeline(!!isActiveClients);
+  async findOneById(sessionID: string): Promise<UserSession> {
     const session = await this.UserSessionModel.aggregate([
       {
         $match: {
           _id: sessionID,
         },
       },
-      ...projectPipeline,
-      ...userClientsPipeline,
+      ...this.projectPipeline(),
     ])
       .cursor()
       .next();
     return session;
   }
 
-  async findAll(
-    userId: string,
-    isActiveClients?: boolean,
-  ): Promise<UserSession[]> {
+  async findAll(userId: string): Promise<UserSession[]> {
     const userObjectId = new ObjectId(userId);
-    const projectPipeline = await this.projectPipeline();
-    const userClientsPipeline =
-      await this.userClientsPipeline(!!isActiveClients);
     const sessions = await this.UserSessionModel.aggregate([
       {
         $match: {
           'session.passport.user._id': userObjectId,
         },
       },
-      ...projectPipeline,
-      ...userClientsPipeline,
+      ...this.projectPipeline(),
     ]);
     return sessions;
+  }
+
+  async findAllInactive(userId: string): Promise<UserSession[]> {
+    const userObjectId = new ObjectId(userId);
+    const inactiveSessions = await this.UserSessionModel.aggregate([
+      {
+        $match: {
+          'session.passport.user._id': userObjectId,
+        },
+      },
+      ...this.userClientsPipeline(),
+      ...this.projectPipeline(),
+    ]);
+    return inactiveSessions;
   }
 
   async updateAuthTokens(
@@ -141,5 +134,9 @@ export class UserSessionService {
     ).lean();
     const session = await this.findOneById(updatedSession?._id);
     return session;
+  }
+
+  async removeStale(): Promise<void> {
+    await this.UserSessionModel.deleteMany({ 'session.passport': {} });
   }
 }

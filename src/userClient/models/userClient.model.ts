@@ -9,9 +9,6 @@ export class Client {
   @Field(() => String)
   sessionID: string;
 
-  @Field(() => Boolean, { nullable: true })
-  isClientActive?: boolean;
-
   @Field(() => DateScalar, { nullable: true })
   lastActive?: Date;
 }
@@ -40,8 +37,8 @@ export class OnlineStatus {
   lastSeen: Date;
 }
 
-@ObjectType({ description: 'ClientsDataObject' })
-export class ClientData extends Clients {
+@ObjectType({ description: 'UserOnlineStatusObject' })
+export class UserOnlineStatus {
   @Field(() => String)
   userId: string;
 

@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { ConfigService } from '@nestjs/config';
 import { Job, Queue, Worker } from 'bullmq';
 import Redis, { RedisOptions } from 'ioredis';
-import { Model } from 'mongoose';
+import { Model, PipelineStage } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { MessageArgs } from './dto/message.args';
 import { CreateMessageInput } from './dto/message.input';
@@ -16,6 +16,7 @@ import {
 import { Message as MessageSchema, MessageDocument } from './message.schema';
 import { ChatService } from '../chat/chat.service';
 import { UserClientService } from '../userClient/userClient.service';
+import { UserSessionService } from '../userSession/userSession.service';
 import { PubSubService } from '../shared/pubSub.service';
 
 @Injectable()
@@ -32,6 +33,7 @@ export class MessageService {
     private MessageModel: Model<MessageDocument>,
     private chatService: ChatService,
     private userClientService: UserClientService,
+    private userSessionService: UserSessionService,
     private readonly pubSubService: PubSubService,
     private readonly configService: ConfigService,
   ) {
@@ -51,7 +53,7 @@ export class MessageService {
     this.redisPublisher = new Redis(this.redisConfig);
   }
 
-  async groupPipeline(): Promise<any> {
+  groupPipeline(): PipelineStage[] {
     return [
       {
         $group: {
@@ -70,7 +72,7 @@ export class MessageService {
     ];
   }
 
-  async membersPipeline(): Promise<any> {
+  membersPipeline(): PipelineStage[] {
     return [
       {
         $unwind: '$otherMembers',
@@ -137,12 +139,10 @@ export class MessageService {
 
   async findOneById(messageId: string): Promise<MessageDocument> {
     const messageObjectId = new ObjectId(messageId);
-    const membersPipeline = await this.membersPipeline();
-    const groupPipeline = await this.groupPipeline();
     const message = await this.MessageModel.aggregate([
       { $match: { _id: messageObjectId, isActive: true } },
-      ...membersPipeline,
-      ...groupPipeline,
+      ...this.membersPipeline(),
+      ...this.groupPipeline(),
       { $limit: 1 },
     ])
       .cursor()
@@ -160,8 +160,6 @@ export class MessageService {
       throw new BadRequestException('Chat not found.');
     }
     const { limit, after } = args;
-    const membersPipeline = await this.membersPipeline();
-    const groupPipeline = await this.groupPipeline();
     const messages = await this.MessageModel.aggregate([
       {
         $match: {
@@ -170,8 +168,8 @@ export class MessageService {
           isActive: true,
         },
       },
-      ...membersPipeline,
-      ...groupPipeline,
+      ...this.membersPipeline(),
+      ...this.groupPipeline(),
       { $sort: { timestamp: -1 } },
       { $limit: limit },
     ]);
@@ -302,15 +300,12 @@ export class MessageService {
         for (const member of otherMembers) {
           const userId = String(member?._id);
 
-          const activeClientsData =
-            await this.userClientService.findAllActiveInactive(userId, true);
-          const inactiveClientsData =
-            await this.userClientService.findAllActiveInactive(userId, false);
+          const userOnlineStatus =
+            await this.userClientService.findUserOnlineStatus(userId);
+          const inactiveSessions =
+            await this.userSessionService.findAllInactive(userId);
 
-          const activeClients = activeClientsData?.clients;
-          const inactiveClients = inactiveClientsData?.clients;
-
-          if (activeClients?.length) {
+          if (userOnlineStatus?.onlineStatus?.isOnline) {
             if (!isDelivered) {
               const deliveredStatus = {
                 isDelivered: true,
@@ -342,21 +337,20 @@ export class MessageService {
             }
           }
 
-          if (inactiveClients?.length) {
-            for (const client of inactiveClients) {
-              const sessionID = client?.sessionID;
+          if (inactiveSessions?.length) {
+            for (const session of inactiveSessions) {
+              const sessionID = session?._id;
               await this.addQueueAndJob(`session_${sessionID}_queue`, {
                 messageId,
                 isDelivered,
               });
             }
-            await this.addQueueAndJob(`user_${userId}_queue`, {
-              messageId,
-              isDelivered,
-            });
           }
 
-          if (!activeClients?.length && !inactiveClients?.length) {
+          if (
+            inactiveSessions?.length ||
+            !userOnlineStatus?.onlineStatus?.isOnline
+          ) {
             await this.addQueueAndJob(`user_${userId}_queue`, {
               messageId,
               isDelivered,
@@ -377,7 +371,7 @@ export class MessageService {
     });
   }
 
-  async deliverQueuedMessage(job: Job): Promise<any> {
+  async deliverQueuedMessage(job: Job): Promise<void> {
     const jobData = job?.data;
     const messageId = jobData?.messageId;
     const isDelivered = jobData?.isDelivered;

@@ -7,6 +7,7 @@ import { AuthModule } from '../auth/auth.module';
 import { SharedModule } from '../shared/shared.module';
 import { ChatModule } from '../chat/chat.module';
 import { UserClientModule } from '../userClient/userClient.module';
+import { UserSessionModule } from '../userSession/userSession.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { UserClientModule } from '../userClient/userClient.module';
     SharedModule,
     ChatModule,
     UserClientModule,
+    UserSessionModule,
     MongooseModule.forFeature([
       { name: Message.name, schema: MessageSchema, collection: 'messages' },
     ]),
