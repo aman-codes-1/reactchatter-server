@@ -56,8 +56,8 @@ export class Sender extends User {
   sentStatus: SentStatus;
 }
 
-@ObjectType({ description: 'OtherMemberObject' })
-export class OtherMember extends User {
+@ObjectType({ description: 'ReceiverObject' })
+export class Receiver extends User {
   @Field(() => DeliveredStatus, { nullable: true })
   deliveredStatus?: DeliveredStatus;
 
@@ -82,8 +82,8 @@ export class Message extends CommonId {
   @Field(() => Sender)
   sender: Sender;
 
-  @Field(() => [OtherMember])
-  otherMembers: OtherMember[];
+  @Field(() => [Receiver])
+  receivers: Receiver[];
 
   @Field(() => Float)
   timestamp: number;

@@ -77,7 +77,7 @@ export class MessageResolver {
         chat: updatedChat,
       },
     });
-    await this.messageService.deliverMessage(newMessage, String(chatId));
+    await this.messageService.deliverMessage(newMessage);
     return newMessage;
   }
 

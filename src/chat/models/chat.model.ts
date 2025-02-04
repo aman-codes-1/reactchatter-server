@@ -1,4 +1,4 @@
-import { Field, ObjectType } from '@nestjs/graphql';
+import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { User } from '../../user/models/user.model';
 import { Message } from '../../message/models/message.model';
 import { DateScalar } from '../../common/scalars/date.scalar';
@@ -10,6 +10,9 @@ class ChatMember extends User {
 
   @Field(() => Boolean, { nullable: true })
   isAdmin?: boolean;
+
+  @Field(() => Int, { nullable: true })
+  unreadMessagesCount?: number;
 }
 
 @ObjectType({ description: 'ChatFriendMemberObject' })

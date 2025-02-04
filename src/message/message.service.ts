@@ -53,34 +53,15 @@ export class MessageService {
     this.redisPublisher = new Redis(this.redisConfig);
   }
 
-  groupPipeline(): PipelineStage[] {
-    return [
-      {
-        $group: {
-          _id: '$_id',
-          chatId: { $first: '$chatId' },
-          queueId: { $first: '$queueId' },
-          isActive: { $first: '$isActive' },
-          message: { $first: '$message' },
-          sender: { $first: '$sender' },
-          otherMembers: { $push: '$otherMembers' },
-          timestamp: { $first: '$timestamp' },
-          createdAt: { $first: '$createdAt' },
-          updatedAt: { $first: '$updatedAt' },
-        },
-      },
-    ];
-  }
-
   membersPipeline(): PipelineStage[] {
     return [
       {
-        $unwind: '$otherMembers',
+        $unwind: '$receivers',
       },
       {
         $lookup: {
           from: 'users',
-          localField: 'otherMembers._id',
+          localField: 'receivers._id',
           foreignField: '_id',
           pipeline: [
             {
@@ -99,9 +80,9 @@ export class MessageService {
       },
       {
         $set: {
-          otherMembers: {
+          receivers: {
             $mergeObjects: [
-              '$otherMembers',
+              '$receivers',
               { $arrayElemAt: ['$userDetails', 0] },
             ],
           },
@@ -132,6 +113,25 @@ export class MessageService {
           sender: {
             $mergeObjects: ['$sender', { $arrayElemAt: ['$senderDetails', 0] }],
           },
+        },
+      },
+    ];
+  }
+
+  groupPipeline(): PipelineStage[] {
+    return [
+      {
+        $group: {
+          _id: '$_id',
+          chatId: { $first: '$chatId' },
+          queueId: { $first: '$queueId' },
+          isActive: { $first: '$isActive' },
+          message: { $first: '$message' },
+          sender: { $first: '$sender' },
+          receivers: { $push: '$receivers' },
+          timestamp: { $first: '$timestamp' },
+          createdAt: { $first: '$createdAt' },
+          updatedAt: { $first: '$updatedAt' },
         },
       },
     ];
@@ -232,7 +232,7 @@ export class MessageService {
     const chatObjectId = new ObjectId(chatId);
     const userObjectId = new ObjectId(userId);
     const { members } = chat;
-    const otherMembers = members
+    const receivers = members
       .filter((el) => String(el?._id) !== String(userId))
       .map((el) => ({
         _id: new ObjectId(el?._id),
@@ -252,7 +252,7 @@ export class MessageService {
           timestamp: sentTimestamp,
         },
       },
-      otherMembers,
+      receivers,
       timestamp: queuedTimestamp || sentTimestamp,
     };
     const newMessage = new this.MessageModel(newMessageData);
@@ -264,21 +264,21 @@ export class MessageService {
 
   async updateDeliveryStatus(
     messageId: string,
-    otherMemberId: string,
+    receiverId: string,
     deliveredStatus: DeliveredStatus,
   ): Promise<MessageDocument> {
     const messageObjectId = new ObjectId(messageId);
-    const OtherMemberObjectId = new ObjectId(otherMemberId);
+    const receiverObjectId = new ObjectId(receiverId);
     const { _id } = (await this.MessageModel.findOneAndUpdate(
       { _id: messageObjectId },
       {
         $set: {
-          'otherMembers.$[element].deliveredStatus': deliveredStatus,
+          'receivers.$[element].deliveredStatus': deliveredStatus,
         },
       },
       {
         new: true,
-        arrayFilters: [{ 'element._id': OtherMemberObjectId }],
+        arrayFilters: [{ 'element._id': receiverObjectId }],
       },
     ).lean()) as MessageDocument;
     const message = await this.findOneById(String(_id));
@@ -287,23 +287,22 @@ export class MessageService {
 
   async deliverMessage(
     message: MessageDocument,
-    chatId: string,
     isAlreadyDelivered?: boolean,
   ): Promise<void> {
     let isDelivered = !!isAlreadyDelivered;
 
     try {
-      const { _id, otherMembers } = message || {};
+      const { _id, chatId, receivers } = message || {};
       const messageId = String(_id);
 
-      if (otherMembers?.length) {
-        for (const member of otherMembers) {
-          const userId = String(member?._id);
+      if (receivers?.length) {
+        for (const receiver of receivers) {
+          const receiverUserId = String(receiver?._id);
 
           const userOnlineStatus =
-            await this.userClientService.findUserOnlineStatus(userId);
+            await this.userClientService.findUserOnlineStatus(receiverUserId);
           const inactiveSessions =
-            await this.userSessionService.findAllInactive(userId);
+            await this.userSessionService.findAllInactive(receiverUserId);
 
           if (userOnlineStatus?.onlineStatus?.isOnline) {
             if (!isDelivered) {
@@ -313,7 +312,7 @@ export class MessageService {
               };
               const updatedMessage = await this.updateDeliveryStatus(
                 messageId,
-                userId,
+                receiverUserId,
                 deliveredStatus,
               );
               await this.pubSubService.pubSubInstance.publish(
@@ -335,6 +334,15 @@ export class MessageService {
                 },
               );
             }
+
+            const updatedChat = await this.chatService.findOneById(
+              String(chatId),
+            );
+            await this.pubSubService.pubSubInstance.publish('OnChatUpdated', {
+              OnChatUpdated: {
+                chat: updatedChat,
+              },
+            });
           }
 
           if (inactiveSessions?.length) {
@@ -351,7 +359,7 @@ export class MessageService {
             inactiveSessions?.length ||
             !userOnlineStatus?.onlineStatus?.isOnline
           ) {
-            await this.addQueueAndJob(`user_${userId}_queue`, {
+            await this.addQueueAndJob(`user_${receiverUserId}_queue`, {
               messageId,
               isDelivered,
             });
@@ -362,13 +370,6 @@ export class MessageService {
       console.error('Error processing job:', error);
       throw error;
     }
-
-    const updatedChat = await this.chatService.findOneById(chatId);
-    await this.pubSubService.pubSubInstance.publish('OnChatUpdated', {
-      OnChatUpdated: {
-        chat: updatedChat,
-      },
-    });
   }
 
   async deliverQueuedMessage(job: Job): Promise<void> {
@@ -376,8 +377,7 @@ export class MessageService {
     const messageId = jobData?.messageId;
     const isDelivered = jobData?.isDelivered;
     const message = await this.findOneById(String(messageId));
-    const { chatId } = message || {};
-    await this.deliverMessage(message, String(chatId), isDelivered);
+    await this.deliverMessage(message, isDelivered);
   }
 
   async addQueueAndJob(queueName: string, jobData: any): Promise<void> {

@@ -21,20 +21,6 @@ export class RequestService {
     //
   }
 
-  groupPipeline(): PipelineStage[] {
-    return [
-      {
-        $group: {
-          _id: '$_id',
-          status: { $first: '$status' },
-          members: { $push: '$members' },
-          createdAt: { $first: '$createdAt' },
-          updatedAt: { $first: '$updatedAt' },
-        },
-      },
-    ];
-  }
-
   membersPipeline(): PipelineStage[] {
     return [
       {
@@ -65,6 +51,20 @@ export class RequestService {
           members: {
             $mergeObjects: ['$members', { $arrayElemAt: ['$userDetails', 0] }],
           },
+        },
+      },
+    ];
+  }
+
+  groupPipeline(): PipelineStage[] {
+    return [
+      {
+        $group: {
+          _id: '$_id',
+          status: { $first: '$status' },
+          members: { $push: '$members' },
+          createdAt: { $first: '$createdAt' },
+          updatedAt: { $first: '$updatedAt' },
         },
       },
     ];

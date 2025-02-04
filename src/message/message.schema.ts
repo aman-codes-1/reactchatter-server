@@ -47,7 +47,7 @@ class Sender extends CommonId {
   sentStatus: SentStatus;
 }
 
-class OtherMember extends CommonId {
+class Receiver extends CommonId {
   @Prop({ type: DeliveredStatus, required: false })
   deliveredStatus?: DeliveredStatus;
 
@@ -72,8 +72,8 @@ export class Message extends CommonTimestamp {
   @Prop({ type: Sender, required: true })
   sender: Sender;
 
-  @Prop({ type: [OtherMember], required: true })
-  otherMembers: OtherMember[];
+  @Prop({ type: [Receiver], required: true })
+  receivers: Receiver[];
 }
 
 export const MessageSchema = SchemaFactory.createForClass(Message);

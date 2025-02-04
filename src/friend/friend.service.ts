@@ -14,27 +14,6 @@ export class FriendService {
     //
   }
 
-  groupPipeline(): PipelineStage[] {
-    return [
-      {
-        $group: {
-          _id: '$_id',
-          isActive: { $first: '$isActive' },
-          type: { $first: '$type' },
-          members: { $push: '$members' },
-          hasChats: { $first: '$hasChats' },
-          createdAt: { $first: '$createdAt' },
-          updatedAt: { $first: '$updatedAt' },
-        },
-      },
-      {
-        $addFields: {
-          type: 'friend',
-        },
-      },
-    ];
-  }
-
   hasChatsPipeline(userObjectId: ObjectId): PipelineStage[] {
     return [
       {
@@ -58,9 +37,9 @@ export class FriendService {
               $match: {
                 $expr: {
                   $and: [
+                    { $eq: ['$isActive', true] },
                     { $in: ['$$friendId', '$members._id'] },
                     { $in: ['$$userId', '$members._id'] },
-                    { $eq: ['$isActive', true] },
                   ],
                 },
               },
@@ -110,6 +89,27 @@ export class FriendService {
           members: {
             $mergeObjects: ['$members', { $arrayElemAt: ['$userDetails', 0] }],
           },
+        },
+      },
+    ];
+  }
+
+  groupPipeline(): PipelineStage[] {
+    return [
+      {
+        $group: {
+          _id: '$_id',
+          isActive: { $first: '$isActive' },
+          type: { $first: '$type' },
+          members: { $push: '$members' },
+          hasChats: { $first: '$hasChats' },
+          createdAt: { $first: '$createdAt' },
+          updatedAt: { $first: '$updatedAt' },
+        },
+      },
+      {
+        $addFields: {
+          type: 'friend',
         },
       },
     ];

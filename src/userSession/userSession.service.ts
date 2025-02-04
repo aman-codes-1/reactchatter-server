@@ -17,23 +17,6 @@ export class UserSessionService {
     //
   }
 
-  projectPipeline(): PipelineStage[] {
-    return [
-      {
-        $project: {
-          _id: 1,
-          userId: '$session.passport.user._id',
-          provider: '$session.passport.user.provider',
-          authTokens: '$session.passport.user.authTokens',
-          deviceDetails: '$session.passport.user.deviceDetails',
-          expires: 1,
-          lastModified: 1,
-          lastActive: 1,
-        },
-      },
-    ];
-  }
-
   userClientsPipeline(): PipelineStage[] {
     return [
       {
@@ -60,6 +43,23 @@ export class UserSessionService {
       {
         $match: {
           $expr: { $not: { $in: ['$_id', '$activeSessionIds'] } },
+        },
+      },
+    ];
+  }
+
+  projectPipeline(): PipelineStage[] {
+    return [
+      {
+        $project: {
+          _id: 1,
+          userId: '$session.passport.user._id',
+          provider: '$session.passport.user.provider',
+          authTokens: '$session.passport.user.authTokens',
+          deviceDetails: '$session.passport.user.deviceDetails',
+          expires: 1,
+          lastModified: 1,
+          lastActive: 1,
         },
       },
     ];

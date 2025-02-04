@@ -56,6 +56,7 @@ type ChatMember {
   name: String
   picture: String
   provider: String
+  unreadMessagesCount: Int
 }
 
 """ChatsInput"""
@@ -158,8 +159,8 @@ type Message {
   chatId: String!
   isActive: Boolean!
   message: String!
-  otherMembers: [OtherMember!]!
   queueId: String!
+  receivers: [Receiver!]!
   sender: Sender!
   timestamp: Float!
 }
@@ -200,20 +201,6 @@ type OnlineStatus {
   lastSeen: Date!
 }
 
-"""OtherMemberObject"""
-type OtherMember {
-  _id: String!
-  deliveredStatus: DeliveredStatus
-  email: String
-  email_verified: String
-  family_name: String
-  given_name: String
-  name: String
-  picture: String
-  provider: String
-  readStatus: ReadStatus
-}
-
 """PageInfoObject"""
 type PageInfo {
   endCursor: String!
@@ -250,6 +237,20 @@ type QueuedStatus {
 type ReadStatus {
   isRead: Boolean!
   timestamp: Float!
+}
+
+"""ReceiverObject"""
+type Receiver {
+  _id: String!
+  deliveredStatus: DeliveredStatus
+  email: String
+  email_verified: String
+  family_name: String
+  given_name: String
+  name: String
+  picture: String
+  provider: String
+  readStatus: ReadStatus
 }
 
 """RequestObject"""

@@ -16,23 +16,6 @@ export class ChatService {
     //
   }
 
-  groupPipeline(): PipelineStage[] {
-    return [
-      {
-        $group: {
-          _id: '$_id',
-          isActive: { $first: '$isActive' },
-          type: { $first: '$type' },
-          members: { $push: '$members' },
-          friends: { $first: '$friends' },
-          lastMessage: { $first: '$lastMessage' },
-          createdAt: { $first: '$createdAt' },
-          updatedAt: { $first: '$updatedAt' },
-        },
-      },
-    ];
-  }
-
   membersPipeline(): PipelineStage[] {
     return [
       {
@@ -59,6 +42,33 @@ export class ChatService {
         },
       },
       {
+        $lookup: {
+          from: 'messages',
+          let: {
+            chatId: '$_id',
+            memberId: '$members._id',
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$isActive', true] },
+                    { $eq: ['$chatId', '$$chatId'] },
+                    { $in: ['$$memberId', '$receivers._id'] },
+                    { $ne: ['$receivers.readStatus.isRead', true] },
+                  ],
+                },
+              },
+            },
+            {
+              $count: 'unreadMessagesCount',
+            },
+          ],
+          as: 'unreadMessages',
+        },
+      },
+      {
         $set: {
           members: {
             $mergeObjects: ['$members', { $arrayElemAt: ['$userDetails', 0] }],
@@ -66,11 +76,27 @@ export class ChatService {
         },
       },
       {
+        $set: {
+          'members.unreadMessagesCount': {
+            $ifNull: [
+              { $arrayElemAt: ['$unreadMessages.unreadMessagesCount', 0] },
+              0,
+            ],
+          },
+        },
+      },
+    ];
+  }
+
+  lastMessagePipeline(): PipelineStage[] {
+    return [
+      {
         $lookup: {
           from: 'messages',
-          let: { chatId: '$_id' },
+          localField: '_id',
+          foreignField: 'chatId',
           pipeline: [
-            { $match: { $expr: { $eq: ['$chatId', '$$chatId'] } } },
+            { $match: { isActive: true } },
             { $sort: { timestamp: -1 } },
             { $limit: 1 },
           ],
@@ -86,11 +112,29 @@ export class ChatService {
     ];
   }
 
+  groupPipeline(): PipelineStage[] {
+    return [
+      {
+        $group: {
+          _id: '$_id',
+          isActive: { $first: '$isActive' },
+          type: { $first: '$type' },
+          members: { $push: '$members' },
+          friends: { $first: '$friends' },
+          lastMessage: { $first: '$lastMessage' },
+          createdAt: { $first: '$createdAt' },
+          updatedAt: { $first: '$updatedAt' },
+        },
+      },
+    ];
+  }
+
   async findOneById(chatId: string): Promise<ChatDocument> {
     const chatObjectId = new ObjectId(chatId);
     const chat = await this.ChatModel.aggregate([
       { $match: { _id: chatObjectId, isActive: true } },
       ...this.membersPipeline(),
+      ...this.lastMessagePipeline(),
       ...this.groupPipeline(),
       { $limit: 1 },
     ])
@@ -114,6 +158,7 @@ export class ChatService {
         },
       },
       ...this.membersPipeline(),
+      ...this.lastMessagePipeline(),
       ...this.groupPipeline(),
       {
         $addFields: {
