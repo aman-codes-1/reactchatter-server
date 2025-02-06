@@ -1,4 +1,4 @@
-import { Field, ObjectType } from '@nestjs/graphql';
+import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { User } from '../../user/models/user.model';
 import { Message } from '../../message/models/message.model';
 import { DateScalar } from '../../common/scalars/date.scalar';
@@ -7,6 +7,9 @@ import { DateScalar } from '../../common/scalars/date.scalar';
 class FriendMember extends User {
   @Field(() => Boolean)
   hasAdded: boolean;
+
+  @Field(() => Int, { nullable: true })
+  unreadMessagesCount?: number;
 }
 
 @ObjectType({ description: 'FriendObject' })
