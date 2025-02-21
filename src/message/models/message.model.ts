@@ -1,5 +1,5 @@
 import { Field, Float, Int, ObjectType } from '@nestjs/graphql';
-import { Types } from 'mongoose';
+import { Types, UpdateResult } from 'mongoose';
 import { User } from '../../user/models/user.model';
 
 @ObjectType({ description: 'CommonTimestampObject' })
@@ -120,4 +120,22 @@ export class MessagesData {
 export class MessageData {
   @Field(() => Message)
   message: Message;
+}
+
+@ObjectType({ description: 'MarkReadObject' })
+export class MarkRead implements UpdateResult {
+  @Field(() => Boolean)
+  acknowledged: boolean;
+
+  @Field(() => Number)
+  matchedCount: number;
+
+  @Field(() => Number)
+  modifiedCount: number;
+
+  @Field(() => Number)
+  upsertedCount: number;
+
+  @Field(() => String, { nullable: true })
+  upsertedId: Types.ObjectId | null;
 }

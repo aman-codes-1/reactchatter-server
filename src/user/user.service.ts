@@ -46,7 +46,7 @@ export class UserService {
   ): Promise<UserDocument> {
     const user = await this.UserModel.findOne(findQuery).lean();
     if (!user) {
-      throw new BadRequestException('User not found.');
+      throw new BadRequestException('User not registered.');
     }
     return user as UserDocument;
   }
@@ -55,7 +55,7 @@ export class UserService {
     const userObjectId = new ObjectId(userId);
     const user = await this.UserModel.findById(userObjectId).lean();
     if (!user) {
-      throw new BadRequestException('User not found.');
+      throw new BadRequestException('User not registered.');
     }
     return user as UserDocument;
   }

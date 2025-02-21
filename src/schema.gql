@@ -154,6 +154,21 @@ input FriendsInput {
   userId: String!
 }
 
+"""MarkReadObject"""
+type MarkRead {
+  acknowledged: Boolean!
+  matchedCount: Float!
+  modifiedCount: Float!
+  upsertedCount: Float!
+  upsertedId: String
+}
+
+"""MarkReadInput"""
+input MarkReadInput {
+  chatId: String!
+  userId: String!
+}
+
 """MessageObject"""
 type Message {
   _id: String!
@@ -193,6 +208,7 @@ type Mutation {
   createChat(input: CreateChatInput!): CreateChatData!
   createMessage(input: CreateMessageInput!): Message!
   createRequest(input: CreateRequestInput!): Request!
+  markAllAsRead(input: MarkReadInput!): MarkRead!
   updateRequest(input: UpdateRequestInput!): Request!
 }
 
@@ -225,6 +241,7 @@ type Query {
   userOnlineStatus(input: UserInput!): UserOnlineStatus!
   userSession(input: UserSessionInput!): UserSession!
   userSessions(input: UserSessionsInput!): [UserSession!]!
+  userSessionsActive(input: UserSessionsInput!): [UserSession!]!
   userSessionsInactive(input: UserSessionsInput!): [UserSession!]!
 }
 

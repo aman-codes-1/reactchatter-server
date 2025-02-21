@@ -56,7 +56,27 @@ export class ChatService {
                     { $eq: ['$isActive', true] },
                     { $eq: ['$chatId', '$$chatId'] },
                     { $in: ['$$memberId', '$receivers._id'] },
-                    { $ne: ['$receivers.readStatus.isRead', true] },
+                    {
+                      $gt: [
+                        {
+                          $size: {
+                            $filter: {
+                              input: '$receivers',
+                              as: 'receiver',
+                              cond: {
+                                $and: [
+                                  { $eq: ['$$receiver._id', '$$memberId'] },
+                                  {
+                                    $ne: ['$$receiver.readStatus.isRead', true],
+                                  },
+                                ],
+                              },
+                            },
+                          },
+                        },
+                        0,
+                      ],
+                    },
                   ],
                 },
               },
@@ -186,8 +206,10 @@ export class ChatService {
     const { userId, type, friendIds, friendUserIds } = data || {};
     let isAlreadyCreated = false;
     let chat: ChatDocument;
+
     if (type === 'private' && friendIds?.length === 1) {
       const Chat = await this.ChatModel.findOne({
+        isActive: true,
         type: 'private',
         friends: {
           $size: 1,
@@ -199,6 +221,7 @@ export class ChatService {
         chat = Chat;
       }
     }
+
     if (!isAlreadyCreated) {
       const members = [userId, ...friendUserIds]?.map(
         (id: string, idx: number) => ({

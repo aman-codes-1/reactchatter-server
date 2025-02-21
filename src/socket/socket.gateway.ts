@@ -10,6 +10,7 @@ import { Server, Socket } from 'socket.io';
 import { UserClientService } from '../userClient/userClient.service';
 import { UserSessionService } from '../userSession/userSession.service';
 import { MessageService } from '../message/message.service';
+import { MarkReadInput } from 'src/message/dto/message.input';
 
 @WebSocketGateway({ transports: ['websocket'] })
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -41,14 +42,17 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     await this.userClientService.addClient(_id, Client);
 
-    const userSession = await this.userSessionService.findOneById(sessionID);
+    const sessionQueueName = `session_${sessionID}_queue`;
+    const userQueueName = `user_${_id}_queue`;
 
-    if (userSession) {
-      const sessionQueueName = `session_${sessionID}_queue`;
+    const [userSession, isSessionQueueExists] = await Promise.all([
+      this.userSessionService.findOneById(sessionID),
+      this.messageService.isQueueExists(sessionQueueName),
+    ]);
+
+    if (userSession && isSessionQueueExists) {
       await this.messageService.startWorker(sessionQueueName);
-      // to do: check if user queue exists with same jobId and remove it
     } else {
-      const userQueueName = `user_${_id}_queue`;
       await this.messageService.startWorker(userQueueName);
     }
   }
@@ -62,14 +66,23 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     await this.userClientService.removeClient(_id, id);
 
-    const userSession = await this.userSessionService.findOneById(sessionID);
+    const sessionQueueName = `session_${sessionID}_queue`;
+    const userQueueName = `user_${_id}_queue`;
 
-    if (userSession) {
-      const sessionQueueName = `session_${sessionID}_queue`;
+    const [userSession, isSessionQueueExists] = await Promise.all([
+      this.userSessionService.findOneById(sessionID),
+      this.messageService.isQueueExists(sessionQueueName),
+    ]);
+
+    if (userSession && isSessionQueueExists) {
       await this.messageService.stopWorker(sessionQueueName);
     } else {
-      const userQueueName = `user_${_id}_queue`;
       await this.messageService.stopWorker(userQueueName);
     }
+  }
+
+  @SubscribeMessage('markMessagesAsRead')
+  async handleMessagesRead(@MessageBody() payload: MarkReadInput) {
+    await this.messageService.markAllAsRead(payload);
   }
 }

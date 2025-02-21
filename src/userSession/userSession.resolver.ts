@@ -15,7 +15,7 @@ export class UserSessionResolver {
     //
   }
 
-  // @UseGuards(GqlAuthGuard)
+  @UseGuards(GqlAuthGuard)
   @Query(() => UserSession)
   async userSession(
     @Args('input') input: UserSessionInput,
@@ -37,12 +37,27 @@ export class UserSessionResolver {
 
   @UseGuards(GqlAuthGuard)
   @Query(() => [UserSession])
+  async userSessionsActive(
+    @Args('input') input: UserSessionsInput,
+  ): Promise<UserSession[]> {
+    const { userId } = input;
+    const userSessionsActive = await this.userSessionService.findAll(
+      userId,
+      'active',
+    );
+    return userSessionsActive;
+  }
+
+  @UseGuards(GqlAuthGuard)
+  @Query(() => [UserSession])
   async userSessionsInactive(
     @Args('input') input: UserSessionsInput,
   ): Promise<UserSession[]> {
     const { userId } = input;
-    const userSessionsInactive =
-      await this.userSessionService.findAllInactive(userId);
+    const userSessionsInactive = await this.userSessionService.findAll(
+      userId,
+      'inactive',
+    );
     return userSessionsInactive;
   }
 

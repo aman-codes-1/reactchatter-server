@@ -17,35 +17,56 @@ export class UserSessionService {
     //
   }
 
-  userClientsPipeline(): PipelineStage[] {
-    return [
+  userClientsPipeline(
+    filterType: 'all' | 'active' | 'inactive' = 'all',
+  ): PipelineStage[] {
+    const pipeline: PipelineStage[] = [
       {
         $lookup: {
           from: 'userClients',
           localField: 'session.passport.user._id',
           foreignField: 'userId',
-          as: 'userClients',
+          as: 'userClientsData',
         },
       },
       {
-        $unwind: {
-          path: '$userClients',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $set: {
-          activeSessionIds: {
-            $ifNull: ['$userClients.clients.sessionID', []],
+        $addFields: {
+          clients: {
+            $filter: {
+              input: {
+                $ifNull: [
+                  { $arrayElemAt: ['$userClientsData.clients', 0] },
+                  [],
+                ],
+              },
+              as: 'client',
+              cond: { $eq: ['$$client.sessionID', '$_id'] },
+            },
           },
         },
       },
       {
-        $match: {
-          $expr: { $not: { $in: ['$_id', '$activeSessionIds'] } },
+        $project: {
+          userClientsData: 0,
         },
       },
     ];
+
+    if (filterType === 'active') {
+      pipeline.push({
+        $match: {
+          $expr: { $gt: [{ $size: '$clients' }, 0] },
+        },
+      });
+    } else if (filterType === 'inactive') {
+      pipeline.push({
+        $match: {
+          $expr: { $eq: [{ $size: '$clients' }, 0] },
+        },
+      });
+    }
+
+    return pipeline;
   }
 
   projectPipeline(): PipelineStage[] {
@@ -57,6 +78,7 @@ export class UserSessionService {
           provider: '$session.passport.user.provider',
           authTokens: '$session.passport.user.authTokens',
           deviceDetails: '$session.passport.user.deviceDetails',
+          clients: 1,
           expires: 1,
           lastModified: 1,
           lastActive: 1,
@@ -72,6 +94,7 @@ export class UserSessionService {
           _id: sessionID,
         },
       },
+      ...this.userClientsPipeline(),
       ...this.projectPipeline(),
     ])
       .cursor()
@@ -79,7 +102,10 @@ export class UserSessionService {
     return session;
   }
 
-  async findAll(userId: string): Promise<UserSession[]> {
+  async findAll(
+    userId: string,
+    clientsFilterType: 'all' | 'active' | 'inactive' = 'all',
+  ): Promise<UserSession[]> {
     const userObjectId = new ObjectId(userId);
     const sessions = await this.UserSessionModel.aggregate([
       {
@@ -87,23 +113,10 @@ export class UserSessionService {
           'session.passport.user._id': userObjectId,
         },
       },
+      ...this.userClientsPipeline(clientsFilterType),
       ...this.projectPipeline(),
     ]);
     return sessions;
-  }
-
-  async findAllInactive(userId: string): Promise<UserSession[]> {
-    const userObjectId = new ObjectId(userId);
-    const inactiveSessions = await this.UserSessionModel.aggregate([
-      {
-        $match: {
-          'session.passport.user._id': userObjectId,
-        },
-      },
-      ...this.userClientsPipeline(),
-      ...this.projectPipeline(),
-    ]);
-    return inactiveSessions;
   }
 
   async updateAuthTokens(

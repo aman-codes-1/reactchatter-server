@@ -3,10 +3,16 @@ import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
 import { MessageArgs } from './dto/message.args';
 import {
   CreateMessageInput,
+  MarkReadInput,
   MessageInput,
   MessagesInput,
 } from './dto/message.input';
-import { Message, MessageData, MessagesData } from './models/message.model';
+import {
+  MarkRead,
+  Message,
+  MessageData,
+  MessagesData,
+} from './models/message.model';
 import { MessageService } from './message.service';
 import { MessageDocument } from './message.schema';
 import { ChatService } from '../chat/chat.service';
@@ -77,8 +83,15 @@ export class MessageResolver {
         chat: updatedChat,
       },
     });
-    await this.messageService.deliverMessage(newMessage);
+    await this.messageService.enqueueMessageDelivery(newMessage);
     return newMessage;
+  }
+
+  @UseGuards(GqlAuthGuard)
+  @Mutation(() => MarkRead)
+  async markAllAsRead(@Args('input') input: MarkReadInput): Promise<MarkRead> {
+    const res = await this.messageService.markAllAsRead(input);
+    return res;
   }
 
   @UseGuards(GqlAuthGuard)

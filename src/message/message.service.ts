@@ -1,21 +1,21 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ConfigService } from '@nestjs/config';
-import { Job, Queue, Worker } from 'bullmq';
+import { Job, Queue, QueueOptions, Worker } from 'bullmq';
 import Redis, { RedisOptions } from 'ioredis';
 import { Model, PipelineStage } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { MessageArgs } from './dto/message.args';
-import { CreateMessageInput } from './dto/message.input';
+import { CreateMessageInput, MarkReadInput } from './dto/message.input';
 import {
   DeliveredStatus,
+  MarkRead,
   Message,
   MessagesData,
   PageInfo,
 } from './models/message.model';
 import { Message as MessageSchema, MessageDocument } from './message.schema';
 import { ChatService } from '../chat/chat.service';
-import { UserClientService } from '../userClient/userClient.service';
 import { UserSessionService } from '../userSession/userSession.service';
 import { PubSubService } from '../shared/pubSub.service';
 
@@ -24,6 +24,7 @@ export class MessageService {
   private REDIS_HOST: string;
   private REDIS_PORT: number;
   private redisConfig: RedisOptions;
+  private redisOptions: QueueOptions;
   private redisClient: Redis;
   private redisSubscriber: Redis;
   private redisPublisher: Redis;
@@ -32,7 +33,6 @@ export class MessageService {
     @InjectModel(MessageSchema.name)
     private MessageModel: Model<MessageDocument>,
     private chatService: ChatService,
-    private userClientService: UserClientService,
     private userSessionService: UserSessionService,
     private readonly pubSubService: PubSubService,
     private readonly configService: ConfigService,
@@ -42,11 +42,14 @@ export class MessageService {
     this.redisConfig = {
       host: this.REDIS_HOST,
       port: this.REDIS_PORT,
+      maxRetriesPerRequest: null,
       // retryStrategy: (times) => {
       //   const delay = Math.min(times * 50, 2000);
       //   return delay;
       // },
-      maxRetriesPerRequest: null,
+    };
+    this.redisOptions = {
+      connection: this.redisConfig,
     };
     this.redisClient = new Redis(this.redisConfig);
     this.redisSubscriber = new Redis(this.redisConfig);
@@ -262,6 +265,110 @@ export class MessageService {
     return message;
   }
 
+  async enqueueMessageDelivery(message: MessageDocument): Promise<void> {
+    const { _id, receivers } = message || {};
+    const messageId = String(_id);
+
+    if (receivers?.length) {
+      await Promise.all(
+        receivers?.map(async (receiver) => {
+          const receiverUserId = String(receiver?._id);
+
+          const userQueueName = `user_${receiverUserId}_queue`;
+          await this.addQueueAndJob(userQueueName, `delivery_${messageId}`, {
+            messageId,
+            receiverUserId,
+          });
+
+          const receiverSessions =
+            await this.userSessionService.findAll(receiverUserId);
+
+          if (receiverSessions?.length) {
+            await Promise.all(
+              receiverSessions?.map(async (receiverSession) => {
+                const receiverSessionID = receiverSession?._id;
+                const sessionQueueName = `session_${receiverSessionID}_queue`;
+
+                await this.addQueueAndJob(
+                  sessionQueueName,
+                  `delivery_${messageId}`,
+                  {
+                    messageId,
+                    receiverUserId,
+                  },
+                );
+
+                const session =
+                  await this.userSessionService.findOneById(receiverSessionID);
+
+                if (session?.clients?.length) {
+                  await this.startWorker(sessionQueueName);
+                } else {
+                  await this.stopWorker(sessionQueueName);
+                }
+              }),
+            );
+          }
+        }),
+      );
+    }
+  }
+
+  async enqueueMessagesRead(message: MessageDocument): Promise<void> {
+    const { _id, receivers } = message || {};
+    const messageId = String(_id);
+
+    if (receivers?.length) {
+      await Promise.all(
+        receivers?.map(async (receiver) => {
+          const receiverUserId = String(receiver?._id);
+
+          const userQueueName = `user_${receiverUserId}_queue`;
+          await this.addQueueAndJob(
+            userQueueName,
+            `unread_${messageId}`,
+            {
+              messageId,
+              receiverUserId,
+            },
+            1,
+          );
+
+          const receiverSessions =
+            await this.userSessionService.findAll(receiverUserId);
+
+          if (receiverSessions?.length) {
+            await Promise.all(
+              receiverSessions?.map(async (receiverSession) => {
+                const receiverSessionID = receiverSession?._id;
+                const sessionQueueName = `session_${receiverSessionID}_queue`;
+
+                await this.addQueueAndJob(
+                  sessionQueueName,
+                  `unread_${messageId}`,
+                  {
+                    messageId,
+                    receiverUserId,
+                  },
+                  1,
+                );
+
+                const session =
+                  await this.userSessionService.findOneById(receiverSessionID);
+
+                if (session?.clients?.length) {
+                  await this.startWorker(sessionQueueName);
+                } else {
+                  await this.stopWorker(sessionQueueName);
+                }
+              }),
+            );
+          }
+        }),
+      );
+    }
+  }
+
   async updateDeliveryStatus(
     messageId: string,
     receiverId: string,
@@ -287,85 +394,43 @@ export class MessageService {
 
   async deliverMessage(
     message: MessageDocument,
-    isAlreadyDelivered?: boolean,
+    receiverUserId: string,
   ): Promise<void> {
-    let isDelivered = !!isAlreadyDelivered;
+    let updatedMessage = message;
 
     try {
-      const { _id, chatId, receivers } = message || {};
+      const { _id, chatId, receivers } = updatedMessage || {};
       const messageId = String(_id);
 
-      if (receivers?.length) {
-        for (const receiver of receivers) {
-          const receiverUserId = String(receiver?._id);
+      const receiver = receivers?.length
+        ? receivers?.find((el) => String(el?._id) === receiverUserId)
+        : null;
 
-          const userOnlineStatus =
-            await this.userClientService.findUserOnlineStatus(receiverUserId);
-          const inactiveSessions =
-            await this.userSessionService.findAllInactive(receiverUserId);
+      if (!receiver?.deliveredStatus?.isDelivered) {
+        const deliveredStatus = {
+          isDelivered: true,
+          timestamp: Date.now(),
+        };
 
-          if (userOnlineStatus?.onlineStatus?.isOnline) {
-            if (!isDelivered) {
-              const deliveredStatus = {
-                isDelivered: true,
-                timestamp: Date.now(),
-              };
-              const updatedMessage = await this.updateDeliveryStatus(
-                messageId,
-                receiverUserId,
-                deliveredStatus,
-              );
-              await this.pubSubService.pubSubInstance.publish(
-                'OnMessageUpdated',
-                {
-                  OnMessageUpdated: {
-                    message: updatedMessage,
-                  },
-                },
-              );
-              isDelivered = true;
-            } else {
-              await this.pubSubService.pubSubInstance.publish(
-                'OnMessageUpdated',
-                {
-                  OnMessageUpdated: {
-                    message,
-                  },
-                },
-              );
-            }
-
-            const updatedChat = await this.chatService.findOneById(
-              String(chatId),
-            );
-            await this.pubSubService.pubSubInstance.publish('OnChatUpdated', {
-              OnChatUpdated: {
-                chat: updatedChat,
-              },
-            });
-          }
-
-          if (inactiveSessions?.length) {
-            for (const session of inactiveSessions) {
-              const sessionID = session?._id;
-              await this.addQueueAndJob(`session_${sessionID}_queue`, {
-                messageId,
-                isDelivered,
-              });
-            }
-          }
-
-          if (
-            inactiveSessions?.length ||
-            !userOnlineStatus?.onlineStatus?.isOnline
-          ) {
-            await this.addQueueAndJob(`user_${receiverUserId}_queue`, {
-              messageId,
-              isDelivered,
-            });
-          }
-        }
+        updatedMessage = await this.updateDeliveryStatus(
+          messageId,
+          receiverUserId,
+          deliveredStatus,
+        );
       }
+
+      await this.pubSubService.pubSubInstance.publish('OnMessageUpdated', {
+        OnMessageUpdated: {
+          message: updatedMessage,
+        },
+      });
+
+      const updatedChat = await this.chatService.findOneById(String(chatId));
+      await this.pubSubService.pubSubInstance.publish('OnChatUpdated', {
+        OnChatUpdated: {
+          chat: updatedChat,
+        },
+      });
     } catch (error) {
       console.error('Error processing job:', error);
       throw error;
@@ -375,18 +440,78 @@ export class MessageService {
   async deliverQueuedMessage(job: Job): Promise<void> {
     const jobData = job?.data;
     const messageId = jobData?.messageId;
-    const isDelivered = jobData?.isDelivered;
+    const receiverUserId = jobData?.receiverUserId;
     const message = await this.findOneById(String(messageId));
-    await this.deliverMessage(message, isDelivered);
+    await this.deliverMessage(message, receiverUserId);
   }
 
-  async addQueueAndJob(queueName: string, jobData: any): Promise<void> {
-    const queue = new Queue(queueName, {
-      connection: this.redisConfig,
+  async markAllAsRead(input: MarkReadInput): Promise<MarkRead> {
+    const { chatId, userId } = input;
+    const chatObjectId = new ObjectId(chatId);
+    const userObjectId = new ObjectId(userId);
+
+    const messages = await this.MessageModel.find({
+      chatId: chatObjectId,
+      'receivers._id': userObjectId,
+      'receivers.readStatus.isRead': { $ne: true },
     });
 
+    let res: MarkRead = {
+      acknowledged: false,
+      matchedCount: 0,
+      modifiedCount: 0,
+      upsertedCount: 0,
+      upsertedId: null,
+    };
+
+    if (messages?.length) {
+      const updateResult = await this.MessageModel.updateMany(
+        {
+          chatId: chatObjectId,
+          'receivers._id': userObjectId,
+          'receivers.readStatus.isRead': { $ne: true },
+        },
+        {
+          $set: {
+            'receivers.$[].readStatus.isRead': true,
+            'receivers.$[].readStatus.timestamp': Date.now(),
+          },
+        },
+      );
+
+      await Promise.all(
+        messages?.map(async (msg) => {
+          const msgId = String(msg?._id);
+          const message = await this.findOneById(msgId);
+          await this.enqueueMessagesRead(message);
+        }),
+      );
+
+      res = updateResult;
+    }
+
+    return res;
+  }
+
+  async isQueueExists(queueName: string): Promise<boolean> {
     try {
-      const jobId = jobData?.messageId;
+      const exists = await this.redisClient.exists(`bull:${queueName}:id`);
+      return exists === 1;
+    } catch (error) {
+      console.error('Error checking queue existence:', error);
+      return false;
+    }
+  }
+
+  async addQueueAndJob(
+    queueName: string,
+    jobId: string,
+    jobData: any,
+    priority: number = 0,
+  ): Promise<void> {
+    const queue = new Queue(queueName, this.redisOptions);
+
+    try {
       if (jobId) {
         const existingJob = await queue.getJob(jobId);
         if (existingJob) {
@@ -397,6 +522,7 @@ export class MessageService {
       await queue.add('deliverMessage', jobData, {
         jobId,
         removeOnComplete: true,
+        priority,
       });
     } catch (err) {
       console.error(`Failed to add queue ${queueName}:`, err);
@@ -441,9 +567,7 @@ export class MessageService {
           throw error;
         }
       },
-      {
-        connection: new Redis(this.redisConfig),
-      },
+      this.redisOptions,
     );
 
     const stopChannel = `worker-stop:${queueName}`;

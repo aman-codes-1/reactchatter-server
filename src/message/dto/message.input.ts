@@ -16,10 +16,10 @@ export class MessagesInput {
 @InputType({ description: 'CreateMessageInput' })
 export class CreateMessageInput {
   @Field(() => String)
-  userId: string;
+  chatId: string;
 
   @Field(() => String)
-  chatId: string;
+  userId: string;
 
   @Field(() => String)
   queueId: string;
@@ -39,4 +39,13 @@ export class CreateMessageInput {
   @Field(() => String)
   @MaxLength(4096)
   message: string;
+}
+
+@InputType({ description: 'MarkReadInput' })
+export class MarkReadInput {
+  @Field(() => String)
+  chatId: string;
+
+  @Field(() => String)
+  userId: string;
 }
