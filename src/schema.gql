@@ -274,8 +274,10 @@ type Receiver {
 """RequestObject"""
 type Request {
   _id: String!
+  createdAt: Date!
   members: [RequestMember!]!
   status: String!
+  updatedAt: Date!
 }
 
 """RequestDataObject"""

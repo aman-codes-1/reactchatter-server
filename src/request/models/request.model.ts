@@ -1,5 +1,6 @@
 import { Field, ObjectType } from '@nestjs/graphql';
 import { User } from '../../user/models/user.model';
+import { DateScalar } from '../../common/scalars/date.scalar';
 
 @ObjectType({ description: 'RequestMemberObject' })
 class RequestMember extends User {
@@ -17,6 +18,12 @@ export class Request {
 
   @Field(() => [RequestMember])
   members: RequestMember[];
+
+  @Field(() => DateScalar)
+  createdAt: Date;
+
+  @Field(() => DateScalar)
+  updatedAt: Date;
 }
 
 @ObjectType({ description: 'RequestsDataObject' })
