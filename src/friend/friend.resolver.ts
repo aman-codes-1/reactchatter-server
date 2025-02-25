@@ -27,27 +27,24 @@ export class FriendResolver {
 
   @UseGuards(GqlAuthGuard)
   @Query(() => [Friend])
+  async allFriends(
+    @Args('input') input: FriendsInput,
+    @Args() args: FriendArgs,
+  ): Promise<FriendDocument[]> {
+    const { userId } = input;
+    const allFriends = await this.friendService.findAll(userId, args);
+    return allFriends;
+  }
+
+  @UseGuards(GqlAuthGuard)
+  @Query(() => [Friend])
   async friends(
     @Args('input') input: FriendsInput,
     @Args() args: FriendArgs,
   ): Promise<FriendDocument[]> {
     const { userId } = input;
-    const friends = await this.friendService.findAll(userId, args);
-    return friends;
-  }
-
-  @UseGuards(GqlAuthGuard)
-  @Query(() => [Friend])
-  async otherFriends(
-    @Args('input') input: FriendsInput,
-    @Args() args: FriendArgs,
-  ): Promise<FriendDocument[]> {
-    const { userId } = input;
-    const otherFriends = await this.friendService.findAllOtherFriends(
-      userId,
-      args,
-    );
-    return otherFriends;
+    const newFriends = await this.friendService.findAllNew(userId, args);
+    return newFriends;
   }
 
   @UseGuards(GqlAuthGuard)

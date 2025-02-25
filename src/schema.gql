@@ -226,6 +226,7 @@ type PageInfo {
 }
 
 type Query {
+  allFriends(after: ID, input: FriendsInput!, limit: Int = 25): [Friend!]!
   cachedMessages(input: MessagesInput!): MessagesData!
   chat(input: ChatInput!): Chat!
   chats(after: ID, input: ChatsInput!, limit: Int = 25): [Chat!]!
@@ -233,7 +234,6 @@ type Query {
   friends(after: ID, input: FriendsInput!, limit: Int = 25): [Friend!]!
   message(input: MessageInput!): Message!
   messages(after: ID, input: MessagesInput!, limit: Int = 25): MessagesData!
-  otherFriends(after: ID, input: FriendsInput!, limit: Int = 25): [Friend!]!
   pendingRequests(after: ID, input: RequestsInput!, limit: Int = 25): RequestsData!
   sentRequests(after: ID, input: RequestsInput!, limit: Int = 25): RequestsData!
   user(input: UserInput!): User!

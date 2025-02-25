@@ -160,13 +160,13 @@ export class FriendService {
     return friends;
   }
 
-  async findAllOtherFriends(
+  async findAllNew(
     userId: string,
     args: FriendArgs,
   ): Promise<FriendDocument[]> {
     const userObjectId = new ObjectId(userId);
     const { limit, after } = args;
-    const otherFriends = await this.FriendModel.aggregate([
+    const newFriends = await this.FriendModel.aggregate([
       {
         $match: {
           members: { $elemMatch: { _id: userObjectId } },
@@ -185,7 +185,7 @@ export class FriendService {
       { $sort: { _id: -1 } },
       { $limit: limit },
     ]);
-    return otherFriends;
+    return newFriends;
   }
 
   async create(data: RequestDocument, userId: string): Promise<FriendDocument> {
