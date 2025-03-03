@@ -132,7 +132,6 @@ type FriendData {
 """FriendInput"""
 input FriendInput {
   friendId: String!
-  userId: String!
 }
 
 """FriendMemberObject"""
@@ -232,6 +231,7 @@ type Query {
   chats(after: ID, input: ChatsInput!, limit: Int = 25): [Chat!]!
   friend(input: FriendInput!): Friend!
   friends(after: ID, input: FriendsInput!, limit: Int = 25): [Friend!]!
+  friendsSorted(after: ID, input: FriendsInput!, limit: Int = 25): [Friend!]!
   message(input: MessageInput!): Message!
   messages(after: ID, input: MessagesInput!, limit: Int = 25): MessagesData!
   pendingRequests(after: ID, input: RequestsInput!, limit: Int = 25): RequestsData!

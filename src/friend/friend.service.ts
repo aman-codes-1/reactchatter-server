@@ -14,24 +14,12 @@ export class FriendService {
     //
   }
 
-  hasChatsPipeline(userObjectId: ObjectId): PipelineStage[] {
+  hasChatsPipeline(): PipelineStage[] {
     return [
-      {
-        $set: {
-          filteredMembers: {
-            $filter: {
-              input: '$members',
-              as: 'member',
-              cond: { $ne: ['$$member._id', userObjectId] },
-            },
-          },
-        },
-      },
-      { $unwind: '$filteredMembers' },
       {
         $lookup: {
           from: 'chats',
-          let: { friendId: '$filteredMembers._id', userId: userObjectId },
+          let: { friendId: '$members._id' },
           pipeline: [
             {
               $match: {
@@ -39,7 +27,6 @@ export class FriendService {
                   $and: [
                     { $eq: ['$isActive', true] },
                     { $in: ['$$friendId', '$members._id'] },
-                    { $in: ['$$userId', '$members._id'] },
                   ],
                 },
               },
@@ -122,13 +109,12 @@ export class FriendService {
     return friend as FriendDocument;
   }
 
-  async findOneById(friendId: string, userId: string): Promise<FriendDocument> {
+  async findOneById(friendId: string): Promise<FriendDocument> {
     const friendObjectId = new ObjectId(friendId);
-    const userObjectId = new ObjectId(userId);
     const friend = await this.FriendModel.aggregate([
       { $match: { _id: friendObjectId, isActive: true } },
-      ...this.hasChatsPipeline(userObjectId),
       ...this.membersPipeline(),
+      ...this.hasChatsPipeline(),
       ...this.groupPipeline(),
       { $limit: 1 },
     ])
@@ -151,8 +137,8 @@ export class FriendService {
           isActive: true,
         },
       },
-      ...this.hasChatsPipeline(userObjectId),
       ...this.membersPipeline(),
+      ...this.hasChatsPipeline(),
       ...this.groupPipeline(),
       { $sort: { _id: -1 } },
       { $limit: limit },
@@ -166,7 +152,7 @@ export class FriendService {
   ): Promise<FriendDocument[]> {
     const userObjectId = new ObjectId(userId);
     const { limit, after } = args;
-    const newFriends = await this.FriendModel.aggregate([
+    const friends = await this.FriendModel.aggregate([
       {
         $match: {
           members: { $elemMatch: { _id: userObjectId } },
@@ -174,8 +160,8 @@ export class FriendService {
           isActive: true,
         },
       },
-      ...this.hasChatsPipeline(userObjectId),
       ...this.membersPipeline(),
+      ...this.hasChatsPipeline(),
       {
         $match: {
           chatsWithFriend: { $size: 0 },
@@ -185,7 +171,50 @@ export class FriendService {
       { $sort: { _id: -1 } },
       { $limit: limit },
     ]);
-    return newFriends;
+    return friends;
+  }
+
+  async findAllNewSorted(
+    userId: string,
+    args: FriendArgs,
+  ): Promise<FriendDocument[]> {
+    const userObjectId = new ObjectId(userId);
+    const { limit, after } = args;
+    const friends = await this.FriendModel.aggregate([
+      {
+        $match: {
+          members: { $elemMatch: { _id: userObjectId } },
+          ...(after ? { _id: { $gt: new ObjectId(after) } } : {}),
+          isActive: true,
+        },
+      },
+      ...this.membersPipeline(),
+      ...this.hasChatsPipeline(),
+      {
+        $match: {
+          chatsWithFriend: { $size: 0 },
+        },
+      },
+      ...this.groupPipeline(),
+      {
+        $set: {
+          sortedMembers: {
+            $filter: {
+              input: '$members',
+              as: 'member',
+              cond: { $ne: ['$$member._id', userObjectId] },
+            },
+          },
+        },
+      },
+      {
+        $unwind: '$sortedMembers',
+      },
+      { $sort: { _id: -1, 'sortedMembers.name': 1 } },
+      { $unset: 'sortedMembers' },
+      { $limit: limit },
+    ]).collation({ locale: 'en', strength: 2 });
+    return friends;
   }
 
   async create(data: RequestDocument, userId: string): Promise<FriendDocument> {
@@ -199,7 +228,7 @@ export class FriendService {
     });
     const savedFriend = (await newFriend.save()).toObject();
     const { _id: friendId } = savedFriend;
-    const friend = await this.findOneById(String(friendId), userId);
+    const friend = await this.findOneById(String(friendId));
     return friend;
   }
 }

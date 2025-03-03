@@ -20,8 +20,8 @@ export class FriendResolver {
   @UseGuards(GqlAuthGuard)
   @Query(() => Friend)
   async friend(@Args('input') input: FriendInput): Promise<FriendDocument> {
-    const { friendId, userId } = input;
-    const friend = await this.friendService.findOneById(friendId, userId);
+    const { friendId } = input;
+    const friend = await this.friendService.findOneById(friendId);
     return friend;
   }
 
@@ -43,8 +43,22 @@ export class FriendResolver {
     @Args() args: FriendArgs,
   ): Promise<FriendDocument[]> {
     const { userId } = input;
-    const newFriends = await this.friendService.findAllNew(userId, args);
-    return newFriends;
+    const friends = await this.friendService.findAllNew(userId, args);
+    return friends;
+  }
+
+  @UseGuards(GqlAuthGuard)
+  @Query(() => [Friend])
+  async friendsSorted(
+    @Args('input') input: FriendsInput,
+    @Args() args: FriendArgs,
+  ): Promise<FriendDocument[]> {
+    const { userId } = input;
+    const friendsSorted = await this.friendService.findAllNewSorted(
+      userId,
+      args,
+    );
+    return friendsSorted;
   }
 
   @UseGuards(GqlAuthGuard)
