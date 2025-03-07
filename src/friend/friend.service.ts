@@ -210,7 +210,7 @@ export class FriendService {
       {
         $unwind: '$sortedMembers',
       },
-      { $sort: { _id: -1, 'sortedMembers.name': 1 } },
+      { $sort: { 'sortedMembers.name': 1, _id: -1 } },
       { $unset: 'sortedMembers' },
       { $limit: limit },
     ]).collation({ locale: 'en', strength: 2 });
