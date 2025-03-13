@@ -69,16 +69,8 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const sessionQueueName = `session_${sessionID}_queue`;
     const userQueueName = `user_${_id}_queue`;
 
-    const [userSession, isSessionQueueExists] = await Promise.all([
-      this.userSessionService.findOneById(sessionID),
-      this.messageService.isQueueExists(sessionQueueName),
-    ]);
-
-    if (userSession && isSessionQueueExists) {
-      await this.messageService.stopWorker(sessionQueueName);
-    } else {
-      await this.messageService.stopWorker(userQueueName);
-    }
+    await this.messageService.stopWorker(sessionQueueName);
+    await this.messageService.stopWorker(userQueueName);
   }
 
   @SubscribeMessage('markMessagesAsRead')
