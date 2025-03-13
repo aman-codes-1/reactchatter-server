@@ -6,7 +6,6 @@ import { CookieOptions, Request, Response } from 'express';
 import { UserService } from '../user/user.service';
 import { UserSessionService } from '../userSession/userSession.service';
 import { AuthTokens } from '../userSession/models/userSession.model';
-import { MessageService } from '../message/message.service';
 
 @Injectable()
 export class AuthService {
@@ -24,7 +23,6 @@ export class AuthService {
     private jwtService: JwtService,
     private userService: UserService,
     private userSessionService: UserSessionService,
-    private messageService: MessageService,
     private readonly configService: ConfigService,
   ) {
     this.JWT_SECRET = configService.get('JWT_SECRET');
@@ -234,8 +232,5 @@ export class AuthService {
       response?.cookie('token', '', this.HTTP_ONLY_COOKIE);
       response?.cookie('token-expires', '', this.USERS_COOKIE);
     }
-    await this.messageService.removeQueue(
-      `session_${request?.sessionID}_queue`,
-    );
   }
 }
