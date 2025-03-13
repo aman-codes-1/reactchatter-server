@@ -14,34 +14,41 @@ export class FriendService {
     //
   }
 
-  hasChatsPipeline(): PipelineStage[] {
+  hasChatsPipeline(onlyNewFriends = false): PipelineStage[] {
     return [
       {
         $lookup: {
           from: 'chats',
-          let: { friendId: '$members._id' },
+          let: { memberIds: '$members._id' },
           pipeline: [
             {
               $match: {
                 $expr: {
                   $and: [
                     { $eq: ['$isActive', true] },
-                    { $in: ['$$friendId', '$members._id'] },
+                    { $setIsSubset: ['$$memberIds', '$members._id'] },
                   ],
                 },
               },
             },
-            {
-              $project: { _id: 1 },
-            },
           ],
-          as: 'chatsWithFriend',
+          as: 'chatMembers',
         },
       },
       {
         $addFields: {
-          hasChats: { $gt: [{ $size: '$chatsWithFriend' }, 0] },
+          hasChats: { $gt: [{ $size: '$chatMembers' }, 0] },
         },
+      },
+      ...(onlyNewFriends
+        ? [
+            {
+              $match: { hasChats: false },
+            },
+          ]
+        : []),
+      {
+        $unset: 'chatMembers',
       },
     ];
   }
@@ -113,8 +120,8 @@ export class FriendService {
     const friendObjectId = new ObjectId(friendId);
     const friend = await this.FriendModel.aggregate([
       { $match: { _id: friendObjectId, isActive: true } },
-      ...this.membersPipeline(),
       ...this.hasChatsPipeline(),
+      ...this.membersPipeline(),
       ...this.groupPipeline(),
       { $limit: 1 },
     ])
@@ -137,8 +144,8 @@ export class FriendService {
           isActive: true,
         },
       },
-      ...this.membersPipeline(),
       ...this.hasChatsPipeline(),
+      ...this.membersPipeline(),
       ...this.groupPipeline(),
       { $sort: { _id: -1 } },
       { $limit: limit },
@@ -160,13 +167,8 @@ export class FriendService {
           isActive: true,
         },
       },
+      ...this.hasChatsPipeline(true),
       ...this.membersPipeline(),
-      ...this.hasChatsPipeline(),
-      {
-        $match: {
-          chatsWithFriend: { $size: 0 },
-        },
-      },
       ...this.groupPipeline(),
       { $sort: { _id: -1 } },
       { $limit: limit },
@@ -188,13 +190,8 @@ export class FriendService {
           isActive: true,
         },
       },
+      ...this.hasChatsPipeline(true),
       ...this.membersPipeline(),
-      ...this.hasChatsPipeline(),
-      {
-        $match: {
-          chatsWithFriend: { $size: 0 },
-        },
-      },
       ...this.groupPipeline(),
       {
         $set: {
