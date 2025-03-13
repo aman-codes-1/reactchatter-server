@@ -9,6 +9,7 @@ import {
 import { Request, RequestData, RequestsData } from './models/request.model';
 import { RequestService } from './request.service';
 import { RequestDocument } from './request.schema';
+import { UserClientService } from '../userClient/userClient.service';
 import { PubSubService } from '../shared/pubSub.service';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 
@@ -16,6 +17,7 @@ import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 export class RequestResolver {
   constructor(
     private readonly requestService: RequestService,
+    private readonly userClientService: UserClientService,
     private readonly pubSubService: PubSubService,
   ) {
     //
@@ -57,6 +59,20 @@ export class RequestResolver {
         request: newRequest,
       },
     });
+    await Promise.all(
+      newRequest?.members?.map(async (member) => {
+        const memberId = String(member?._id);
+        const updatedUserClient = await this.userClientService.shouldNotifyUser(
+          memberId,
+          true,
+        );
+        await this.pubSubService.pubSubInstance.publish('OnUserClientUpdated', {
+          OnUserClientUpdated: {
+            userClient: updatedUserClient,
+          },
+        });
+      }),
+    );
     return newRequest;
   }
 

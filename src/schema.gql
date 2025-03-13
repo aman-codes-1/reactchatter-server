@@ -153,6 +153,12 @@ input FriendsInput {
   userId: String!
 }
 
+"""MarkNotificationsReadInput"""
+input MarkNotificationsReadInput {
+  userId: String!
+  value: Boolean!
+}
+
 """MarkReadObject"""
 type MarkRead {
   acknowledged: Boolean!
@@ -208,6 +214,7 @@ type Mutation {
   createMessage(input: CreateMessageInput!): Message!
   createRequest(input: CreateRequestInput!): Request!
   markAllAsRead(input: MarkReadInput!): MarkRead!
+  shouldNotifyUser(input: MarkNotificationsReadInput!): UserClient!
   updateRequest(input: UpdateRequestInput!): Request!
 }
 
@@ -237,8 +244,8 @@ type Query {
   pendingRequests(after: ID, input: RequestsInput!, limit: Int = 25): RequestsData!
   sentRequests(after: ID, input: RequestsInput!, limit: Int = 25): RequestsData!
   user(input: UserInput!): User!
-  userClient(input: UserInput!): UserClient!
-  userOnlineStatus(input: UserInput!): UserOnlineStatus!
+  userClient(input: UserClientInput!): UserClient!
+  userOnlineStatus(input: UserClientInput!): UserOnlineStatus!
   userSession(input: UserSessionInput!): UserSession!
   userSessions(input: UserSessionsInput!): [UserSession!]!
   userSessionsActive(input: UserSessionsInput!): [UserSession!]!
@@ -345,6 +352,7 @@ type Subscription {
   OnRequestAdded: RequestData!
   OnRequestUpdated: RequestData!
   OnSessionUpdated(input: UserSessionInput!): UserSessionData!
+  OnUserClientUpdated: UserClientData!
   OnUserOnlineStatus: UserOnlineStatus!
 }
 
@@ -371,6 +379,18 @@ type User {
 type UserClient {
   _id: String!
   clients: [Client!]
+  hasNotifications: Boolean
+  lastActive: Date
+  userId: String!
+}
+
+"""UserClientDataObject"""
+type UserClientData {
+  userClient: UserClient!
+}
+
+"""UserClientInput"""
+input UserClientInput {
   userId: String!
 }
 

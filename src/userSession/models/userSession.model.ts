@@ -1,8 +1,7 @@
 import { Field, Float, Int, ObjectType } from '@nestjs/graphql';
-import { Types } from 'mongoose';
 import { DateScalar } from '../../common/scalars/date.scalar';
 import { AnyScalar } from '../../common/scalars/any.scalar';
-import { Clients } from '../../userClient/models/userClient.model';
+import { Client } from '../../userClient/models/userClient.model';
 
 @ObjectType({ description: 'AuthTokensObject' })
 export class AuthTokens {
@@ -29,7 +28,7 @@ export class AuthTokens {
 }
 
 @ObjectType({ description: 'UserSessionObject' })
-export class UserSession extends Clients {
+export class UserSession {
   @Field(() => String)
   _id: string;
 
@@ -53,6 +52,9 @@ export class UserSession extends Clients {
 
   @Field(() => DateScalar, { nullable: true })
   lastActive?: Date;
+
+  @Field(() => [Client], { nullable: true })
+  clients?: Client[];
 }
 
 @ObjectType({ description: 'UserSessionDataObject' })

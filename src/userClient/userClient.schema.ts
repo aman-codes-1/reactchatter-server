@@ -21,6 +21,9 @@ export class UserClient extends LastActive {
 
   @Prop({ type: [Client], required: false })
   clients?: Client[];
+
+  @Prop({ type: Boolean, required: false, default: false })
+  hasNotifications?: boolean;
 }
 
 export const UserClientSchema = SchemaFactory.createForClass(UserClient);

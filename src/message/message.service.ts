@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ConfigService } from '@nestjs/config';
-import { Job, Queue, QueueOptions, Worker } from 'bullmq';
+import { Job, Queue, Worker, WorkerOptions } from 'bullmq';
 import Redis, { RedisOptions } from 'ioredis';
 import { Model, PipelineStage } from 'mongoose';
 import { ObjectId } from 'mongodb';
@@ -16,6 +16,7 @@ import {
 } from './models/message.model';
 import { Message as MessageSchema, MessageDocument } from './message.schema';
 import { ChatService } from '../chat/chat.service';
+import { UserClientService } from '../userClient/userClient.service';
 import { UserSessionService } from '../userSession/userSession.service';
 import { PubSubService } from '../shared/pubSub.service';
 
@@ -24,7 +25,8 @@ export class MessageService {
   private REDIS_HOST: string;
   private REDIS_PORT: number;
   private redisConfig: RedisOptions;
-  private redisOptions: QueueOptions;
+  private redisOptions: WorkerOptions;
+  private redisOptionsNew: WorkerOptions;
   private redisClient: Redis;
   private redisSubscriber: Redis;
   private redisPublisher: Redis;
@@ -33,6 +35,7 @@ export class MessageService {
     @InjectModel(MessageSchema.name)
     private MessageModel: Model<MessageDocument>,
     private chatService: ChatService,
+    private userClientService: UserClientService,
     private userSessionService: UserSessionService,
     private readonly pubSubService: PubSubService,
     private readonly configService: ConfigService,
@@ -43,13 +46,15 @@ export class MessageService {
       host: this.REDIS_HOST,
       port: this.REDIS_PORT,
       maxRetriesPerRequest: null,
-      // retryStrategy: (times) => {
-      //   const delay = Math.min(times * 50, 2000);
-      //   return delay;
-      // },
+      retryStrategy: (times) => {
+        return Math.min(times * 50, 2000);
+      },
     };
     this.redisOptions = {
       connection: this.redisConfig,
+    };
+    this.redisOptionsNew = {
+      connection: new Redis(this.redisConfig),
     };
     this.redisClient = new Redis(this.redisConfig);
     this.redisSubscriber = new Redis(this.redisConfig);
@@ -314,9 +319,9 @@ export class MessageService {
     }
   }
 
-  async enqueueMessagesRead(message: MessageDocument): Promise<void> {
-    const { _id, receivers } = message || {};
-    const messageId = String(_id);
+  async enqueueMessagesRead(messageId: string): Promise<void> {
+    const message = await this.findOneById(messageId);
+    const { receivers } = message || {};
 
     if (receivers?.length) {
       await Promise.all(
@@ -393,14 +398,13 @@ export class MessageService {
   }
 
   async deliverMessage(
-    message: MessageDocument,
+    messageId: string,
     receiverUserId: string,
   ): Promise<void> {
-    let updatedMessage = message;
-
     try {
-      const { _id, chatId, receivers } = updatedMessage || {};
-      const messageId = String(_id);
+      let message = await this.findOneById(messageId);
+
+      const { chatId, receivers } = message || {};
 
       const receiver = receivers?.length
         ? receivers?.find((el) => String(el?._id) === receiverUserId)
@@ -412,7 +416,7 @@ export class MessageService {
           timestamp: Date.now(),
         };
 
-        updatedMessage = await this.updateDeliveryStatus(
+        message = await this.updateDeliveryStatus(
           messageId,
           receiverUserId,
           deliveredStatus,
@@ -421,7 +425,7 @@ export class MessageService {
 
       await this.pubSubService.pubSubInstance.publish('OnMessageUpdated', {
         OnMessageUpdated: {
-          message: updatedMessage,
+          message,
         },
       });
 
@@ -429,6 +433,16 @@ export class MessageService {
       await this.pubSubService.pubSubInstance.publish('OnChatUpdated', {
         OnChatUpdated: {
           chat: updatedChat,
+        },
+      });
+
+      const updatedUserClient = await this.userClientService.shouldNotifyUser(
+        receiverUserId,
+        true,
+      );
+      await this.pubSubService.pubSubInstance.publish('OnUserClientUpdated', {
+        OnUserClientUpdated: {
+          userClient: updatedUserClient,
         },
       });
     } catch (error) {
@@ -439,10 +453,9 @@ export class MessageService {
 
   async deliverQueuedMessage(job: Job): Promise<void> {
     const jobData = job?.data;
-    const messageId = jobData?.messageId;
+    const messageId = String(jobData?.messageId || '');
     const receiverUserId = jobData?.receiverUserId;
-    const message = await this.findOneById(String(messageId));
-    await this.deliverMessage(message, receiverUserId);
+    await this.deliverMessage(messageId, receiverUserId);
   }
 
   async markAllAsRead(input: MarkReadInput): Promise<MarkRead> {
@@ -480,10 +493,9 @@ export class MessageService {
       );
 
       await Promise.all(
-        messages?.map(async (msg) => {
-          const msgId = String(msg?._id);
-          const message = await this.findOneById(msgId);
-          await this.enqueueMessagesRead(message);
+        messages?.map(async (message) => {
+          const messageId = String(message?._id);
+          await this.enqueueMessagesRead(messageId);
         }),
       );
 
@@ -567,7 +579,7 @@ export class MessageService {
           throw error;
         }
       },
-      this.redisOptions,
+      this.redisOptionsNew,
     );
 
     const stopChannel = `worker-stop:${queueName}`;
@@ -598,6 +610,27 @@ export class MessageService {
         `Failed to publish stop signal for queue ${queueName}:`,
         error,
       );
+    }
+  }
+
+  // async shutDownAllWorkers(): Promise<void> {
+  //   try {
+  //     const stopChannels = await this.getAllQueueStopChannels();
+  //     for (const stopChannel of stopChannels) {
+  //       await this.redisPublisher.publish(stopChannel, 'stop');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error shutting down all workers:', error);
+  //   }
+  // }
+
+  private async getAllQueueStopChannels(): Promise<string[]> {
+    try {
+      const keys = await this.redisClient.keys('worker-stop:*');
+      return keys;
+    } catch (error) {
+      console.error('Error fetching worker stop channels:', error);
+      return [];
     }
   }
 }

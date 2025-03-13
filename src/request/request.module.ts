@@ -6,6 +6,7 @@ import { RequestService } from './request.service';
 import { AuthModule } from '../auth/auth.module';
 import { SharedModule } from '../shared/shared.module';
 import { UserModule } from '../user/user.module';
+import { UserClientModule } from '../userClient/userClient.module';
 import { FriendModule } from '../friend/friend.module';
 
 @Module({
@@ -13,6 +14,7 @@ import { FriendModule } from '../friend/friend.module';
     AuthModule,
     SharedModule,
     UserModule,
+    UserClientModule,
     FriendModule,
     MongooseModule.forFeature([
       {

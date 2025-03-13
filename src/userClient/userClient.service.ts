@@ -35,6 +35,7 @@ export class UserClientService {
           userId: 1,
           clients: 1,
           lastActive: 1,
+          hasNotifications: 1,
         },
       },
     ])
@@ -104,5 +105,15 @@ export class UserClientService {
     ]);
 
     return updatedClient;
+  }
+
+  async shouldNotifyUser(userId: string, value: boolean) {
+    const userObjectId = new ObjectId(userId);
+    const updatedUser = await this.UserClientModel.findOneAndUpdate(
+      { userId: userObjectId },
+      { $set: { hasNotifications: value } },
+      { new: true },
+    ).lean();
+    return updatedUser;
   }
 }
