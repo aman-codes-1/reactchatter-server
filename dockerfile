@@ -1,11 +1,11 @@
 FROM node:18-alpine AS builder
 WORKDIR /usr/src/app
+
 COPY package*.json tsconfig*.json ./
 RUN npm install
 COPY . .
 RUN npm run build
 
-# ───── Runtime image ─────
 FROM node:18-alpine
 WORKDIR /usr/src/app
 
