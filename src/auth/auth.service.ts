@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { OAuth2Client } from 'google-auth-library';
 import { CookieOptions, Request, Response } from 'express';
+import * as crypto from 'crypto';
 import { UserService } from '../user/user.service';
 import { UserSessionService } from '../userSession/userSession.service';
 import { AuthTokens } from '../userSession/models/userSession.model';
