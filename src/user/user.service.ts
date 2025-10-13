@@ -48,7 +48,7 @@ export class UserService {
     if (!user) {
       throw new BadRequestException('User not registered.');
     }
-    return user as UserDocument;
+    return user as unknown as UserDocument;
   }
 
   async findOneById(userId: string): Promise<UserDocument> {
@@ -57,7 +57,7 @@ export class UserService {
     if (!user) {
       throw new BadRequestException('User not registered.');
     }
-    return user as UserDocument;
+    return user as unknown as UserDocument;
   }
 
   async validateUser(userDetails: UserDocument): Promise<UserDocument> {
@@ -79,8 +79,8 @@ export class UserService {
         { $set: userDetails },
         { upsert: true, new: true },
       ).lean();
-      return updatedUser as UserDocument;
+      return updatedUser as unknown as UserDocument;
     }
-    return user as UserDocument;
+    return user as unknown as UserDocument;
   }
 }

@@ -381,7 +381,7 @@ export class MessageService {
   ): Promise<MessageDocument> {
     const messageObjectId = new ObjectId(messageId);
     const receiverObjectId = new ObjectId(receiverId);
-    const { _id } = (await this.MessageModel.findOneAndUpdate(
+    const { _id } = await this.MessageModel.findOneAndUpdate(
       { _id: messageObjectId },
       {
         $set: {
@@ -392,7 +392,7 @@ export class MessageService {
         new: true,
         arrayFilters: [{ 'element._id': receiverObjectId }],
       },
-    ).lean()) as MessageDocument;
+    ).lean();
     const message = await this.findOneById(String(_id));
     return message;
   }

@@ -113,7 +113,7 @@ export class FriendService {
     findQuery: FilterQuery<FriendDocument>,
   ): Promise<FriendDocument> {
     const friend = await this.FriendModel.findOne(findQuery).lean();
-    return friend as FriendDocument;
+    return friend as unknown as FriendDocument;
   }
 
   async findOneById(friendId: string): Promise<FriendDocument> {

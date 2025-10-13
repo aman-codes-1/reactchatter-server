@@ -68,14 +68,14 @@ export class UserClientService {
   async addClient(userId: string, client: Client): Promise<UserClientDocument> {
     const userObjectId = new ObjectId(userId);
     const { sessionID, lastActive } = client || {};
-    const updatedClient = (await this.UserClientModel.findOneAndUpdate(
+    const updatedClient = await this.UserClientModel.findOneAndUpdate(
       { userId: userObjectId },
       {
         $set: { lastActive },
         $addToSet: { clients: client },
       },
       { upsert: true, new: true },
-    ).lean()) as UserClientDocument;
+    ).lean();
 
     await Promise.all([
       this.userSessionService.updateLastActive(sessionID, lastActive),
@@ -83,7 +83,7 @@ export class UserClientService {
       this.userSessionService.removeStale(),
     ]);
 
-    return updatedClient;
+    return updatedClient as unknown as UserClientDocument;
   }
 
   async removeClient(
@@ -91,20 +91,20 @@ export class UserClientService {
     clientId: string,
   ): Promise<UserClientDocument> {
     const userObjectId = new ObjectId(userId);
-    const updatedClient = (await this.UserClientModel.findOneAndUpdate(
+    const updatedClient = await this.UserClientModel.findOneAndUpdate(
       { userId: userObjectId },
       {
         $pull: { clients: { _id: clientId } },
       },
       { new: true },
-    ).lean()) as UserClientDocument;
+    ).lean();
 
     await Promise.all([
       this.sendClients(userId),
       this.userSessionService.removeStale(),
     ]);
 
-    return updatedClient;
+    return updatedClient as unknown as UserClientDocument;
   }
 
   async shouldNotifyUser(userId: string, value: boolean) {
@@ -114,6 +114,6 @@ export class UserClientService {
       { $set: { hasNotifications: value } },
       { new: true },
     ).lean();
-    return updatedUser;
+    return updatedUser as unknown as UserClientDocument;
   }
 }
