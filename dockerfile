@@ -1,12 +1,12 @@
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /usr/src/app
 
 COPY package*.json tsconfig*.json ./
-RUN npm install
+RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM node:18-alpine
+FROM node:22-alpine
 WORKDIR /usr/src/app
 
 ARG PORT
@@ -15,9 +15,8 @@ ENV PORT=${PORT}
 
 COPY --from=builder /usr/src/app/dist ./dist
 COPY package*.json ./
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
 
 EXPOSE ${PORT}
 
 CMD ["sh", "-c", "node dist/main.js"]
-
